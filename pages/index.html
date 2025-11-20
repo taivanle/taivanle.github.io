@@ -40,15 +40,24 @@
             <div class="navbar-collapse offcanvas-collapse" id="navbarsExampleDefault">
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item">
-                        <a class="nav-link page-scroll" href="#header">Home <span class="sr-only">(current)</span></a>
-                    <li class="nav-item">
-                    <li class="nav-item">
-                        <a class="nav-link page-scroll" href="blog_homepage.html">Blog</a>
+                        <a class="nav-link page-scroll" href="#header">
+                            Home <span class="sr-only">(current)</span>
+                        </a>
                     </li>
 
-                    <a class="nav-link page-scroll" href="#contact">Contact</a>
+                    <li class="nav-item">
+                        <a class="nav-link" href="blog_homepage.html">
+                            Blog
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll" href="#contact">
+                            Contact
+                        </a>
                     </li>
                 </ul>
+
                 <span class="nav-item social-icons">
                     <span class="fa-stack">
                         <a href="https://www.linkedin.com/in/owen-le-68a21a194/">
@@ -138,9 +147,10 @@
 
     <!-- Details -->
     <div class="split">
-        <div class="area-1">
-        </div><!-- end of area-1 on same line and no space between comments to eliminate margin white space -->
-        <div class="area-2 bg-gray">
+        <div class="area-1"></div>
+        <!-- end of area-1 -->
+
+        <div class="area-2">
             <div class="container">
                 <div class="row">
                     <div class="col-lg-12">
@@ -299,19 +309,38 @@
                                 <i class="fab fa-github fa-stack-1x"></i>
                             </a>
                         </span>
-                    </div> <!-- end of social-container -->
-                </div> <!-- end of col -->
-            </div> <!-- end of row -->
-        </div> <!-- end of container -->
-    </div> <!-- end of footer -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
     <!-- end of footer -->
 
-
     <!-- Scripts -->
-    <script src="js/jquery.min.js"></script> <!-- jQuery for Bootstrap's JavaScript plugins -->
-    <script src="js/bootstrap.min.js"></script> <!-- Bootstrap framework -->
-    <script src="js/jquery.easing.min.js"></script> <!-- jQuery Easing for smooth scrolling between anchors -->
-    <script src="js/scripts.js"></script> <!-- Custom scripts -->
-</body>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/jquery.easing.min.js"></script>
+    <script src="js/scripts.js"></script>
 
+    <!-- Smooth scroll for visiting index.html#contact -->
+    <script>
+        $(document).ready(function () {
+            if (window.location.hash) {
+                var $target = $(window.location.hash);
+
+                if ($target.length) {
+                    $('html, body').scrollTop(0);
+
+                    setTimeout(function () {
+                        $('html, body').stop().animate(
+                            { scrollTop: $target.offset().top },
+                            800,
+                            'easeInOutExpo'
+                        );
+                    }, 150);
+                }
+            }
+        });
+    </script>
+</body>
 </html>
