@@ -142,13 +142,17 @@ a:hover {
 	background-color: #f7f9fb;
 }
 
-.section-divider {
+/* .section-divider {
 	display: block;
 	height: 1px;
 	margin: 0;
 	border: none;
 	background-color: #d3dae2;
+} */
+.section-divider {
+    display: none !important;
 }
+
 
 .btn-solid-reg {
 	display: inline-block;
@@ -525,7 +529,13 @@ input[type='checkbox'] {
 	background-size: cover;
 	text-align: center;
 }
-
+.blog_header {
+	padding-top: 7rem;
+	padding-bottom: 5.5rem;
+	background: linear-gradient(rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.1)), url('../images/blog_header.png') center center no-repeat;
+	background-size: cover;
+	text-align: center;
+}
 .header .h1-large {
 	margin-bottom: 1.75rem;
 	color: #ffffff;
@@ -577,6 +587,7 @@ input[type='checkbox'] {
 .basic-1 h6 {
 	margin-bottom: 0.125rem;
 }
+
 
 
 /********************/
@@ -1122,8 +1133,8 @@ a:hover.back-to-top {
 	}
 	
 	.split .area-2 {
-		height: 100%;
-		width: 50%;
+		height: 110%;
+		width: 45%;
 		display: inline-block;
 		vertical-align: top;
 	}
@@ -1276,5 +1287,25 @@ a:hover.back-to-top {
 		margin-left: 2.875rem;
 	}
 	/* end of extra pages */
+	
 }
 /* end of min-width 1200px */
+/* ---- Fix overlap between "Why Work With Me" and "Frequent questions" ---- */
+/* Fix spacing between split section and FAQ */
+
+/* Full-width grey background with centered content (Preference B) */
+.full-width-gray {
+    background-color: #f7f9fb;      /* same grey */
+    width: 100vw;                   /* stretch full width */
+    margin-left: calc(50% - 50vw);  /* align with viewport */
+    margin-right: calc(50% - 50vw);
+}
+
+
+/* Remove the grey divider line between sections */
+.section-divider {
+    display: none !important;
+}
+body {
+    background-color: #f7f9fb !important;
+}
