@@ -184,6 +184,7 @@ a:hover {
 	line-height: 0;
 	text-decoration: none;
 	transition: all 0.2s;
+	border-radius: 8px;
 }
 
 .btn-solid-lg:hover {
@@ -567,8 +568,8 @@ input[type='checkbox'] {
 /*     About     */
 /*****************/
 .basic-1 {
-	padding-top: 7.75rem;
-	padding-bottom: 5.25rem;
+	padding-top: 2rem;
+	padding-bottom: 2rem;
 }
 
 .basic-1 .text-container {
@@ -1308,4 +1309,24 @@ a:hover.back-to-top {
 }
 body {
     background-color: #f7f9fb !important;
+}
+/* Blog body text */
+.blog-content {
+    font-family: "Open Sans", sans-serif;
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: #333;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Blog section headers */
+.blog-section-title {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-size: 2rem;         /* was 3.5rem */
+    line-height: 1.3;
+    color: #222;
+    margin-bottom: 2rem;
 }

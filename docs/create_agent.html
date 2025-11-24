@@ -13,11 +13,8 @@
         rel="stylesheet">
 
     <!-- Bootstrap 5 CSS (same as index.html) -->
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
-        crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
     <!-- Font Awesome + Custom Styles -->
     <link href="css/fontawesome-all.css" rel="stylesheet">
@@ -40,13 +37,12 @@
         }
     </style>
 
-    <!-- Favicon  -->
     <link rel="icon" href="images/favicon.png">
 </head>
 
 <body data-bs-spy="scroll" data-bs-target=".fixed-top">
 
-    <!-- Navigation -->
+    <!-- Navigation (copied from index.html, with active item for this page) -->
     <nav class="navbar navbar-expand-lg fixed-top navbar-dark">
         <div class="container">
 
@@ -68,14 +64,14 @@
 
                     <!-- Blog dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarBlog"
-                           data-bs-toggle="dropdown" aria-expanded="false">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarBlog" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             Blog
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarBlog">
-                            <li><a class="dropdown-item active" href="blog_homepage.html">All posts</a></li>
-                            <li><a class="dropdown-item" href="orchestrate_simplified.html">watsonx Orchestrate – Simplified</a></li>
-                            <li><a class="dropdown-item" href="create_agent.html">Creating an Agent</a></li>
+                            <li><a class="dropdown-item" href="blog_homepage.html">All posts</a></li>
+                            <li><a class="dropdown-item" href="orchestrate_simplified.html">watsonx Orchestrate –
+                                    Simplified</a></li>
                         </ul>
                     </li>
 
@@ -107,37 +103,76 @@
 
 
     <!-- Hero Section -->
-    <header class="blog_header" style="padding-top:140px; padding-bottom:80px;">
+    <header class="blog_header pt-150 pb-80">
         <div class="container text-center">
-            <h1 class="h1-large" style="color: #fff;">Welcome to My Blog</h1>
-            <p class="lead mt-3" style="max-width:650px; margin:auto; color: #fff;">
-                I write about learning, tech, growth, and everything I discover along the way.
-                Dive into my thoughts, lessons, and personal journey.
+            <h1 class="h1-large text-white">Creating an agent</h1>
+            <p class="lead mt-3 hero-subtitle" style="color: #fff;">
+                So you want to know how to create a watsonx orchestrate agent? ADK or the Orchestrate interface?
             </p>
         </div>
     </header>
 
-    <section class="basic-1 bg-gray full-width-gray" style="padding:60px 0;">
+
+    <!-- Back button -->
+    <section class="basic-1 bg-gray full-width-gray py-60">
         <div class="container text-center">
+            <a href="orchestrate_simplified.html" class="btn-solid-lg d-inline-block mb-5">
+                Back to Simplified chapters
+            </a>
+        </div>
+    </section>
 
-            <h2 class="text-center mb-5" style="font-size: 3.5rem;">Series</h2>
 
-            <div class="d-flex flex-column align-items-center">
+    <!-- Blog Content -->
+    <section class="basic-1 bg-gray full-width-gray">
+        <div class="container">
+            <div class="blog-content">
 
-                <a href="orchestrate_simplified.html"
-                   class="btn-solid-lg mb-3 mb-md-4 mb-lg-4"
-                   style="font-size: 0.875rem;">
-                    Simplified
-                </a>
+                <h3>Introduction</h3>
+                <p>
+                    Watsonx Orchestrate gives you two distinct ways to build automation agents:
+                    the Agent Development Kit (ADK), or the low-code Orchestrate UI.
+                    Both approaches serve different needs and skill levels. This guide will be your resource for
+                    creating the minimum viable version to get started while explaining how to make your agent more
+                    intuitive, tailored and optimised for your use case!
 
-                <a href="orchestrate_simplified.html"
-                   class="btn-solid-lg mb-3 mb-md-4 mb-lg-4"
-                   style="font-size: 0.875rem;">
-                    test
-                </a>
+                </p>
+
+                <h3>When to Use the ADK</h3>
+                <p>
+                    The ADK is the best choice when you need full control over the agent’s logic,
+                    deeper integrations, or programmable workflows. Developers can define custom actions,
+                    call external APIs, and build reusable automation capabilities.
+                </p>
+
+                <h3>When to Use the Orchestrate UI</h3>
+                <p>
+                    The Orchestrate UI is more visual and intuitive. It allows non-technical users
+                    or business analysts to quickly assemble automations using existing actions.
+                </p>
 
             </div>
+        </div>
+    </section>
 
+    <!-- Section Header – ADK -->
+    <section class="basic-1 bg-gray full-width-gray py-60">
+        <div class="container">
+            <h2 class="blog-section-title text-center mb-5">
+                Creating an Agent through the ADK
+                <p>
+
+                </p>
+            </h2>
+        </div>
+    </section>
+
+    <!-- Section Header – Orchestrate UI -->
+    <section class="basic-1 bg-gray full-width-gray py-60">
+        <div class="container">
+            <h2 class="blog-section-title text-center mb-5">
+                Creating an Agent through the Orchestrate UI
+            </h2>
         </div>
     </section>
 
@@ -145,13 +180,12 @@
     <script src="js/jquery.min.js"></script>
     <script src="js/jquery.easing.min.js"></script>
 
-    <script
-        src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
         crossorigin="anonymous"></script>
 
     <script src="js/scripts.js"></script>
 
-    <!-- Off-canvas navbar toggle -->
+    <!-- Off-canvas navbar toggle (same as index.html) -->
     <script>
         (function () {
             'use strict';
@@ -166,4 +200,5 @@
     </script>
 
 </body>
+
 </html>
