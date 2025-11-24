@@ -160,10 +160,81 @@
         <div class="container">
             <h2 class="blog-section-title text-center mb-5">
                 Creating an Agent through the ADK
-                <p>
-
-                </p>
             </h2>
+
+        </div>
+    </section>
+    <section class="basic-1 bg-gray full-width-gray">
+        <div class="container">
+            <div class="blog-content">
+
+                <h3>Install the ADK and set up the env</h3>
+                <p>
+                    First things first, you will need to install Python 3.11–3.13 if you haven't got it already.
+                    You will need to run:
+                </p>
+                <pre class="code-block"><code>brew install python@3.12</code></pre>
+                <p>Next, we will need to create the venv, using the code below:</p>
+                <pre class="code-block"><code>python3.11 -m venv .venv
+source .venv/bin/activate
+pip install ibm-watsonx-orchestrate
+</code></pre>
+                <p>
+                    You will also need to create an ADK project structure. This would be like:
+                <pre class="code-block"><code>mkdir my-adk-project
+cd my-adk-project
+mkdir agents tools knowledge flows
+                </code></pre>
+                </p>
+                <p>A common layout for a project would look like:
+                <pre class="code-block"><code>my-adk-project/ 
+agents/ 
+tools/ 
+knowledge/ 
+flows/ 
+.env</code></pre>
+                </p>
+                <p>Your .env file will hold the connection information such as API keys, login credentials, etc...</p>
+                <p>Next, you will need to define your agent via a YAML file. This is the easiest way to "create an agent
+                    in the ADK". It's as simple as writing the YAML and then importing with the CLI. Important to note,
+                    agents can be defined in YAML, JSON or Python.
+                    For example: agents/my_first_agent.yaml</p>
+                <pre class="code-block"><code>id: customer-support-agent          # unique ID for this agent
+name: "Customer Support Agent"
+description: >
+  Handles common customer queries and can escalate complex issues.
+version: "1.0.0"
+
+llm:
+  provider: "watsonx"
+  model: "ibm/granite-13b-chat-v2"
+  temperature: 0.3
+  max_tokens: 1024
+
+instructions: |
+  You are a friendly, concise support agent.
+  - Ask clarifying questions if the request is ambiguous.
+  - Escalate issues you cannot solve to human support.
+  - Use tools when available instead of guessing.
+
+tools:
+  - id: faq-search-tool
+  - id: ticket-creation-tool
+
+knowledge_bases:
+  - id: faq-kb
+
+inputs:
+  - name: user_message
+    type: string
+    required: true
+
+outputs:
+  - name: reply
+    type: string
+
+                </code></pre>
+            </div>
         </div>
     </section>
 
