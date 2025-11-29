@@ -179,6 +179,7 @@
 source .venv/bin/activate
 pip install ibm-watsonx-orchestrate
 </code></pre>
+                <h3>Create an ADK project structure</h3>
                 <p>
                     You will also need to create an ADK project structure. This would be like:
                 <pre class="code-block"><code>mkdir my-adk-project
@@ -193,6 +194,8 @@ tools/
 knowledge/ 
 flows/ 
 .env</code></pre>
+                <h3>Define your agent (YAML)</h3>
+
                 </p>
                 <p>Your .env file will hold the connection information such as API keys, login credentials, etc...</p>
                 <p>Next, you will need to define your agent via a YAML file. This is the easiest way to "create an agent
@@ -235,12 +238,93 @@ outputs:
 
                 </code></pre>
                 <p>
-                    You can simplifier this further depending on your usecase! You don't even need to have any tools or
+                    You can simplify this further depending on your usecase! You don't even need to have any tools or
                     knowledge bases right now, you can add them later!
                 </p>
+                <h3>OPTIONAL: Create a Python tool</h3>
+                <p>Now, this next part is optional, but if you need to create a python tool you will need to define a
+                    YAML tool and the Pytho Implementationn
+                    You'll want to save this in your tools/ folder:</p>
+                <pre class="code-block"><code>id: faq-search-tool
+name: "FAQ Search"
+description: "Searches FAQs by keyword"
+type: python
+
+inputs:
+  - name: query
+    type: string
+    required: true
+
+outputs:
+  - name: answer
+    type: string
+
+</code></pre>
+                <p>Now you will add your Python Implementation tool</p>
+                <pre class="code-block"><code>from ibm_watsonx_orchestrate import ToolBase, tool
+
+
+class FAQSearchTool(ToolBase):
+    @tool
+    def run(self, query: str) -> str:
+        # Dummy logic for now – plug in your own search
+        faqs = {
+            "hours": "We’re open 9am–5pm, Monday to Friday.",
+            "refund": "Refunds are processed within 5–7 working days.",
+        }
+        for key, value in faqs.items():
+            if key in query.lower():
+                return value
+        return "I couldn't find that in the FAQ."
+
+
+</code></pre>
+                <p>
+                    You will then need to tell the ADK in your environment/CLI config where tools live so they can be
+                    imported and executed.
+                </p>
+
+                <h3>Use the ADK/CLI to import your agent</h3>
+                <p>
+                    Once your environment is configured (wxo CLI available after installing the ADK), the flow is
+                    roughly:
+                <h5>Configure/activate an environment</h5>
+                </p>
+                <pre class="code-block"><code>wxo env create local-dev \
+  --url http://localhost:4321 \
+  --api-key $WXO_API_KEY
+
+wxo env use local-dev
+</code></pre>
+                <h5>Import tools (If any)</h5>
+                <pre class="code-block"><code>wxo tools import tools/(use_your_tool_filename_here).yaml
+
+</code></pre>
+                <h5>Import the agent</h5>
+                <pre class="code-block"><code>wxo agents import agents/(use_your_agent_filename_here).yaml
+
+
+</code></pre>
+                <h5>List and verify</h5>
+                <pre class="code-block"><code>wxo agents list
+wxo agents describe (Use the agent name from the agent yaml file)
+
+
+</code></pre>
+
+                </code></pre>
+
+                <h3>Test your agent</h3>
+                <p>
+                    You can test your agent via the CLI
+                </p>
+                <pre class="code-block"><code>wxo agents chat (Use_your_agent_id/name_here)
+</code></pre>
             </div>
         </div>
+
     </section>
+
 
     <!-- Section Header – Orchestrate UI -->
     <section class="basic-1 bg-gray full-width-gray py-60">
