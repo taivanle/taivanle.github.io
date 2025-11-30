@@ -321,23 +321,8 @@ def faq_search(query: str) -> str:
 
 
 </code></pre>
-                <p>
-                    You will then need to tell the ADK in your environment/CLI config where tools live so they can be
-                    imported and executed.
-                </p>
 
-                <h3>Use the ADK/CLI to import your agent</h3>
-                <p>
-                    Once your environment is configured (wxo CLI available after installing the ADK), the flow is
-                    roughly:
-                <h5>Configure/activate an environment</h5>
-                </p>
-                <pre class="code-block"><code>orchestrate env create local-dev \
-  --url http://localhost:4321 \
-  --api-key $WXO_API_KEY
-
-orchestrate env use local-dev
-</code></pre>
+                </code></pre>
                 <h5>Import tools (If any)</h5>
                 <pre class="code-block"><code>orchestrate tools import -k python -f tools/(use_your_tool_filename_here).py
 </code></pre>
