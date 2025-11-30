@@ -193,38 +193,86 @@ tools/
 knowledge/ 
 flows/ 
 .env</code></pre>
-                <h3>Define your agent (YAML)</h3>
+                <h3>Get your correct IBM Cloud WXO API Key</h3>
+                <p>
+                    This is a step that most people get wrong. You MUST get your API key from the Orchestrate UI.
+                    You will go to your orchestrate resource, then launch and clikc the profile in the top right corner.
+                    You will then go into settings, API details and then generate an API key. It will send you to the
+                    cloud IAM generate API key page, but this is normal and you MUST follow these steps to get there
+                    otherwise it wont work. It will also provide you with a service instance URL, for example:
+                <pre class="code-block"><code>https://api.eu-de.watson-orchestrate.cloud.ibm.com/instances/984a9587-e52d-44dc-8f82-14d306b6e28f
+</code></pre>
 
+                </p>
+                <h3>Create the credentials file</h3>
+                <p>
+                    You will need to create a credentials file.
+                </p>
+                <pre class="code-block"><code>.orchestrate/credentials.json
+</code></pre>
+                <p>So to create the folder you will need to run:</p>
+                <pre class="code-block"><code>mkdir -p .orchestrate</code></pre>
+                <p>create the file .orchestrate/credentials.json</p>
+                <pre class="code-block"><code>{
+  "credentials": {
+    "cloud-dev": {
+      "type": "ibm_iam",
+      "url": "https://api.eu-de.watson-orchestrate.cloud.ibm.com/instances/984a9587-e52d-44dc-8f82-14d306b6e28f",
+      "api_key": "YOUR_WXO_API_KEY"
+    }
+  }
+}
+</code></pre>
+                <p>
+                    "cloud-dev" is your chosen environment name.
+                    <br>
+                    URL is your instance url
+                    <br>
+                    API key is your Orchestrate-generated API key
+                </p>
+                <h3>Register your IBM Cloud environment in the ADK</h3>
+                <p>
+
+                </p>
+                <pre class="code-block"><code>orchestrate env add -n cloud-dev \
+  -u https://api.eu-de.watson-orchestrate.cloud.ibm.com/instances/984a9587-e52d-44dc-8f82-14d306b6e28f \
+  --type ibm_iam \
+  --activate
+</code></pre>
+                <p>
+                    We can verify this by:
+                </p>
+                <pre class="code-block"><code>orchestrate env list</code></pre>
+                <p>
+                    Your terminal should show something like:
+                </p>
+                <pre class="code-block"><code>cloud-dev(active)</code></pre>
+
+                <h3>Define your agent (YAML)</h3>
                 </p>
                 <p>Your .env file will hold the connection information such as API keys, login credentials, etc...</p>
                 <p>Next, you will need to define your agent via a YAML file. This is the easiest way to "create an agent
                     in the ADK". It's as simple as writing the YAML and then importing with the CLI. Important to note,
                     agents can be defined in YAML, JSON or Python.
                     For example: agents/my_first_agent.yaml</p>
-                <pre class="code-block"><code>id: customer-support-agent          # unique ID for this agent
-name: "Customer Support Agent"
-description: >
-  Handles common customer queries and can escalate complex issues.
+                <pre class="code-block"><code>spec_version: v1
+
+id: my_agent
+name: my_agent
 version: "1.0.0"
 
-llm:
-  provider: "watsonx"
-  model: "ibm/granite-13b-chat-v2"
-  temperature: 0.3
-  max_tokens: 1024
+description: >
+  A simple agent running on IBM Cloud via the ADK.
 
 instructions: |
-  You are a friendly, concise support agent.
-  - Ask clarifying questions if the request is ambiguous.
-  - Escalate issues you cannot solve to human support.
-  - Use tools when available instead of guessing.
+  You are a helpful assistant. Keep responses short and clear.
 
+# ADK expects llm to be a string (model ID), not a dict
+llm: granite-13b-chat-v2
+
+# Optional: only if you have tools already imported with these IDs
 tools:
-  - id: faq-search-tool
-  - id: ticket-creation-tool
-
-knowledge_bases:
-  - id: faq-kb
+  - faq_search
 
 inputs:
   - name: user_message
@@ -242,39 +290,34 @@ outputs:
                 </p>
                 <h3>OPTIONAL: Create a Python tool</h3>
                 <p>Now, this next part is optional, but if you need to create a python tool you will need to define a
-                    YAML tool and the Pytho Implementationn
+                    Python Implementation tool.
                     You'll want to save this in your tools/ folder:</p>
-                <pre class="code-block"><code>id: faq-search-tool
-name: "FAQ Search"
-description: "Searches FAQs by keyword"
-type: python
 
-inputs:
-  - name: query
-    type: string
-    required: true
-
-outputs:
-  - name: answer
-    type: string
-
-</code></pre>
+                </code></pre>
                 <p>Now you will add your Python Implementation tool</p>
-                <pre class="code-block"><code>from ibm_watsonx_orchestrate import ToolBase, tool
+                <pre class="code-block"><code>from ibm_watsonx_orchestrate.agent_builder.tools import tool
 
+@tool
+def faq_search(query: str) -> str:
+    """Search a tiny FAQ by keyword.
 
-class FAQSearchTool(ToolBase):
-    @tool
-    def run(self, query: str) -> str:
-        # Dummy logic for now – plug in your own search
-        faqs = {
-            "hours": "We’re open 9am–5pm, Monday to Friday.",
-            "refund": "Refunds are processed within 5–7 working days.",
-        }
-        for key, value in faqs.items():
-            if key in query.lower():
-                return value
-        return "I couldn't find that in the FAQ."
+    Args:
+        query (str): User's question or keyword.
+
+    Returns:
+        str: Matching answer or a fallback message.
+    """
+    faqs = {
+        "hours": "We’re open 9am–5pm, Monday to Friday.",
+        "refund": "Refunds are processed within 5–7 working days.",
+    }
+
+    q = query.lower()
+    for key, answer in faqs.items():
+        if key in q:
+            return answer
+
+    return "I couldn't find that in the FAQ."
 
 
 </code></pre>
@@ -289,35 +332,34 @@ class FAQSearchTool(ToolBase):
                     roughly:
                 <h5>Configure/activate an environment</h5>
                 </p>
-                <pre class="code-block"><code>wxo env create local-dev \
+                <pre class="code-block"><code>orchestrate env create local-dev \
   --url http://localhost:4321 \
   --api-key $WXO_API_KEY
 
-wxo env use local-dev
+orchestrate env use local-dev
 </code></pre>
                 <h5>Import tools (If any)</h5>
-                <pre class="code-block"><code>wxo tools import tools/(use_your_tool_filename_here).yaml
-
+                <pre class="code-block"><code>orchestrate tools import -k python -f tools/(use_your_tool_filename_here).yaml
 </code></pre>
                 <h5>Import the agent</h5>
-                <pre class="code-block"><code>wxo agents import agents/(use_your_agent_filename_here).yaml
-
-
+                <pre class="code-block"><code>orchestrate agents import -f agents/(use_your_agent_filename_here).yaml
 </code></pre>
                 <h5>List and verify</h5>
-                <pre class="code-block"><code>wxo agents list
-wxo agents describe (Use the agent name from the agent yaml file)
+                <pre class="code-block"><code>orchestrate agents list
+orchestrate agents describe (Use the agent name from the agent yaml file)
 
 
 </code></pre>
 
                 </code></pre>
 
-                <h3>Test your agent</h3>
+                <h3>What you should see</h3>
                 <p>
-                    You can test your agent via the CLI
+                    You should now be able to see your agent in the UI and it should be easily editable in the project
+                    you've just created! You can update your agent by running the command below:
                 </p>
-                <pre class="code-block"><code>wxo agents chat (Use_your_agent_id/name_here)
+                <pre class="code-block"><code>orchestrate agents import agents/my_agent.yaml --update
+
 </code></pre>
             </div>
         </div>
