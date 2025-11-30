@@ -341,25 +341,27 @@ orchestrate agents describe (Use the agent name from the agent yaml file)
                 <h3>What you should see</h3>
                 <p>
                     You should now be able to see your agent in the UI and it should be easily editable in the project
-                    you've just created! You can update your agent by running the command below:
+                    you've just created! You can update your agent by deleting the current agent and importing the fresh
+                    agent:
                 </p>
-                <pre class="code-block"><code>orchestrate agents import agents/my_agent.yaml --update
-
-</code></pre>
+                <p>To delete the agent:</p>
+                <pre class="code-block"><code>orchestrate agents remove (agent_file_name).yaml</code></pre>
+                <p>To import the agent fresh:</p>
+                <pre class="code-block"><code>orchestrate agents import -f (agent_file_name).yaml</code></pre>
             </div>
         </div>
 
     </section>
 
 
-    <!-- Section Header – Orchestrate UI -->
+    <!-- Section Header – Orchestrate UI
     <section class="basic-1 bg-gray full-width-gray py-60">
         <div class="container">
             <h2 class="blog-section-title text-center mb-5">
                 Creating an Agent through the Orchestrate UI
             </h2>
         </div>
-    </section>
+    </section> -->
 
     <!-- Scripts (same stack as index.html) -->
     <script src="js/jquery.min.js"></script>
