@@ -45,31 +45,31 @@
 <body data-bs-spy="scroll" data-bs-target=".fixed-top">
 
     <!-- Navigation -->
+    <!-- Navigation -->
     <nav class="navbar navbar-expand-lg fixed-top navbar-dark">
         <div class="container">
-
-            <!-- Logo -->
-            <a class="navbar-brand logo-text page-scroll" href="index.html">Owen</a>
+            <a class="navbar-brand logo-text" href="index.html">Owen</a>
 
             <!-- Mobile toggle -->
-            <button class="navbar-toggler p-0 border-0" type="button" id="navbarSideCollapse">
+            <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- Navbar links -->
-            <div class="navbar-collapse offcanvas-collapse">
+            <div class="navbar-collapse offcanvas-collapse collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-
                     <li class="nav-item">
-                        <a class="nav-link page-scroll" href="#header">Home</a>
+                        <a class="nav-link" href="index.html">Home</a>
                     </li>
 
-                    <!-- Blog dropdown -->
+                    <!-- Dropdown -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarBlog" data-bs-toggle="dropdown"
-                            aria-expanded="false">
+                        <a class="nav-link dropdown-toggle active" href="#" id="navbarBlog" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Blog
                         </a>
+
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarBlog">
                             <li><a class="dropdown-item" href="blog_homepage.html">All posts</a></li>
                             <li><a class="dropdown-item" href="orchestrate_simplified.html">watsonx Orchestrate –
@@ -78,30 +78,30 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link page-scroll" href="#contact">Contact</a>
+                        <a class="nav-link page-scroll" href="index.html#contact">Contact</a>
                     </li>
                 </ul>
-
-                <!-- Social icons -->
-                <span class="nav-item social-icons">
-                    <span class="fa-stack">
-                        <a href="https://www.linkedin.com/in/owen-le-68a21a194/">
-                            <i class="fas fa-circle fa-stack-2x"></i>
-                            <i class="fab fa-linkedin fa-stack-1x"></i>
-                        </a>
-                    </span>
-                    <span class="fa-stack">
-                        <a href="https://github.com/taivanle">
-                            <i class="fas fa-circle fa-stack-2x"></i>
-                            <i class="fab fa-github fa-stack-1x"></i>
-                        </a>
-                    </span>
-                </span>
-
             </div>
+
+            <!-- Social icons -->
+            <span class="nav-item social-icons">
+                <span class="fa-stack">
+                    <a href="https://www.linkedin.com/in/owen-le-68a21a194/">
+                        <i class="fas fa-circle fa-stack-2x"></i>
+                        <i class="fab fa-linkedin fa-stack-1x"></i>
+                    </a>
+                </span>
+                <span class="fa-stack">
+                    <a href="https://github.com/taivanle">
+                        <i class="fas fa-circle fa-stack-2x"></i>
+                        <i class="fab fa-github fa-stack-1x"></i>
+                    </a>
+                </span>
+            </span>
         </div>
     </nav>
-    <!-- end of navigation -->
+    <!-- end navigation -->
+
 
     <!-- Header -->
     <header id="header" class="header">
