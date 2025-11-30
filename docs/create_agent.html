@@ -291,7 +291,7 @@ outputs:
                 <h3>OPTIONAL: Create a Python tool</h3>
                 <p>Now, this next part is optional, but if you need to create a python tool you will need to define a
                     Python Implementation tool.
-                    You'll want to save this in your tools/ folder:</p>
+                    You'll want to save this in your tools/ folder and can be named something like python_tool.py:</p>
 
                 </code></pre>
                 <p>Now you will add your Python Implementation tool</p>
@@ -339,7 +339,7 @@ def faq_search(query: str) -> str:
 orchestrate env use local-dev
 </code></pre>
                 <h5>Import tools (If any)</h5>
-                <pre class="code-block"><code>orchestrate tools import -k python -f tools/(use_your_tool_filename_here).yaml
+                <pre class="code-block"><code>orchestrate tools import -k python -f tools/(use_your_tool_filename_here).py
 </code></pre>
                 <h5>Import the agent</h5>
                 <pre class="code-block"><code>orchestrate agents import -f agents/(use_your_agent_filename_here).yaml
