@@ -106,7 +106,7 @@
         <div class="container text-center">
             <h1 class="h1-large text-white">Creating an agent</h1>
             <p class="lead mt-3 hero-subtitle" style="color: #fff;">
-                So you want to know how to create a watsonx orchestrate agent? ADK or the Orchestrate interface?
+                So you want to know how to create a watsonx Orchestrate agent? ADK or the Orchestrate interface?
             </p>
         </div>
     </header>
@@ -129,7 +129,7 @@
 
                 <h3>Introduction</h3>
                 <p>
-                    Watsonx Orchestrate gives you two distinct ways to build automation agents:
+                    watsonx Orchestrate gives you two distinct ways to build automation agents:
                     the Agent Development Kit (ADK), or the low-code Orchestrate UI.
                     Both approaches serve different needs and skill levels. This guide will be your resource for
                     creating the minimum viable version to get started while explaining how to make your agent more
@@ -166,7 +166,38 @@
     <section class="basic-1 bg-gray full-width-gray">
         <div class="container">
             <div class="blog-content">
+                <h3>Use Case: FAQ Search and Customer Support Helper Agent</h3>
+                <p>
+                    For example's sake, in this guide, our use case will be to create an agent that is designed to act
+                    as
+                    a lightweight, intelligent support assistant that helps users quickly retrieve information from a
+                    small knowledge set. In this case, it will be a simple FAQ dictionary.
+                    Although the current implementation uses a Python tool containing a tiny hard-coded FAQ, the
+                    structure and workflow are made to mirror how you would integrate a real knowledge source such as a
+                    product help centre, company documentation, policy pages, or an external REST API.
+                </p>
+                <p>
+                    By combining a watsonx LLM with a custom Python tool, the agent will be able to interpret natural
+                    language queries and route them to the FAQ search tool when needed. This enables users to type
+                    questions conversationally, while the underlying tool handles the structured lookup.
+                </p>
 
+                <h3>Example Scenario: Customer asks a support question</h3>
+                <p>So we are building a simple customer-facing assistant for a small business – for example, a coffee
+                    shop. Customers will often ask questions such as:
+                    <li>What time do you open today?</li>
+                    <li>How long do refunds normally take?</li>
+                    <li>Can I return something I bought last week?</li>
+                    So instead of manually responding each time, by using this agent, we can automate this process by
+                    utilising an agent and the Python FAQ Search tool.
+                </p>
+
+                <h3>Expected outcome of this guide</h3>
+                <p>By the end of this guide, you will be able to have an agent that is accessible via the Orchestrate UI
+                    and can answer the basic questions listed above.</p>
+                <p>This would look something like:</p>
+                <img src="images/opening-hours.png" alt="What are your opening hours?">
+                </p>
                 <h3>Install the ADK and set up the env</h3>
                 <p>
                     First things first, you will need to install Python 3.11–3.13 if you haven't got it already.
@@ -224,12 +255,13 @@ flows/
 }
 </code></pre>
                 <p>
-                    "cloud-dev" is your chosen environment name. (change this to whatever best suits your needs)
+                    "cloud-dev" is your chosen environment name (change this to whatever best suits your needs).
                     <br>
-                    URL is your instance url
+                    URL is your instance URL
                     <br>
                     API key is your Orchestrate-generated API key
                 </p>
+
                 <h3>Register your IBM Cloud environment in the ADK</h3>
                 <p>
 
@@ -250,7 +282,7 @@ flows/
 
                 <h3>Define your agent (YAML)</h3>
                 </p>
-                <p>Your .env file will hold the connection information such as API keys, login credentials, etc...</p>
+                <p>Your .env file will hold the connection information such as API keys, login credentials, etc.</p>
                 <p>Next, you will need to define your agent via a YAML file. This is the easiest way to "create an agent
                     in the ADK". It's as simple as writing the YAML and then importing with the CLI. Important to note,
                     agents can be defined in YAML, JSON or Python.
@@ -285,16 +317,18 @@ outputs:
 
                 </code></pre>
                 <p>
-                    You can simplify this further depending on your usecase! You don't even need to have any tools or
-                    knowledge bases right now, you can add them later!
+                    You can simplify this further depending on your use case! You don't even need to have any tools or
+                    knowledge bases right now; you can add them later!
                 </p>
                 <h3>OPTIONAL: Create a Python tool</h3>
-                <p>Now, this next part is optional, but if you need to create a python tool you will need to define a
-                    Python Implementation tool.
-                    You'll want to save this in your tools/ folder and can be named something like python_tool.py:</p>
+                <p>Now, this next part is optional, but if you need to create a Python tool you will need to define a
+                    Python implementation tool.
+                    You'll want to save this in your tools/ folder, and it can be named something like python_tool.py:
+                </p>
 
                 </code></pre>
-                <p>Now you will add your Python Implementation tool</p>
+                <p>Now you will add your Python implementation tool.</p>
+
                 <pre class="code-block"><code>from ibm_watsonx_orchestrate.agent_builder.tools import tool
 
 @tool
@@ -347,6 +381,7 @@ orchestrate agents describe (Use the agent name from the agent yaml file)
                 <p>To delete the agent:</p>
                 <pre class="code-block"><code>orchestrate agents remove (agent_file_name).yaml</code></pre>
                 <p>To import the agent fresh:</p>
+
                 <pre class="code-block"><code>orchestrate agents import -f (agent_file_name).yaml</code></pre>
             </div>
         </div>
