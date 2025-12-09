@@ -390,14 +390,119 @@ orchestrate agents describe (Use the agent name from the agent yaml file)
     </section>
 
 
-    <!-- Section Header – Orchestrate UI
+    <!-- Section Header – Orchestrate UI -->
     <section class="basic-1 bg-gray full-width-gray py-60">
         <div class="container">
-            <h2 class="blog-section-title text-center mb-5">
-                Creating an Agent through the Orchestrate UI
-            </h2>
+            <div class="blog-content">
+
+                <h2 class="blog-section-title text-center mb-5">
+                    Creating an Agent through the Orchestrate UI
+                </h2>
+                <h3>Creating an Agent through the Orchestrate UI</h3>
+                <p>
+                    The orchestrate UI provides a visual, low-code way to create automation agents without writing YAML
+                    or
+                    Python.
+                    This approach is perfect for business users, analysts, or anyone who wants to design conversational
+                    behaviour quickly and intuitively. In this part of my blog we will walk through every step required
+                    to
+                    build an agent directly in the UI from the initial setup to testing your live agent.
+                </p>
+                <h3>When to use the Orchestrate UI</h3>
+                <p>You'll want to use the UI when you want:
+                    <li>A visual interface rather than coding</li>
+                    <li>To prototype agent behaviour quickly</li>
+                    <li>To configure simple or moderate complexity logic</li>
+                    <li>To reuse existing actions, tools, or workflows</li>
+                    <li>Quick iterations while collaborating with non-technical partners</li>
+                    It is important to note, that if you don't need deep custom logic or Python-level tool integrations,
+                    the UI will provide you an easier and faster alternative to build a powerful agent.
+                </p>
+                <h3>Open your watsonx Orchestrate instance</h3>
+                <p>Firstly, you will need to login to IBM Cloud and open your Orchestrate instance, within the resource
+                    list, and launch it.
+                    <img src="images/launch.png">
+                </p>
+
+                <h3>Navigate to the "Build" section</h3>
+                <p>You'll need to click the hamburger menu in the top-left corner and click "Build". From here you will
+                    need to click "Create agent".<img src="images/Build.png">
+                    <br>
+                    <img src="images/start_create_agent.png">
+                </p>
+                <h3>Choose an Agent Tempalate</h3>
+                <p>You will now be prompted with multiple options, for the purpose of this blogs guide, I would suggest
+                    a blank agent because this will give you full control over the agent's configuration.
+
+                </p>
+                <h3>Define the Agent basic details</h3>
+                <p>You'll now be prompted to fill in the following fields:
+                    <li>Agent name
+                        <p>I would choose something simple and readable such as "CustomerAssistant".</p>
+                    </li>
+                    <li>Description
+                        <P>Just a short summary of what the agent will be doing or what it does, for example:
+                            "An assistant that answers common customer questions by searching an interal FAQ"
+                        </P>
+                        <img src="images/create_agent.png">
+                    <li>Behaviour
+                        <p>This is the core behaviour of the agent, similar to a system prompt. You would typically
+                            write something like this:
+                            "You are a helpful assistant who answers user questions by analysing their intent and
+                            retrieving the most relevant information. Keep your responses short, clear and friendly.".
+                        </p>
+                    </li>
+                    </li>
+                </p>
+                <h3>Add Capabilities</h3>
+                <p>
+                    The UI now gives you a cleaner way to design agents by structuring your configuration around three
+                    main areas:
+                    <li>Knowledge <p> What the agent can "read" from</p>
+                    </li>
+                    <li>Toolset <p> What the agent can "do" </p>
+                    </li>
+                    <li>Behaviour <p> How the agent should act and respond</p>
+                        <img src="images/Behaviour.png">
+                    </li>
+                <h3>Review and Create Your Agent</h3>
+                <p>For the purpose of this use case, we will download a FAQ PDF and upload it to the knowledge base!
+                    <br>
+                    <a href="docs/customer_faq.pdf" download class="btn-solid-lg">
+                        Download FAQ
+
+                    </a>
+                </p>
+                <img src="images/knowledge_tool.png">
+                <img src="images/select_new_knowledge.png" <img src="images/fill_details_knowledge.png">
+                <p> Once you are happy with your agent, you'll be able to test it within the UI itself in the preview
+                    window.</p>
+                </p>
+                <h3>Test your Agent</h3>
+                <p>Once you start testing you'll want to ask the Agent a question such as:
+                <pre class="code-block"><code>What time do you open today?
+How long do refunds take?
+Can I return something I bought last week?
+</code></pre>
+                You'll be able to see your messages be sent to the agent, see which tools have been invoked and view the
+                LLM reasoning!
+                <img src="images/result.png">
+                </p>
+                <h3>Result</h3>
+                <p>After following this quick start guide, you will now have made a fully functional watsonx Orchestrate
+                    agent that is built entirely from the UI!
+                    It is capable of using tools, knowledge or workflows (although those are a bit more advanced than
+                    this quick-start guide).
+                    Your agent is going to be easy to test, iterate and public and is also fully compatible with the new
+                    agentic workflow features.
+
+                    <br>
+                    Using the UI is more ideal for fast prototyping, business-facing automations, and provides a clean
+                    production agent that doesn't necessarily require ADK-level knowledge.
+                </p>
+            </div>
         </div>
-    </section> -->
+    </section>
 
     <!-- Scripts (same stack as index.html) -->
     <script src="js/jquery.min.js"></script>
