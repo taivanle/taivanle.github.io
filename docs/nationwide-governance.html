@@ -2,24 +2,41 @@
 <html lang="en">
 
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Nationwide Governance Case Study | Owen Le</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nationwide Governance Pilot – Owen Le</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.gstatic.com">
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:400;600;700&family=Poppins:wght@600&display=swap"
+    <link
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Poppins:wght@600&display=swap"
         rel="stylesheet">
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
 
-    <!-- Custom Styles -->
+    <!-- Font Awesome + Custom Styles -->
+    <link href="css/fontawesome-all.css" rel="stylesheet">
     <link href="css/styles.css" rel="stylesheet">
 
-    <link rel="icon" href="images/favicon.png">
-
+    <!-- Dropdown animation -->
     <style>
+        .navbar .dropdown-menu {
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity .2s ease, transform .2s ease;
+            display: block;
+            visibility: hidden;
+        }
+
+        .navbar .dropdown-menu.show {
+            opacity: 1;
+            transform: translateY(0);
+            visibility: visible;
+        }
+
+        /* Optional polish */
         .case-study-diagram img {
             transition: transform 0.15s ease;
         }
@@ -28,180 +45,272 @@
             transform: scale(1.01);
         }
 
-        .blog-content p {
-            line-height: 1.75;
-            margin-bottom: 1.2rem;
+        /* Article readability */
+        .case-study-content p {
+            line-height: 1.8;
         }
 
-        .blog-content h3 {
-            margin-top: 3rem;
-            margin-bottom: 1.2rem;
-        }
-
-        .blog-content ul {
-            margin-bottom: 1.5rem;
+        .case-study-content h2,
+        .case-study-content h3 {
+            margin-top: 2.5rem;
         }
     </style>
+
+    <!-- Favicon -->
+    <link rel="icon" href="images/favicon.png">
 </head>
 
-<body>
+<body data-bs-spy="scroll" data-bs-target=".fixed-top">
 
-    <div class="container py-5 blog-content" style="max-width: 900px;">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top navbar-dark">
+        <div class="container">
+            <a class="navbar-brand logo-text" href="index.html">Owen</a>
 
-        <a href="projects.html" class="text-decoration-none">&larr; Back to Projects</a>
+            <!-- Mobile toggle -->
+            <button class="navbar-toggler p-0 border-0" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false"
+                aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
 
-        <h1 class="mt-4">Engineering AI Governance as Executable Infrastructure</h1>
-        <p class="text-muted">Nationwide watsonx.governance Pilot</p>
+            <div class="navbar-collapse offcanvas-collapse collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="index.html">Home</a>
+                    </li>
 
-        <hr class="my-4">
+                    <!-- Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" id="navbarBlog" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                            Blog
+                        </a>
 
-        <p class="lead">
-            AI adoption in financial services is accelerating. Governance cannot operate as a retrospective control
-            function. It must exist as enforced infrastructure embedded directly into the AI lifecycle.
-        </p>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarBlog">
+                            <li><a class="dropdown-item" href="blog_homepage.html">All posts</a></li>
+                            <li><a class="dropdown-item" href="orchestrate_simplified.html">watsonx Orchestrate
+                                    Simplified</a></li>
+                        </ul>
+                    </li>
 
-        <p>
-            I worked on a governance focused AI pilot for Nationwide using watsonx.governance. The objective was clear.
-            Replace manual interpretation driven risk processes with deterministic system enforced workflow logic.
-        </p>
+                    <li class="nav-item">
+                        <a class="nav-link page-scroll" href="index.html#contact">Contact</a>
+                    </li>
+                </ul>
+            </div>
 
-        <blockquote class="blockquote mt-4">
-            <p class="mb-0">How do you translate policy risk frameworks and regulatory obligations into executable logic
-                that constrains behaviour?</p>
-        </blockquote>
+            <!-- Social icons -->
+            <span class="nav-item social-icons">
+                <span class="fa-stack">
+                    <a href="https://www.linkedin.com/in/owen-le-68a21a194/">
+                        <i class="fas fa-circle fa-stack-2x"></i>
+                        <i class="fab fa-linkedin fa-stack-1x"></i>
+                    </a>
+                </span>
+                <span class="fa-stack">
+                    <a href="https://github.com/taivanle">
+                        <i class="fas fa-circle fa-stack-2x"></i>
+                        <i class="fab fa-github fa-stack-1x"></i>
+                    </a>
+                </span>
+            </span>
+        </div>
+    </nav>
+    <!-- end navigation -->
 
-        <h3>Reframing Governance as a Systems Design Problem</h3>
+    <!-- Hero Section -->
+    <header class="blog_header" style="padding-top:140px; padding-bottom:80px;">
+        <div class="container text-center">
+            <h1 class="h1-large" style="color: #fff;">Engineering AI Governance as Executable Infrastructure</h1>
+            <p class="lead mt-3" style="max-width:800px; margin:auto; color: #fff;">
+                Nationwide watsonx.governance Pilot. Translating policy into deterministic workflow logic with enforced
+                evidence capture and controlled lifecycle progression.
+            </p>
+        </div>
+    </header>
 
-        <p>
-            Financial institutions operate within layered governance frameworks covering model risk data protection
-            operational risk regulatory oversight and internal controls. These frameworks typically exist as
-            documentation artifacts. Documentation does not enforce behaviour.
-        </p>
+    <!-- Article -->
+    <section class="basic-1 bg-gray full-width-gray" style="padding:60px 0;">
+        <div class="container case-study-content" style="max-width: 920px;">
 
-        <p>
-            The core challenge was not writing code. The challenge was modelling policy intent with precision.
-        </p>
+            <div class="mb-4">
+                <a href="projects.html" class="text-decoration-none">&larr; Back to Projects</a>
+            </div>
 
-        <p>Governance requirements were translated into:</p>
+            <h2>Why governance must be engineered</h2>
 
-        <ul>
-            <li>Structured metadata schemas representing risk attributes</li>
-            <li>Risk tier classification models driven by deterministic inputs</li>
-            <li>Conditional workflow execution paths</li>
-            <li>Mandatory validation checkpoints at lifecycle boundaries</li>
-            <li>Controlled state transitions with audit visibility</li>
-        </ul>
+            <p class="lead">
+                AI adoption in financial services is accelerating. Governance cannot operate as a retrospective control
+                function. It must exist as enforced infrastructure embedded directly into the AI lifecycle.
+            </p>
 
-        <p>
-            Governance constraints were encoded directly into workflow progression rules. Human interpretation was no
-            longer the primary enforcement mechanism.
-        </p>
+            <p>
+                I worked on a governance focused AI pilot for Nationwide using watsonx.governance. The objective was
+                clear. Replace manual interpretation driven risk processes with deterministic system enforced workflow
+                logic.
+            </p>
 
-        <h3>Deterministic Risk Tiering and Control Enforcement</h3>
+            <blockquote class="blockquote mt-4">
+                <p class="mb-0">How do you translate policy risk frameworks and regulatory obligations into executable
+                    logic that constrains behaviour?</p>
+            </blockquote>
 
-        <p>
-            Every AI initiative was assessed through structured inputs including:
-        </p>
+            <h2>Reframing governance as a systems design problem</h2>
 
-        <ul>
-            <li>Model type and deployment context</li>
-            <li>Data sensitivity classification</li>
-            <li>Customer impact scope</li>
-            <li>Regulatory exposure profile</li>
-        </ul>
+            <p>
+                Financial institutions operate within layered governance frameworks covering model risk data protection
+                operational risk regulatory oversight and internal controls. These frameworks typically exist as
+                documentation artifacts. Documentation does not enforce behaviour.
+            </p>
 
-        <p>
-            These attributes generated dynamic risk tiers which directly controlled downstream workflow behaviour.
-        </p>
+            <p>
+                The core challenge was not writing code. The challenge was modelling policy intent with precision.
+            </p>
 
-        <ul>
-            <li>Higher risk tiers triggered DPIA processes automatically</li>
-            <li>Specified data categories enforced additional documentation capture</li>
-            <li>Defined model classes required enhanced approval pathways</li>
-        </ul>
+            <p>Governance requirements were translated into:</p>
 
-        <p>
-            Workflow progression was governed by conditional logic gates. Advancement required evidence submission and
-            control satisfaction.
-        </p>
+            <ul>
+                <li>Structured metadata schemas representing risk attributes</li>
+                <li>Risk tier classification models driven by deterministic inputs</li>
+                <li>Conditional workflow execution paths</li>
+                <li>Mandatory validation checkpoints at lifecycle boundaries</li>
+                <li>Controlled state transitions with audit visibility</li>
+            </ul>
 
-        <h3>Embedding Traceability Across the Lifecycle</h3>
+            <p>
+                Governance constraints were encoded directly into workflow progression rules. Human interpretation was
+                no longer the primary enforcement mechanism.
+            </p>
 
-        <p>
-            Governance credibility depends on traceability. Controls ensured evidence capture occurred at deterministic
-            lifecycle boundaries.
-        </p>
+            <h2>Deterministic risk tiering and control enforcement</h2>
 
-        <ul>
-            <li>Structured evidence submission before state advancement</li>
-            <li>Dynamic linkage between risk tier and documentation requirements</li>
-            <li>Versioned approval checkpoints for audit transparency</li>
-            <li>Predefined deterministic lifecycle paths</li>
-        </ul>
+            <p>Every AI initiative was assessed through structured inputs including:</p>
 
-        <p>
-            The workflow became the enforcement mechanism.
-        </p>
+            <ul>
+                <li>Model type and deployment context</li>
+                <li>Data sensitivity classification</li>
+                <li>Customer impact scope</li>
+                <li>Regulatory exposure profile</li>
+            </ul>
 
-        <h3>Architecture</h3>
+            <p>
+                These attributes generated dynamic risk tiers which directly controlled downstream workflow behaviour.
+            </p>
 
-        <p>
-            The pilot was implemented as a governed workflow layer orchestrating document processing evidence capture
-            and lifecycle progression. Orchestration and enforcement lived in watsonx Orchestrate. Enterprise content
-            services operated on OpenShift.
-        </p>
+            <ul>
+                <li>Higher risk tiers triggered DPIA processes automatically</li>
+                <li>Specified data categories enforced additional documentation capture</li>
+                <li>Defined model classes required enhanced approval pathways</li>
+            </ul>
 
-        <p>
-            MCP tools provided controlled interfaces to downstream services. Watson Document Understanding converted
-            unstructured content into structured metadata aligned to governance schemas. FileNet persisted enterprise
-            records. Postgres supported metadata storage. Object Storage handled durable artefacts.
-        </p>
+            <p>
+                Workflow progression was governed by conditional logic gates. Advancement required evidence submission
+                and control satisfaction.
+            </p>
 
-        <div class="row justify-content-center mt-4">
-            <div class="col-12 col-lg-11">
-                <div class="card shadow-sm case-study-diagram">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">High Level Integration View</h5>
+            <h2>Embedding traceability across the lifecycle</h2>
 
-                        <img src="images/nationwide-governance-architecture.png" class="img-fluid rounded"
-                            alt="Architecture diagram showing watsonx Orchestrate invoking MCP tools connected to Watson AI WDU Object Storage and FileNet on OpenShift backed by Postgres.">
+            <p>
+                Governance credibility depends on traceability. Controls ensured evidence capture occurred at
+                deterministic lifecycle boundaries.
+            </p>
 
-                        <p class="text-muted mt-3 mb-0" style="font-size: 0.95rem;">
-                            Orchestration enforced governance logic. MCP tools abstracted platform services. WDU
-                            extracted structured metadata. FileNet and Postgres maintained enterprise persistence and
-                            audit traceability.
-                        </p>
+            <ul>
+                <li>Structured evidence submission before state advancement</li>
+                <li>Dynamic linkage between risk tier and documentation requirements</li>
+                <li>Versioned approval checkpoints for audit transparency</li>
+                <li>Predefined deterministic lifecycle paths</li>
+            </ul>
+
+            <p>
+                The workflow became the enforcement mechanism.
+            </p>
+
+            <h2>Architecture</h2>
+
+            <p>
+                The pilot was implemented as a governed workflow layer orchestrating document processing evidence
+                capture and lifecycle progression. Orchestration and enforcement lived in watsonx Orchestrate.
+                Enterprise content services operated on OpenShift.
+            </p>
+
+            <p>
+                MCP tools provided controlled interfaces to downstream services. Watson Document Understanding converted
+                unstructured content into structured metadata aligned to governance schemas. FileNet persisted
+                enterprise records. Postgres supported metadata storage. Object Storage handled durable artefacts.
+            </p>
+
+            <div class="row justify-content-center mt-4">
+                <div class="col-12 col-lg-11">
+                    <div class="card shadow-sm case-study-diagram">
+                        <div class="card-body">
+                            <h5 class="card-title mb-3">High level integration view</h5>
+
+                            <img src="images/nationwide-governance-architecture.png" class="img-fluid rounded"
+                                alt="Architecture diagram showing watsonx Orchestrate invoking MCP tools connected to Watson AI WDU Object Storage and FileNet on OpenShift backed by Postgres.">
+
+                            <p class="text-muted mt-3 mb-0" style="font-size: 0.95rem;">
+                                Orchestration enforced governance logic. MCP tools abstracted platform services. WDU
+                                extracted structured metadata. FileNet and Postgres maintained enterprise persistence
+                                and audit traceability.
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
+
+            <h2>Outcome</h2>
+
+            <ul>
+                <li>Formalised governance workflows embedded into AI lifecycle stages</li>
+                <li>Reduced reliance on manual tracking or email based approvals</li>
+                <li>Improved audit readiness through structured evidence capture</li>
+                <li>Clear alignment between risk classification and enforced controls</li>
+            </ul>
+
+            <p>
+                Governance was engineered as infrastructure rather than treated as documentation.
+            </p>
+
+            <h2>Strategic reflection</h2>
+
+            <p>
+                AI governance is a systems engineering discipline. It requires formalising ambiguity translating policy
+                into deterministic logic designing constrained progression pathways and balancing enforcement with
+                adaptability.
+            </p>
+
+            <p>
+                Organisations that scale responsibly will embed governance directly into execution layers rather than
+                applying it after deployment.
+            </p>
+
         </div>
+    </section>
 
-        <h3>Outcome</h3>
+    <!-- Scripts -->
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.easing.min.js"></script>
 
-        <ul>
-            <li>Formalised governance workflows embedded into AI lifecycle stages</li>
-            <li>Reduced reliance on manual tracking or email based approvals</li>
-            <li>Improved audit readiness through structured evidence capture</li>
-            <li>Clear alignment between risk classification and enforced controls</li>
-        </ul>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+        crossorigin="anonymous"></script>
 
-        <p>
-            Governance was engineered as infrastructure rather than treated as documentation.
-        </p>
+    <script src="js/scripts.js"></script>
 
-        <h3>Strategic Reflection</h3>
-
-        <p>
-            AI governance is a systems engineering discipline. It requires formalising ambiguity translating policy into
-            deterministic logic designing constrained progression pathways and balancing enforcement with adaptability.
-        </p>
-
-        <p>
-            Organisations that scale responsibly will embed governance directly into execution layers rather than
-            applying it after deployment.
-        </p>
-
-    </div>
+    <!-- Off-canvas navbar toggle -->
+    <script>
+        (function () {
+            'use strict';
+            const toggler = document.querySelector('#navbarSideCollapse');
+            const offcanvas = document.querySelector('.offcanvas-collapse');
+            if (toggler && offcanvas) {
+                toggler.addEventListener('click', function () {
+                    offcanvas.classList.toggle('open');
+                });
+            }
+        })();
+    </script>
 
 </body>
 
