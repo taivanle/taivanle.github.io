@@ -117,16 +117,18 @@
         <div class="container text-center">
             <h1 class="h1-large" style="color: #fff;">Engineering AI Governance Workflows in a Regulated Environment
             </h1>
-            <p class="lead mt-3" style="max-width:820px; margin:auto; color: #fff;">
-                Nationwide watsonx.governance Pilot. Turning policy into executable workflow logic with enforced gates
-                evidence capture and audit ready progression.
+            <p class="lead mt-3" style="max-width:860px; margin:auto; color: #fff;">
+                Nationwide watsonx.governance Pilot. Turning governance intent into executable workflow constraints with
+                risk tiering evidence capture plus audit ready progression.
             </p>
-            <p class="meta-line mt-3" style="color:#fff; max-width:820px; margin:auto;">
-                Focus: governance workflows, risk tiering logic, lifecycle gates, traceability, platform integration
+            <p class="meta-line mt-3" style="color:#fff; max-width:860px; margin:auto;">
+                Focus areas: policy to logic translation, deterministic gates, traceability, platform integration,
+                explainable risk decisions
             </p>
         </div>
     </header>
-    <!-- Back button -->
+
+    <!-- Back button below hero, above article -->
     <section class="basic-1 bg-gray full-width-gray py-60">
         <div class="container text-center">
             <a href="projects.html" class="btn-solid-lg d-inline-block mb-5">
@@ -134,6 +136,7 @@
             </a>
         </div>
     </section>
+
     <!-- Article -->
     <section class="basic-1 bg-gray full-width-gray" style="padding:60px 0;">
         <div class="container case-study-content" style="max-width:920px;">
@@ -141,113 +144,124 @@
             <h2>Context</h2>
 
             <p class="lead">
-                As AI adoption accelerates in financial services governance cannot remain a static review layer. It must
-                be engineered directly into the AI lifecycle.
+                AI adoption in financial services is accelerating. Governance cannot remain a document driven review
+                step. It must be engineered into the lifecycle as a control surface that constrains what can happen
+                next.
             </p>
 
             <p>
-                I worked on a governance focused AI pilot for Nationwide using watsonx.governance. The objective was to
-                convert manual risk and compliance processes into structured system enforced workflows that reduce
-                ambiguity and increase auditability.
+                I worked on a governance focused AI pilot for Nationwide using watsonx.governance. The goal was to
+                transform manual risk plus compliance processes into structured workflows that enforce requirements
+                through deterministic state transitions.
             </p>
 
             <div class="callout mt-4">
                 <p class="mb-2 fw-semibold">The core question</p>
-                <p class="mb-0">How do you convert policy risk frameworks and regulatory obligations into executable
-                    logic?</p>
+                <p class="mb-0">How do you convert policy risk frameworks plus regulatory obligations into executable
+                    logic that remains interpretable?</p>
             </div>
 
-            <h2>My role</h2>
+            <h2>What I owned</h2>
 
             <p>
-                I owned the translation layer between governance intent and workflow execution. That meant taking policy
-                language and converting it into deterministic rules that control progression through the lifecycle.
-            </p>
-
-            <p>
-                I focused on designing the structured inputs that drive governance decisions. I then modelled those
-                decisions as conditional workflow paths with mandatory checkpoints evidence capture and controlled state
-                transitions.
+                My role sat at the boundary between governance intent plus system behaviour. I designed the inputs that
+                drive decisions. I converted those decisions into workflow gates. I ensured each gate produced audit
+                artefacts that could be traced back to a risk rationale.
             </p>
 
             <ul>
-                <li>Designed metadata schemas to represent governance attributes as machine readable fields</li>
-                <li>Implemented risk tier classification logic mapped to downstream controls</li>
-                <li>Modelled conditional workflow paths with progression gates</li>
-                <li>Defined validation checkpoints for documentation evidence and approvals</li>
-                <li>Shaped audit ready state transitions aligned to review stages</li>
+                <li>Defined metadata schemas that turn policy concepts into machine readable fields</li>
+                <li>Implemented risk tier scoring plus mapping from tier to required controls</li>
+                <li>Built conditional workflow paths with mandatory checkpoints</li>
+                <li>Designed state transitions that prevent bypassing evidence or approvals</li>
+                <li>Shaped evidence capture to be useful for audit plus usable for teams</li>
             </ul>
 
-            <h2>From policy to workflow logic</h2>
+            <h2>From policy text to workflow logic</h2>
 
             <p>
-                Financial institutions operate under layered risk frameworks covering model risk data protection
-                operational risk and regulatory compliance. These frameworks usually live in documentation.
-                Documentation is not enforceable logic.
+                Most governance programs start with policy documents. The problem is enforcement. Documentation can
+                describe what should happen. It cannot guarantee it will happen.
             </p>
 
             <p>
-                The build treated governance as a control system. Instead of relying on reviewers to interpret
-                requirements manually we encoded requirements into workflow behaviour. This shifts enforcement from
-                human judgement to system constraints while retaining explainability.
+                The work was to formalise ambiguous policy language into deterministic rules. Each rule was expressed as
+                a small set of structured fields plus a limited set of valid transitions. The system could then block
+                progression when prerequisites were not satisfied.
             </p>
 
-            <h2>Risk tiering and conditional controls</h2>
+            <h3>A modelling example</h3>
 
             <p>
-                A key component of the pilot was implementing risk tier scoring logic. Projects were assessed through
-                structured inputs including:
+                One recurring challenge was separating high impact customer outcomes from high sensitivity data
+                conditions. These can correlate but they are not the same risk. I modelled them as separate fields so
+                controls could trigger for either case without inflating false positives.
+            </p>
+
+            <p>
+                That design choice improved explainability. Reviewers could see which attribute triggered a control.
+                Teams could remediate by addressing a specific requirement rather than guessing.
+            </p>
+
+            <h2>Risk tiering plus conditional controls</h2>
+
+            <p>
+                A core component was implementing risk tier scoring logic. Projects were assessed through structured
+                inputs including:
             </p>
 
             <ul>
-                <li>Model type and use case</li>
+                <li>Model type plus use case category</li>
                 <li>Data sensitivity classification</li>
                 <li>Customer impact scope</li>
                 <li>Regulatory exposure</li>
             </ul>
 
             <p>
-                These inputs drove risk tier assignment which triggered downstream controls automatically. Higher risk
-                tiers required deeper evidence capture and more rigorous approval pathways.
+                Based on these inputs the workflow assigned a risk tier. The tier directly controlled what the system
+                required next. This moved governance from reviewer discretion to system enforced constraints.
             </p>
 
             <ul>
-                <li>Higher risk classifications triggered DPIA workflows automatically</li>
+                <li>Higher risk tiers triggered DPIA workflows automatically</li>
                 <li>Specific data categories required additional documentation uploads</li>
                 <li>Certain model types required enhanced approval pathways</li>
             </ul>
 
+            <h3>The tradeoff I managed</h3>
+
             <p>
-                This was implemented using conditional workflow logic that controlled state transitions and progression
-                gates. Governance became system driven rather than reviewer dependent.
+                Overly strict workflows slow delivery. Overly flexible workflows leak risk. I tuned gates so high risk
+                paths were strict while lower risk paths stayed lightweight. The goal was consistent enforcement without
+                turning governance into friction.
             </p>
 
-            <h2>Embedding evaluation and traceability</h2>
+            <h2>Embedding evaluation plus traceability</h2>
 
             <p>
-                Beyond workflow gating we focused on traceability and auditability. The design enforced structured
-                evidence capture at defined lifecycle stages with requirements linked directly to risk tiers.
+                We treated traceability as a first class output. The workflow enforced evidence capture at lifecycle
+                boundaries. Evidence requirements were tied to risk tier so the process remained consistent plus
+                auditable.
             </p>
 
             <ul>
                 <li>Enforced evidence capture before progression at key lifecycle boundaries</li>
-                <li>Linked documentation requirements to risk tiers for consistency</li>
+                <li>Linked documentation requirements to risk tiers for consistent control coverage</li>
                 <li>Maintained versioned checkpoints across approval states</li>
                 <li>Created deterministic progression paths through the lifecycle</li>
             </ul>
 
             <p>
-                Evaluation criteria were embedded into workflow steps so model documentation risk assessments and
-                control evidence were captured before progression. This reduced ambiguity in decision making by
-                constraining allowable state transitions based on governance criteria.
+                This reduced ambiguity in decision making. Allowed transitions were constrained by governance criteria.
+                Review decisions became traceable to structured inputs plus captured artefacts.
             </p>
 
             <h2>Architecture</h2>
 
             <p>
-                The pilot was implemented as a governed workflow layer that orchestrated document processing evidence
-                capture and lifecycle progression. Orchestration and enforcement lived in watsonx Orchestrate.
-                Enterprise content services ran on OpenShift.
+                The pilot used a governed workflow layer to orchestrate document processing evidence capture plus
+                lifecycle progression. Orchestration plus enforcement lived in watsonx Orchestrate. Enterprise content
+                services ran on OpenShift.
             </p>
 
             <p>
@@ -267,8 +281,8 @@
 
                             <p class="text-muted mt-3 mb-0" style="font-size:0.95rem;">
                                 Orchestration enforced governance logic. MCP tools abstracted platform services. WDU
-                                extracted structured metadata. FileNet and Postgres maintained enterprise persistence
-                                plus audit traceability.
+                                extracted structured metadata. FileNet plus Postgres maintained persistence plus audit
+                                traceability.
                             </p>
                         </div>
                     </div>
@@ -278,17 +292,24 @@
             <h2>Technical considerations</h2>
 
             <p>
-                From a technical standpoint the complexity was not in code volume. It was in modelling correctness. The
-                system needed to be strict enough to prevent risk leakage while flexible enough to support iterative
-                development.
+                The hardest part was modelling correctness. Risk logic must remain interpretable. Workflows must remain
+                usable. Policy language must map cleanly to executable conditions without creating loopholes.
             </p>
 
             <ul>
-                <li>Ensured risk logic remained interpretable plus explainable</li>
-                <li>Avoided overly rigid workflows that slowed delivery</li>
-                <li>Maintained alignment between policy language plus executable conditions</li>
-                <li>Designed escalation paths that reflected real world review hierarchies</li>
+                <li>Kept risk logic interpretable plus explainable for reviewers</li>
+                <li>Avoided rigid gates that create workarounds or shadow processes</li>
+                <li>Maintained alignment between policy intent plus executable rules</li>
+                <li>Designed escalation paths that reflect real review hierarchies</li>
             </ul>
+
+            <h3>Failure modes we designed against</h3>
+
+            <p>
+                I explicitly modelled bypass risk. The workflow prevented skipping documentation uploads. It prevented
+                direct jumps to approval states. It required evidence capture before promotion to the next lifecycle
+                stage. These constraints were implemented as state transition rules rather than UI guidance.
+            </p>
 
             <h2>Outcome</h2>
 
@@ -300,21 +321,21 @@
             </ul>
 
             <p>
-                More importantly the pilot demonstrated that governance can be engineered as infrastructure. Policy
-                becomes executable constraint logic rather than guidance reviewed after the fact.
+                The pilot demonstrated a broader point. Governance can be engineered as infrastructure. Policy becomes
+                executable constraint logic rather than a document reviewed after delivery.
             </p>
 
             <h2>Reflection</h2>
 
             <p>
-                One key lesson was that AI governance is fundamentally a systems design problem. It requires formalising
-                ambiguity encoding policy into deterministic logic designing controlled progression paths and balancing
-                risk mitigation with operational velocity.
+                AI governance is a systems design problem. It requires formalising ambiguity. It requires encoding
+                policy into deterministic logic. It requires controlled progression paths plus enforcement that
+                preserves delivery velocity.
             </p>
 
             <p>
-                As models become more capable organisations that scale responsibly will treat governance as an
-                engineered capability embedded in execution layers rather than an afterthought.
+                As model capability increases organisations that scale responsibly will treat governance as an
+                engineered capability embedded in execution layers.
             </p>
 
         </div>
