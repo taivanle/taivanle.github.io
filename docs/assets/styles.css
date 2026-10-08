@@ -5489,3 +5489,18 @@ html:not(.js) .stage-track {
     display: none !important;
   }
 }
+
+@media screen {
+  @container project-frame (max-height: 530px) {
+    .js .presentation-mode .build-tabs {
+      margin-top: 16px;
+      gap: 8px;
+    }
+    .js .presentation-mode .build-tabs button {
+      padding: 8px 10px;
+    }
+    .js .presentation-mode .build-grid {
+      margin-top: 12px;
+    }
+  }
+}
