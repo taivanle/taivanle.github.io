@@ -235,6 +235,7 @@ async function recordJourney(page, records, label, action, url, selector) {
     frames.push({
       data: await page.screenshot({ type: "jpeg", quality: 95 }),
       timestamp: Date.now(),
+      receivedAt: Date.now(),
       viewportWidth: viewport.width,
       viewportHeight: viewport.height,
       source: "settled-screenshot",
