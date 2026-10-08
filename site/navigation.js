@@ -1,8 +1,17 @@
 // Install navigation before external styles/scripts can delay first paint.
 (() => {
   const root = document.documentElement;
-  const projectRoute = /\/(themis|dueform|actifact)\.html$/;
-  const isProject = projectRoute.test(location.pathname);
+  // The shared build supplies these routes from the project content file.
+  const projectRoutes = new Map(
+    (root.dataset.projectRoutes || "")
+      .split(" ")
+      .filter(Boolean)
+      .map((file) => [
+        new URL(file, location.href).pathname,
+        file.slice(0, -5),
+      ]),
+  );
+  const isProject = projectRoutes.has(location.pathname);
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const transitionKey = "portfolio-navigation-transition";
   let departing = false;
@@ -113,7 +122,7 @@
       viewportHeight: innerHeight,
     };
   }
-  function rectTransform(element, rect) {
+  function rectTransform(element, rect, fullCard = false) {
     if (
       !rect ||
       Math.abs(rect.viewportWidth - innerWidth) > 2 ||
@@ -122,6 +131,9 @@
       return "translateY(18px) scale(0.96)";
     const box = element.getBoundingClientRect();
     if (!box.width || !box.height) return "scale(0.96)";
+    // On entry, expand the entire selected card, as the earlier opening did.
+    if (fullCard)
+      return `translate(${rect.x - box.x}px, ${rect.y - box.y}px) scale(${rect.width / box.width}, ${rect.height / box.height})`;
     // Keep type and diagrams proportional while the frame travels to its card.
     const scale = Math.min(rect.width / box.width, rect.height / box.height);
     const x = rect.x + (rect.width - box.width * scale) / 2 - box.x;
@@ -151,7 +163,7 @@
     const previous = previousPortfolioUrl();
     const marker =
       incoming ||
-      (previous && projectRoute.test(previous.pathname)
+      (previous && projectRoutes.has(previous.pathname)
         ? { from: previous.href, direction: "close" }
         : null);
     incoming = null;
@@ -166,21 +178,21 @@
     root.dataset.pageTransition = "entering";
     // The real DOM animates; no browser-generated page or canvas snapshots exist.
     const slug = marker?.from
-      ? projectRoute.exec(new URL(marker.from).pathname)?.[1]
+      ? projectRoutes.get(new URL(marker.from).pathname)
       : null;
     const frame = isProject
       ? document.querySelector(".presentation-deck")
       : slug
         ? document.querySelector(`.card-frame[data-project="${slug}"]`)
         : null;
-    const duration = isProject ? 560 : 320;
+    const duration = isProject ? 420 : 320;
     signal("entering", duration, direction);
     if (element) {
       element.style.opacity = "1";
       // A DOM cover takes over before the head's first-paint cover is removed.
       root.dataset.coverReady = "true";
       coverAnimation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
-        duration: 220,
+        duration: isProject && marker?.rect ? 80 : 220,
         fill: "forwards",
         easing: "ease-out",
       });
@@ -195,9 +207,9 @@
         [
           {
             transform: isProject
-              ? rectTransform(frame, marker?.rect)
+              ? rectTransform(frame, marker?.rect, true)
               : "translateY(8px) scale(0.98)",
-            opacity: 0.3,
+            opacity: isProject && marker?.rect ? 1 : 0.3,
           },
           { transform: "none", opacity: 1 },
         ],
@@ -221,7 +233,7 @@
     const duration = motion.matches || document.hidden || !isProject ? 0 : 900;
     const marker = { from: location.href, to, direction, rect, at: Date.now() };
     write(transitionKey, marker);
-    if (projectRoute.test(new URL(to).pathname) && rect)
+    if (projectRoutes.has(new URL(to).pathname) && rect)
       write(`portfolio-project-origin:${new URL(to).pathname}`, {
         from: location.href,
         rect,
@@ -284,9 +296,8 @@
     const previous = previousPortfolioUrl();
     const allowed =
       previous &&
-      /\/(?:index\.html|projects\.html|themis\.html|dueform\.html|actifact\.html)?$/.test(
-        previous.pathname,
-      ) &&
+      (projectRoutes.has(previous.pathname) ||
+        /\/(?:index\.html|projects\.html)?$/.test(previous.pathname)) &&
       history.length > 1;
     // An older, already-open portfolio cannot supply our transition marker.
     // Reload its URL instead of restoring its stale scripts from page cache.
@@ -328,7 +339,7 @@
     } else if (
       departing &&
       pendingUrl &&
-      projectRoute.test(new URL(pendingUrl).pathname)
+      projectRoutes.has(new URL(pendingUrl).pathname)
     ) {
       event.preventDefault();
       window.stop();

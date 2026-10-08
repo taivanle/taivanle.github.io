@@ -950,13 +950,40 @@ test("project cards expand into a dark presentation and return through the real 
       page.evaluate(() =>
         window.projectArrival?.some(
           (animation) =>
-            animation.duration >= 500 &&
+            animation.duration >= 400 &&
+            animation.duration <= 500 &&
             animation.frames[0].transform !== "none" &&
             animation.frames.at(-1).transform === "none",
         ),
       ),
     )
     .toBe(true);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /entering|leaving/,
+  );
+  const openingBounds = await page.evaluate(() => {
+    const deck = document.querySelector(".presentation-deck");
+    const target = deck.getBoundingClientRect();
+    const opening = window.projectArrival.find(
+      (animation) => animation.frames.at(-1).transform === "none",
+    );
+    const transform = new DOMMatrix(opening.frames[0].transform);
+    const { rect } = JSON.parse(
+      sessionStorage.getItem(`portfolio-project-origin:${location.pathname}`),
+    );
+    return {
+      origin: rect,
+      x: target.x + transform.e,
+      y: target.y + transform.f,
+      width: target.width * transform.a,
+      height: target.height * transform.d,
+    };
+  });
+  // The opening fills the selected card's entire bounds, including its height.
+  // Fitting a wide deck proportionally into the card would leave empty space.
+  for (const key of ["x", "y", "width", "height"])
+    expect(openingBounds[key]).toBeCloseTo(openingBounds.origin[key], 1);
   expect(
     await page
       .locator("body")
