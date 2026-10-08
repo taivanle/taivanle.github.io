@@ -4270,6 +4270,9 @@ html:not(.js) .stage-track {
   flex-direction: column;
 }
 .student-projects h4 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-size: 20px;
   font-weight: 500;
   margin: 0 0 15px;
