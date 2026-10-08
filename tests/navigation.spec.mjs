@@ -1,5 +1,40 @@
 import { test, expect } from "@playwright/test";
 
+test("Escape refreshes an older source page instead of restoring its cached scripts", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.documentVersionId = `${Date.now()}:${Math.random()}`;
+  });
+  await page.route("**/index.html", async (route) => {
+    const response = await route.fetch();
+    const body = (await response.text()).replace(
+      /<script>\s*\/\/ Install navigation[\s\S]*?<\/script>/,
+      "",
+    );
+    await route.fulfill({ response, body });
+    await page.unroute("**/index.html");
+  });
+  await page.goto("/index.html#work");
+  const originalDocument = await page.evaluate(() => window.documentVersionId);
+  await page
+    .getByRole("link", { name: "Read case study: ActiFact", exact: true })
+    .click();
+  await expect(page).toHaveURL(/actifact.html$/);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/index.html#work$/);
+  expect(await page.evaluate(() => window.documentVersionId)).not.toBe(
+    originalDocument,
+  );
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /^(entering|leaving)$/,
+  );
+  await expect(
+    page.getByRole("link", { name: "Read case study: ActiFact", exact: true }),
+  ).toBeVisible();
+});
+
 test("Escape returns before the deferred project script has loaded", async ({
   page,
 }) => {

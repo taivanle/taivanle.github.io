@@ -63,6 +63,7 @@
   }
   let incoming = consumeTransition();
   arrivalSource = incoming?.from || null;
+  let knownSource = Boolean(incoming);
   // This state paints a solid dark cover before the external stylesheet arrives.
   if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
 
@@ -273,9 +274,11 @@
         previous.pathname,
       ) &&
       history.length > 1;
+    // An older, already-open portfolio cannot supply our transition marker.
+    // Reload its URL instead of restoring its stale scripts from page cache.
     leave(
       allowed ? previous.href : new URL("index.html#work", location.href).href,
-      { back: Boolean(allowed) },
+      { back: Boolean(allowed && knownSource) },
     );
   }
 
@@ -291,6 +294,7 @@
   window.addEventListener("pageshow", (event) => {
     if (!initialized || event.persisted) {
       incoming = incoming || consumeTransition();
+      if (incoming) knownSource = true;
       arrivalSource = incoming?.from || arrivalSource;
       const element = document.getElementById("navigation-cover");
       if (element) element.style.pointerEvents = "none";
