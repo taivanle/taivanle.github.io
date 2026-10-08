@@ -65,6 +65,12 @@ test("all five chapter handoffs have moving currents and scroll-driven type in b
   await expect(page.locator(".chapter-rule")).toHaveCount(5);
   for (const section of ["work", "about", "experience", "community", "notes"]) {
     const divider = page.locator(`#${section} .chapter-rule`);
+    const number = (
+      await page.locator(`#${section} .eyebrow`).first().innerText()
+    )
+      .split("/")[0]
+      .trim();
+    await expect(divider.locator(".chapter-index")).toHaveText(number);
     await divider.scrollIntoViewIfNeeded();
     await expect(divider).toHaveClass(/is-divider-active/);
     const current = divider.locator(".chapter-current-core");
@@ -108,6 +114,46 @@ test("all five chapter handoffs have moving currents and scroll-driven type in b
   ).toBe(0);
   await expect(page.locator("#notes .chapter-current-core")).not.toBeVisible();
   await expect(page.locator("#notes h2")).toBeVisible();
+});
+
+test("landing chapters softly snap near their start while longer sections remain scrollable", async ({
+  page,
+}) => {
+  await page.goto("/#experience");
+  const top = () =>
+    page
+      .locator("#experience")
+      .evaluate((el) => el.getBoundingClientRect().top);
+  const padding = await page.evaluate(() =>
+    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
+  );
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.mouse.wheel(0, -50);
+  await page.waitForTimeout(400);
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.mouse.wheel(0, 420);
+  await expect.poll(top).toBeLessThan(padding - 250);
+  await page.mouse.wheel(0, -420);
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(
+    await page.evaluate(
+      () => getComputedStyle(document.documentElement).scrollSnapType,
+    ),
+  ).toBe("none");
+  await page.goto("/themis.html");
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  expect(
+    await page.evaluate(
+      () => getComputedStyle(document.documentElement).scrollSnapType,
+    ),
+  ).toBe("none");
 });
 
 test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({
