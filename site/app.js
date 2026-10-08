@@ -308,3 +308,77 @@ if (presentation) {
   });
   setReading(readAll);
 }
+
+// An auxiliary cursor keeps the native pointer and follows only deliberate mouse movement.
+const cursorTracker = document.querySelector(".cursor-tracker");
+if (cursorTracker) {
+  let cursorFrame = 0;
+  let cursorVisible = false;
+  let currentX = 0,
+    currentY = 0,
+    targetX = 0,
+    targetY = 0;
+  const hideCursor = () => {
+    cursorVisible = false;
+    cancelAnimationFrame(cursorFrame);
+    cursorFrame = 0;
+    cursorTracker.classList.remove(
+      "is-visible",
+      "is-project",
+      "is-link",
+      "is-pressed",
+    );
+  };
+  const renderCursor = () => {
+    currentX += (targetX - currentX) * 0.18;
+    currentY += (targetY - currentY) * 0.18;
+    cursorTracker.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+    if (Math.hypot(targetX - currentX, targetY - currentY) > 0.1)
+      cursorFrame = requestAnimationFrame(renderCursor);
+    else cursorFrame = 0;
+  };
+  document.addEventListener(
+    "pointermove",
+    (event) => {
+      if (!responsiveMotion.matches || event.pointerType !== "mouse") {
+        hideCursor();
+        return;
+      }
+      targetX = event.clientX;
+      targetY = event.clientY;
+      if (!cursorVisible) {
+        currentX = targetX;
+        currentY = targetY;
+        cursorVisible = true;
+        cursorTracker.classList.add("is-visible");
+      }
+      cursorTracker.classList.toggle(
+        "is-project",
+        !!event.target.closest(".project-card"),
+      );
+      cursorTracker.classList.toggle(
+        "is-link",
+        !!event.target.closest("a, button"),
+      );
+      if (!cursorFrame) cursorFrame = requestAnimationFrame(renderCursor);
+    },
+    { passive: true },
+  );
+  document.addEventListener(
+    "pointerdown",
+    () => cursorTracker.classList.add("is-pressed"),
+    { passive: true },
+  );
+  document.addEventListener(
+    "pointerup",
+    () => cursorTracker.classList.remove("is-pressed"),
+    { passive: true },
+  );
+  document.documentElement.addEventListener("pointerleave", hideCursor);
+  window.addEventListener("blur", hideCursor);
+  document.addEventListener("keydown", hideCursor);
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) hideCursor();
+  });
+  responsiveMotion.addEventListener("change", hideCursor);
+}

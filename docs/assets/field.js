@@ -4,13 +4,12 @@
   if (!canvas) return;
   const context = canvas.getContext("2d");
   if (!context) return;
-  const host = canvas.parentElement;
+  const host = document.documentElement;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let width = 0,
     height = 0,
     frame = 0,
-    last = 0,
-    visible = true;
+    last = 0;
   let phase = 0;
   let pointer = { x: 0, y: 0 };
   let target = { x: 0, y: 0 };
@@ -18,7 +17,7 @@
 
   function resize() {
     width = host.clientWidth;
-    height = host.clientHeight;
+    height = window.innerHeight;
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
@@ -104,7 +103,7 @@
   function sync() {
     cancelAnimationFrame(frame);
     last = 0;
-    if (!reduced.matches && visible && !document.hidden)
+    if (!reduced.matches && !document.hidden)
       frame = requestAnimationFrame(animate);
     else draw();
   }
@@ -112,10 +111,9 @@
     "pointermove",
     (event) => {
       if (reduced.matches || event.pointerType !== "mouse") return;
-      const bounds = host.getBoundingClientRect();
       target = {
         x: (event.clientX / width - 0.5) * 18,
-        y: ((event.clientY - bounds.top) / height - 0.5) * 14,
+        y: (event.clientY / height - 0.5) * 14,
       };
     },
     { passive: true },
@@ -124,11 +122,7 @@
     target = { x: 0, y: 0 };
   });
   new ResizeObserver(resize).observe(host);
-  if ("IntersectionObserver" in window)
-    new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      sync();
-    }).observe(host);
+  window.addEventListener("resize", resize);
   reduced.addEventListener("change", sync);
   document.addEventListener("visibilitychange", sync);
   resize();

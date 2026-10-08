@@ -27,7 +27,7 @@ export function renderPresentation(
     <div class="presentation-shell wrap" tabindex="0" role="region" aria-label="${escape(p.name)} project presentation">
       <div class="presentation-deck">
         <section class="scene intro-scene is-active" id="overview" aria-label="Overview">
-          <div class="scene-intro-grid"><div>${heading("01", "THE OVERVIEW", p.title)}<p class="scene-lead">${escape(p.summary)}</p><div class="scene-tags">${p.tags.map((tag) => `<span>${escape(tag)}</span>`).join("")}</div><dl class="presentation-meta"><div><dt>ROLE</dt><dd>${escape(p.role)}</dd></div><div><dt>PERIOD</dt><dd>${escape(p.period)}</dd></div><div><dt>STATUS</dt><dd>${escape(p.status)}</dd></div></dl></div><div class="intro-visual">${visual(p, index)}</div></div>
+          <div class="scene-intro-grid"><div>${heading("01", "THE OVERVIEW", p.title)}<p class="scene-lead">${escape(p.summary)}</p><div class="scene-tags">${p.tags.map((tag) => `<span>${escape(tag)}</span>`).join("")}</div><dl class="presentation-meta"><div><dt>ROLE</dt><dd>${escape(p.role)}</dd></div>${p.period ? `<div><dt>PERIOD</dt><dd>${escape(p.period)}</dd></div>` : ""}<div><dt>STATUS</dt><dd>${escape(p.status)}</dd></div></dl></div><div class="intro-visual">${visual(p, index)}</div></div>
         </section>
         <section class="scene problem-scene" id="problem" aria-label="The problem">
           ${heading("02", "THE PROBLEM", p.problemHeadline)}
@@ -51,7 +51,7 @@ export function renderPresentation(
         <section class="scene results-scene" id="results" aria-label="Results">
           ${heading("05", "THE EVIDENCE", p.slug === "themis" ? "A measurable change in the workflow." : "What the build demonstrates.")}
           <div class="presentation-results">${p.results.map((result, i) => `<div class="presentation-result ${p.slug === "themis" || /^\d+$/.test(result[0]) ? "" : "result-label"}"><span class="mono">0${i + 1} / ${escape(result[1].toUpperCase())}</span><strong>${escape(result[0])}</strong><p>${escape(result[2])}</p><span class="result-rule" aria-hidden="true"></span></div>`).join("")}</div>
-          <div class="results-context"><span class="mono">CONTEXT MATTERS</span><p>${escape(p.slug === "themis" ? "Resume-reported outcomes from the evaluation workflows used at Aptura. The accuracy numbers describe that benchmark context." : p.slug === "billacord" ? "A private local MVP verified with synthetic cases. Commercial outcomes and an independent live extraction baseline remain unvalidated." : "Five isolated synthetic scenarios against our own broken and corrected references. This demonstrates verification behaviour within that example.")}</p></div>
+          <div class="results-context"><span class="mono">CONTEXT MATTERS</span><p>${escape(p.slug === "themis" ? "Resume-reported outcomes for a specific evaluation benchmark. The accuracy figures describe that test set and workflow." : p.slug === "billacord" ? "A private local MVP verified with synthetic cases. Commercial outcomes and an independent live extraction baseline remain unvalidated." : "Five isolated synthetic scenarios against our own broken and corrected references. This demonstrates verification behaviour within that example.")}</p></div>
         </section>
         <section class="scene perspective-scene" id="scope" aria-label="Perspective">
           ${heading("06", "THE PERSPECTIVE", "What I take forward.")}

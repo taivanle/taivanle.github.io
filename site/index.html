@@ -1,17 +1,16 @@
 <main id="main">
   <section class="hero-scene" aria-labelledby="hero-title">
-    <canvas class="hero-field" aria-hidden="true"></canvas>
     <div class="hero wrap">
       <div class="hero-copy">
         <p class="eyebrow">
           <span class="tiny-dot"></span> FORWARD DEPLOYED / APPLIED AI ENGINEER
         </p>
         <h1 id="hero-title">
-          AI systems.<br />Built for the<br /><span>real world.</span>
+          Owen Le.<br />Applied AI<br /><span>engineer.</span>
         </h1>
         <p class="hero-description">
-          I’m Owen. I turn model capabilities into reliable products, measurable
-          evaluations, and enterprise systems people can use.
+          I build evaluation systems, agent workflows, and software that
+          connects AI to enterprise tools.
         </p>
         <div class="hero-actions">
           <a class="button primary" href="#work">Explore my work {{arrow}}</a
@@ -28,20 +27,11 @@
           IBM
         </p>
       </div>
-      <div class="system-panel portrait-panel" data-spotlight>
-        <div class="panel-heading">
-          <span class="mono">IN PRACTICE / AT IBM</span
-          ><span class="panel-live" aria-hidden="true">● FIELD NOTES</span>
-        </div>
-        <div class="portrait-heading">
-          <strong>Owen Le.</strong
-          ><span>Applied AI · Platform engineering</span>
-        </div>
-        <figure class="portrait-clip">
+      <div class="portrait-panel" data-spotlight>
+        <div class="portrait-clip">
           <video
             data-portrait-video
             aria-label="Owen discussing a technical demonstration at IBM"
-            aria-describedby="clip-description"
             poster="assets/media/owen-at-work-poster.jpg"
             width="1280"
             height="720"
@@ -55,22 +45,6 @@
               >Watch the demonstration clip.</a
             >
           </video>
-          <figcaption id="clip-description">
-            A moment from a technical demo. 10 seconds · silent.
-          </figcaption>
-        </figure>
-        <div class="panel-bottom">
-          <span
-            >From technical discovery<br /><strong
-              >to practical delivery.</strong
-            ></span
-          ><a
-            class="portrait-link"
-            href="https://www.linkedin.com/in/owen-le/"
-            target="_blank"
-            rel="noopener noreferrer"
-            >LinkedIn {{external}}</a
-          >
         </div>
       </div>
     </div>
@@ -85,7 +59,9 @@
     <a href="themis.html"
       ><strong>98.7<span>%</span></strong
       ><span
-        >lower evaluation cost per run<br /><small>Themis · Aptura</small></span
+        >lower evaluation cost per run<br /><small
+          >Themis evaluation benchmark</small
+        ></span
       ></a
     >
     <a href="#experience"
@@ -97,43 +73,43 @@
       ></a
     >
   </div>
-  <section id="work" class="work-section wrap" aria-labelledby="work-title">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">01 / SELECTED WORK</p>
-        <h2 id="work-title">
-          From idea to <span class="serif">implementation.</span>
-        </h2>
+  <section id="work" class="work-section" aria-labelledby="work-title">
+    <div class="wrap">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">01 / SELECTED WORK</p>
+          <h2 id="work-title">Selected <span class="serif">projects.</span></h2>
+        </div>
+        <p>
+          Applied AI, product engineering,<br />and the controls that make them
+          work.
+        </p>
       </div>
-      <p>
-        Applied AI, product engineering,<br />and the controls that make them
-        work.
-      </p>
+      <div class="filters" role="group" aria-label="Filter projects">
+        <button type="button" data-filter="all" aria-pressed="true">
+          All work <span>03</span></button
+        ><button type="button" data-filter="ai" aria-pressed="false">
+          AI & evaluation</button
+        ><button type="button" data-filter="product" aria-pressed="false">
+          Product engineering</button
+        ><button type="button" data-filter="governance" aria-pressed="false">
+          Governance & controls
+        </button>
+      </div>
+      <p class="sr-only" id="filter-status" role="status"></p>
+      <div class="project-grid">{{projects}}</div>
     </div>
-    <div class="filters" role="group" aria-label="Filter projects">
-      <button type="button" data-filter="all" aria-pressed="true">
-        All work <span>03</span></button
-      ><button type="button" data-filter="ai" aria-pressed="false">
-        AI & evaluation</button
-      ><button type="button" data-filter="product" aria-pressed="false">
-        Product engineering</button
-      ><button type="button" data-filter="governance" aria-pressed="false">
-        Governance & controls
-      </button>
-    </div>
-    <p class="sr-only" id="filter-status" role="status"></p>
-    <div class="project-grid">{{projects}}</div>
   </section>
   <section id="about" class="about-section" aria-labelledby="about-title">
     <div class="wrap about-grid">
       <div>
         <p class="eyebrow">02 / HOW I WORK</p>
         <h2 id="about-title">
-          The model is<br />only <span class="serif">the beginning.</span>
+          How I<br /><span class="serif">build systems.</span>
         </h2>
         <p class="about-intro">
-          The interesting work happens around it: connecting real data, defining
-          the right controls, and proving the system does what it should.
+          I start with the data and the workflow, make the controls explicit,
+          and test whether the system does what people need.
         </p>
         <p class="about-background">
           My background in mechanical engineering, simulation, and systems
@@ -181,27 +157,6 @@
         </div>
       </div>
     </div>
-    <div class="talks-panel wrap" data-spotlight>
-      <div>
-        <p class="eyebrow">BEYOND THE BUILD</p>
-        <h3>Make the complex <span class="serif">clear.</span></h3>
-      </div>
-      <div>
-        <p>
-          Technical demos, developer workshops, and talks are part of the work.
-          At IBM, I presented to clients, showcased AI platforms, and mentored
-          student teams. Helping people understand the technology is part of
-          making it useful.
-        </p>
-        <a
-          class="text-link"
-          href="#community"
-          target="_blank"
-          rel="noopener noreferrer"
-          >Speaking & mentorship {{arrow}}</a
-        >
-      </div>
-    </div>
   </section>
   <section
     id="experience"
@@ -212,7 +167,7 @@
       <div>
         <p class="eyebrow">03 / EXPERIENCE</p>
         <h2 id="experience-title">
-          Built with teams.<br /><span class="serif">Delivered to people.</span>
+          Engineering<br /><span class="serif">experience.</span>
         </h2>
       </div>
       <a
@@ -231,14 +186,9 @@
       </div>
       <div class="experience-detail">
         <p>
-          Designed and implemented Themis, a hybrid agentic grader for model
-          outputs. Built automated evaluation environments, repeatable
-          benchmarks, and grading pipelines combining deterministic validation
-          with structured rubrics and model judgement.
+          Worked on evaluation pipelines, automated testing, and repeatable
+          benchmarks for model-generated outputs.
         </p>
-        <a class="text-link" href="themis.html"
-          >Explore the evaluation work {{arrow}}</a
-        >
       </div>
     </div>
     <div class="experience-row">
@@ -342,10 +292,13 @@
         <div>
           <p class="eyebrow">04 / SPEAKING & MENTORSHIP</p>
           <h2 id="community-title">
-            Technology is a<br /><span class="serif">people business.</span>
+            Speaking &<br /><span class="serif">mentorship.</span>
           </h2>
         </div>
-        <p>On stage, with clients,<br />and alongside the next generation.</p>
+        <p>
+          Client demonstrations, platform showcases,<br />and university project
+          mentoring.
+        </p>
       </div>
       <div class="community-grid">
         <div class="event-gallery">
@@ -365,10 +318,6 @@
                 decoding="async"
               />
             </a>
-            <figcaption>
-              <span class="mono">BIRMINGHAM TECH WEEK / 2024</span
-              ><span>Conversations that move ideas forward.</span>
-            </figcaption>
           </figure>
           <div class="event-photo-pair">
             <figure>
@@ -385,7 +334,6 @@
                   loading="lazy"
                   decoding="async"
               /></a>
-              <figcaption>At the Tech Week podium.</figcaption>
             </figure>
             <figure>
               <a
@@ -401,7 +349,6 @@
                   loading="lazy"
                   decoding="async"
               /></a>
-              <figcaption>With colleagues at Tech Week.</figcaption>
             </figure>
           </div>
         </div>
@@ -439,7 +386,7 @@
       <article class="mentorship-panel" data-spotlight>
         <div class="mentorship-intro">
           <p class="eyebrow">03 / INDUSTRY MENTORSHIP</p>
-          <h3>Two teams.<br /><span class="serif">Room to grow.</span></h3>
+          <h3>University of<br /><span class="serif">Nottingham.</span></h3>
           <p>
             Mentored two groups of University of Nottingham students through
             their final year projects, providing industry guidance alongside
@@ -479,7 +426,7 @@
     <div class="section-heading">
       <div>
         <p class="eyebrow">05 / ENGINEERING NOTES</p>
-        <h2 id="notes-title">Thinking <span class="serif">out loud.</span></h2>
+        <h2 id="notes-title">Engineering <span class="serif">notes.</span></h2>
       </div>
       <a class="text-link" href="blog_homepage.html">All notes {{arrow}}</a>
     </div>

@@ -4,14 +4,13 @@
       "slug": "themis",
       "name": "Themis",
       "category": "ai",
-      "eyebrow": "AI EVALUATION · APTURA",
-      "status": "Professional work",
+      "eyebrow": "EVALUATION ENGINEERING",
+      "status": "Evaluation system",
       "title": "Better evaluations. A fraction of the cost.",
       "summary": "A hybrid agentic grader combining deterministic checks, structured rubrics, and model judgement to benchmark AI-generated spreadsheets and presentations.",
       "tags": ["Evaluation pipelines", "LLM as a judge", "Golden datasets"],
       "theme": "themis",
-      "role": "Member of Technical Staff, Aptura",
-      "period": "June – August 2026",
+      "role": "Design & implementation",
       "challenge": "Evaluating model-generated artefacts needs more than a plausible-sounding answer. The grader has to assess correctness against expected outputs and explicit criteria, while keeping repeated benchmarking affordable and reproducible.",
       "approach": [
         "Designed and implemented Themis as a hybrid grading pipeline: deterministic validation for machine-checkable properties, rubric-based assessment, and LLM judgement for the remaining criteria.",
@@ -24,7 +23,7 @@
         ["~40%", "less evaluation time", "Reported workflow improvement"],
         ["+2 pp", "benchmark accuracy", "95% → 97%"]
       ],
-      "scope": "Results are reported in my resume for the evaluation workflows used at Aptura. They describe that benchmark context; they are not a general claim about model accuracy. This case study summarises my contribution without publishing employer code or datasets.",
+      "scope": "Figures are reported in my resume for a specific evaluation benchmark. They describe the tested workflows and should not be read as general claims about model accuracy.",
       "flow": [
         "Model artefact",
         "Deterministic checks",
