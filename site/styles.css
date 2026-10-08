@@ -4619,6 +4619,15 @@ html:not(.js) .stage-track {
 }
 
 /* Angled seams and space define the chapters on one continuous ground. */
+html:has(> .home-page) {
+  scroll-snap-type: y proximity;
+}
+.home-page .hero-scene,
+.home-page .chapter-section,
+.home-page .contact-section {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
+}
 .home-page .hero-other-roles {
   color: #b6d7c7;
   font-size: 14px;
@@ -4802,6 +4811,9 @@ html:not(.js) .stage-track {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  html:has(> .home-page) {
+    scroll-snap-type: none;
+  }
   .chapter-word {
     transform: none;
   }
