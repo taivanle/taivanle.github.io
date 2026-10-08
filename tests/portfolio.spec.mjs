@@ -116,44 +116,204 @@ test("all five chapter handoffs have moving currents and scroll-driven type in b
   await expect(page.locator("#notes h2")).toBeVisible();
 });
 
-test("landing chapters softly snap near their start while longer sections remain scrollable", async ({
+test("chapter locks release immediately, work in both directions, and keep active and hover states distinct", async ({
   page,
 }) => {
   await page.goto("/#experience");
-  const top = () =>
-    page
-      .locator("#experience")
-      .evaluate((el) => el.getBoundingClientRect().top);
+  const section = page.locator("#experience");
+  const top = () => section.evaluate((el) => el.getBoundingClientRect().top);
   const padding = await page.evaluate(() =>
     parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
   );
   await expect
     .poll(async () => Math.abs((await top()) - padding))
     .toBeLessThan(2);
-  await page.mouse.wheel(0, -50);
-  await page.waitForTimeout(400);
+  await expect(page.locator(".nav-link[aria-current]")).toHaveText(
+    "Experience",
+  );
+  // Moving away from an aligned section must not pull the reader back.
+  await page.mouse.wheel(0, 60);
+  await page.waitForTimeout(700);
+  await expect.poll(top).toBeLessThan(padding - 40);
+  // Return from within the section: settle once after the gesture stops.
+  await page.mouse.wheel(0, 360);
+  await expect.poll(top).toBeLessThan(padding - 300);
+  await page.mouse.wheel(0, -350);
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.mouse.wheel(0, -60);
+  await page.waitForTimeout(700);
+  await expect.poll(top).toBeGreaterThan(padding + 40);
+  await page.mouse.wheel(0, -360);
+  await expect.poll(top).toBeGreaterThan(padding + 300);
+  await page.mouse.wheel(0, 350);
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.getByRole("link", { name: "Owen Le home", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+  await expect(page.locator(".nav-link[aria-current]")).toHaveCount(0);
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  await nav.getByRole("link", { name: "About", exact: true }).click();
+  await expect
+    .poll(() =>
+      page
+        .locator("#about")
+        .evaluate((el) =>
+          Math.abs(
+            el.getBoundingClientRect().top -
+              parseFloat(
+                getComputedStyle(document.documentElement).scrollPaddingTop,
+              ),
+          ),
+        ),
+    )
+    .toBeLessThan(2);
+  await expect(page.locator(".nav-link[aria-current]")).toHaveText("About");
+  const active = nav.getByRole("link", { name: "About", exact: true });
+  const hover = nav.getByRole("link", { name: "Experience", exact: true });
+  const normal = await hover.evaluate(
+    (el) => getComputedStyle(el).backgroundColor,
+  );
+  const hoverBounds = await hover.boundingBox();
+  await page.mouse.move(
+    hoverBounds.x + hoverBounds.width / 2,
+    hoverBounds.y + hoverBounds.height / 2,
+  );
+  await expect
+    .poll(() => hover.evaluate((el) => getComputedStyle(el).backgroundColor))
+    .not.toBe(normal);
+  await expect(active).toHaveAttribute("aria-current", "location");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await nav.getByRole("link", { name: "Experience", exact: true }).click();
   await expect
     .poll(async () => Math.abs((await top()) - padding))
     .toBeLessThan(2);
   await page.mouse.wheel(0, 420);
-  await expect.poll(top).toBeLessThan(padding - 250);
-  await page.mouse.wheel(0, -420);
+  await page.mouse.wheel(0, -350);
+  await page.waitForTimeout(700);
+  await expect.poll(top).toBeLessThan(padding - 40);
+});
+
+for (const viewport of [
+  { width: 1280, height: 720 },
+  { width: 390, height: 844 },
+]) {
+  test(`all landing chapters lock on approach and remain readable at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(45000);
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    const padding = await page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
+    );
+    const approach = Math.min(280, (viewport.height - padding) * 0.38);
+    const chapters = ["work", "about", "experience", "community", "notes"];
+    const top = (id) =>
+      page.locator(`#${id}`).evaluate((el) => el.getBoundingClientRect().top);
+    for (const id of chapters) {
+      await page.mouse.wheel(0, (await top(id)) - padding - approach);
+      await expect
+        .poll(async () => Math.abs((await top(id)) - padding))
+        .toBeLessThan(2);
+      // The lock is an arrival point, not a trap: a small next gesture continues.
+      await page.mouse.wheel(0, 60);
+      await page.waitForTimeout(750);
+      await expect.poll(() => top(id)).toBeLessThan(padding - 40);
+    }
+    for (const id of chapters.slice(0, -1).reverse()) {
+      await page.mouse.wheel(0, (await top(id)) - padding + approach);
+      await expect
+        .poll(async () => Math.abs((await top(id)) - padding))
+        .toBeLessThan(2);
+    }
+    await page.mouse.wheel(0, -(await page.evaluate(() => scrollY)) + approach);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+    await expect(page.locator(".nav-link[aria-current]")).toHaveCount(0);
+  });
+}
+
+test("the shared navigation bubble visibly travels between sections and follows menu resizing", async ({
+  page,
+}) => {
+  await page.goto("/#about");
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  const bubble = page.locator(".nav-indicator");
+  const about = nav.getByRole("link", { name: "About", exact: true });
+  const experience = nav.getByRole("link", { name: "Experience", exact: true });
+  await expect(about).toHaveAttribute("aria-current", "location");
+  const aligned = (link) =>
+    Promise.all([bubble.boundingBox(), link.boundingBox()]).then(([a, b]) =>
+      a && b
+        ? Math.abs(a.x - b.x) +
+          Math.abs(a.y - b.y) +
+          Math.abs(a.width - b.width)
+        : Infinity,
+    );
+  await expect.poll(() => aligned(about)).toBeLessThan(2);
+  // Sample rendered frames while the user clicks. Polling an attribute can
+  // otherwise miss the entire short transition on a busy CI worker.
+  const travel = page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const samples = [];
+        const start = performance.now();
+        let alignedFrames = 0;
+        function sample() {
+          const current = document.querySelector(".nav-link[aria-current]");
+          const bubble = document
+            .querySelector(".nav-indicator")
+            .getBoundingClientRect();
+          const target = current?.getBoundingClientRect();
+          const error = target
+            ? Math.abs(bubble.x - target.x) +
+              Math.abs(bubble.width - target.width)
+            : Infinity;
+          samples.push({ section: current?.textContent, error });
+          if (current?.textContent === "Experience" && error < 2)
+            alignedFrames++;
+          else alignedFrames = 0;
+          if (alignedFrames >= 3 || performance.now() - start > 5000)
+            resolve(samples);
+          else requestAnimationFrame(sample);
+        }
+        requestAnimationFrame(sample);
+      }),
+  );
+  const target = await experience.boundingBox();
+  await page.mouse.click(
+    target.x + target.width / 2,
+    target.y + target.height / 2,
+  );
+  await expect(experience).toHaveAttribute("aria-current", "location");
+  expect(
+    (await travel).some(
+      (frame) => frame.section === "Experience" && frame.error > 3,
+    ),
+  ).toBe(true);
+  await expect.poll(() => aligned(experience)).toBeLessThan(2);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const clickVisible = async (element) => {
+    const bounds = await element.boundingBox();
+    await page.mouse.click(
+      bounds.x + bounds.width / 2,
+      bounds.y + bounds.height / 2,
+    );
+  };
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  await clickVisible(menu);
   await expect
-    .poll(async () => Math.abs((await top()) - padding))
+    .poll(() => aligned(nav.locator(".nav-link[aria-current]")))
     .toBeLessThan(2);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(
-    await page.evaluate(
-      () => getComputedStyle(document.documentElement).scrollSnapType,
-    ),
-  ).toBe("none");
-  await page.goto("/themis.html");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  expect(
-    await page.evaluate(
-      () => getComputedStyle(document.documentElement).scrollSnapType,
-    ),
-  ).toBe("none");
+  await clickVisible(about);
+  await clickVisible(menu);
+  await expect(about).toHaveAttribute("aria-current", "location");
+  await expect.poll(() => aligned(about)).toBeLessThan(2);
+  expect(await bubble.evaluate((el) => el.getAnimations().length)).toBe(0);
 });
 
 test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({
@@ -318,9 +478,11 @@ for (const project of ["themis", "dueform", "actifact"]) {
   test(`${project}: every presentation scene is accessible and fits small and wide screens`, async ({
     page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
+    const frames = new Map();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/${project}.html`);
+    await expect(page.locator(".contact-section")).toHaveCount(0);
     for (let scene = 0; scene < 6; scene++) {
       await page.locator(`[data-scene="${scene}"]`).click();
       await expect(page.locator(".scene:visible")).toHaveCount(1);
@@ -333,8 +495,76 @@ for (const project of ["themis", "dueform", "actifact"]) {
           nodes: violation.nodes.map((node) => node.target),
         })),
       ).toEqual([]);
-      for (const width of [1440, 320]) {
-        await page.setViewportSize({ width, height: 900 });
+      for (const [width, height] of [
+        [1440, 900],
+        [1280, 720],
+        [900, 600],
+        [390, 667],
+        [320, 900],
+        [320, 667],
+      ]) {
+        await page.setViewportSize({ width, height });
+        const fit = await page.evaluate(() => {
+          const scene = document.querySelector(".scene.is-active");
+          const frame = document.querySelector(".presentation-deck");
+          const controls = document.querySelector(".presentation-navigation");
+          return {
+            content: scene.scrollHeight,
+            height: scene.clientHeight,
+            frame: frame.getBoundingClientRect().height,
+            bottom: controls.getBoundingClientRect().bottom,
+            page: document.documentElement.scrollHeight,
+            viewport: innerHeight,
+          };
+        });
+        const size = `${width}×${height}`;
+        if (!frames.has(size)) frames.set(size, fit.frame);
+        expect(fit.frame).toBeCloseTo(frames.get(size), 0);
+        expect(
+          fit.content,
+          `${project} ${scene + 1}: unclipped at ${width}×${height}`,
+        ).toBeLessThanOrEqual(fit.height + 1);
+        expect(fit.bottom).toBeLessThanOrEqual(height);
+        expect(fit.page).toBeLessThanOrEqual(height);
+        const deck = await page.locator(".presentation-deck").boundingBox();
+        if (scene === 0 && width === 320 && height === 667) {
+          const menu = page.getByRole("button", { name: "Menu", exact: true });
+          await menu.click();
+          await expect(page.locator("#navigation")).toBeVisible();
+          const glass = await page.locator(".site-header").boundingBox();
+          const navBounds = await page.locator("#navigation").boundingBox();
+          expect(navBounds.y + navBounds.height).toBeLessThanOrEqual(
+            glass.y + glass.height,
+          );
+          expect(
+            (await page.locator(".presentation-deck").boundingBox()).height,
+          ).toBeCloseTo(deck.height, 0);
+          await menu.click();
+        }
+        for (const selector of [
+          ".design-toggle",
+          ".detail-toggle",
+          "[data-build]",
+        ]) {
+          for (const control of await page
+            .locator(`.scene.is-active ${selector}:visible`)
+            .all()) {
+            await control.click();
+            const content = await page
+              .locator(".scene.is-active")
+              .evaluate((el) => ({
+                height: el.clientHeight,
+                content: el.scrollHeight,
+              }));
+            expect(
+              content.content,
+              `${project} detail at ${width}×${height}`,
+            ).toBeLessThanOrEqual(content.height + 1);
+            expect(
+              (await page.locator(".presentation-deck").boundingBox()).height,
+            ).toBeCloseTo(deck.height, 0);
+          }
+        }
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -971,6 +1201,13 @@ test("the reflective sweep covers the full overview visual at every breakpoint",
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/themis.html");
+    if (width < 981) {
+      await expect(page.locator(".intro-visual")).toBeHidden();
+      await page
+        .getByRole("button", { name: "Read all at once", exact: true })
+        .click();
+      await expect(page.locator(".intro-visual")).toBeVisible();
+    }
     expect(
       await page.locator(".intro-visual").evaluate((visual) => {
         const sheen = getComputedStyle(visual, "::after");
@@ -1019,10 +1256,10 @@ test("the background glow stays smooth across the space below the video frame", 
         const canvas = new OffscreenCanvas(image.width, image.height);
         const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0);
-        const green = (x) => {
+        const green = (x, sampleY) => {
           const pixels = context.getImageData(
             Math.floor(x),
-            Math.floor(y - 6),
+            Math.floor(sampleY - 6),
             8,
             12,
           ).data;
@@ -1030,7 +1267,14 @@ test("the background glow stays smooth across the space below the video frame", 
           for (let i = 1; i < pixels.length; i += 4) total += pixels[i];
           return total / (pixels.length / 4);
         };
-        const difference = Math.abs(green(edge - 12) - green(edge + 4));
+        // A clipped glow produces a persistent edge; one passing wire does not.
+        const differences = [-18, 0, 18, 36, 54]
+          .map(
+            (offset) =>
+              green(edge - 12, y + offset) - green(edge + 4, y + offset),
+          )
+          .sort((a, b) => a - b);
+        const difference = Math.abs(differences[2]);
         image.close();
         return difference;
       },
