@@ -5508,3 +5508,21 @@ html:not(.js) .stage-track {
     }
   }
 }
+
+@media screen and (max-width: 760px) {
+  .js .presentation-mode .perspective-scene .detail-toggle {
+    display: flex;
+  }
+  .js .presentation-mode .perspective-scene .presentation-scope {
+    display: none;
+  }
+  .js .presentation-mode .perspective-scene.is-detail-selected blockquote {
+    display: none;
+  }
+  .js
+    .presentation-mode
+    .perspective-scene.is-detail-selected
+    .presentation-scope {
+    display: block;
+  }
+}
