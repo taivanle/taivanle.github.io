@@ -310,8 +310,8 @@ test("the shared navigation bubble visibly travels between sections and follows 
     .toBeLessThan(2);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await clickVisible(about);
-  await expect(about).toHaveAttribute("aria-current", "location");
   await clickVisible(menu);
+  await expect(about).toHaveAttribute("aria-current", "location");
   await expect.poll(() => aligned(about)).toBeLessThan(2);
   expect(await bubble.evaluate((el) => el.getAnimations().length)).toBe(0);
 });
