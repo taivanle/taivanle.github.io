@@ -230,6 +230,15 @@ async function recordJourney(page, records, label, action, url, selector) {
     );
     // Include restoration and cleanup paints after the final animation.
     await page.waitForTimeout(120);
+    // A reduced-motion page is static, so WebKit may emit just one screencast
+    // frame. Also verify a real full-viewport screenshot after cleanup settles.
+    frames.push({
+      data: await page.screenshot({ type: "jpeg", quality: 95 }),
+      timestamp: Date.now(),
+      viewportWidth: viewport.width,
+      viewportHeight: viewport.height,
+      source: "settled-screenshot",
+    });
   } catch (error) {
     await attachFailure(
       test.info(),

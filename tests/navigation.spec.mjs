@@ -11,10 +11,12 @@ test("Escape unwinds chained projects and returns to Work", async ({
   await page
     .getByRole("button", { name: "Scene 6: Perspective", exact: true })
     .click();
+  await expect(page).toHaveURL(/themis.html#scope$/);
+  const previousProjectUrl = page.url();
   await page.getByRole("link", { name: /Next project.*DueForm/ }).click();
   await expect(page).toHaveURL(/dueform.html$/);
   await page.keyboard.press("Escape");
-  await expect(page).toHaveURL(/themis.html#perspective$/);
+  await expect(page).toHaveURL(previousProjectUrl);
   await expect(page.locator("html")).not.toHaveAttribute(
     "data-page-transition",
     /^(entering|leaving)$/,
