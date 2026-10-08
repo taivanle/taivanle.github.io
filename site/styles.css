@@ -148,7 +148,6 @@ p {
   z-index: 30;
   background: rgba(247, 248, 242, 0.96);
   border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(14px);
 }
 .header-inner {
   display: flex;
@@ -3361,39 +3360,13 @@ html:not(.js) .stage-track {
   }
 }
 
-/* The header belongs to the same luminous scene as the opening field. */
+/* A solid header keeps the moving background light from bleeding into its edge. */
 .site-header {
   color: #e5eee4;
-  background: #0c1c1af5;
+  background: #0c1c1a;
   border-bottom-color: #526d5a66;
   box-shadow: 0 8px 25px -20px #0008;
   isolation: isolate;
-}
-.site-header::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 1px;
-  background: linear-gradient(
-    90deg,
-    transparent 15%,
-    #9ae5c566 42%,
-    #dcc99580 52%,
-    transparent 75%
-  );
-  background-size: 200% 100%;
-  animation: header-light 24s ease-in-out infinite alternate;
-  pointer-events: none;
-}
-@keyframes header-light {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 100% 50%;
-  }
 }
 .site-header .brand-mark {
   border-color: #a9c6af;
