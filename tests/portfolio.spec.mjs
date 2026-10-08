@@ -1136,10 +1136,10 @@ test("the background glow stays smooth across the space below the video frame", 
         const canvas = new OffscreenCanvas(image.width, image.height);
         const context = canvas.getContext("2d");
         context.drawImage(image, 0, 0);
-        const green = (x) => {
+        const green = (x, sampleY) => {
           const pixels = context.getImageData(
             Math.floor(x),
-            Math.floor(y - 6),
+            Math.floor(sampleY - 6),
             8,
             12,
           ).data;
@@ -1147,7 +1147,14 @@ test("the background glow stays smooth across the space below the video frame", 
           for (let i = 1; i < pixels.length; i += 4) total += pixels[i];
           return total / (pixels.length / 4);
         };
-        const difference = Math.abs(green(edge - 12) - green(edge + 4));
+        // A clipped glow produces a persistent edge; one passing wire does not.
+        const differences = [-18, 0, 18, 36, 54]
+          .map(
+            (offset) =>
+              green(edge - 12, y + offset) - green(edge + 4, y + offset),
+          )
+          .sort((a, b) => a - b);
+        const difference = Math.abs(differences[2]);
         image.close();
         return difference;
       },
