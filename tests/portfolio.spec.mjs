@@ -5,8 +5,8 @@ const pages = [
   "index.html",
   "projects.html",
   "themis.html",
-  "billacord.html",
-  "actionproof.html",
+  "dueform.html",
+  "actifact.html",
   "blog_homepage.html",
   "create_agent.html",
   "engineering-reliable-ai.html",
@@ -74,7 +74,7 @@ test("essential content and navigation work without JavaScript", async ({
   await expect(page.locator(".project-card")).toHaveCount(3);
   await expect(page.locator("#navigation")).toBeVisible();
   await page
-    .getByRole("link", { name: "Read case study: Billacord", exact: true })
+    .getByRole("link", { name: "Read case study: DueForm", exact: true })
     .click();
   await expect(
     page.getByRole("heading", {
@@ -129,7 +129,7 @@ test("presentations support scene navigation, architecture exploration, and read
   await expect(page.locator(".scene:visible")).toHaveCount(1);
 });
 
-for (const project of ["themis", "billacord", "actionproof"]) {
+for (const project of ["themis", "dueform", "actifact"]) {
   test(`${project}: every presentation scene is accessible and fits small and wide screens`, async ({
     page,
   }) => {
@@ -291,7 +291,7 @@ test("result labels stay inside their own columns at every breakpoint", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const project of ["themis", "billacord", "actionproof"]) {
+  for (const project of ["themis", "dueform", "actifact"]) {
     await page.goto(`/${project}.html#results`);
     await page.evaluate(() => document.fonts.ready);
     for (const width of [2560, 1920, 1440, 1024, 768, 390, 320]) {
@@ -420,7 +420,7 @@ test("project illustrations and labels stay separate at wide sizes and enlarged 
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/billacord.html");
+  await page.goto("/dueform.html");
   await page.evaluate(() => document.fonts.ready);
   await expect(page.locator(".project-visual")).toHaveCount(1);
   for (const width of [2560, 1920, 1440, 1024, 768, 390, 320]) {
@@ -541,4 +541,119 @@ test("project cards continue into a matching dark presentation with native page 
   await expect(
     page.getByRole("link", { name: "Read case study: Themis", exact: true }),
   ).toBeVisible();
+});
+
+test("the light changes the illumination of the background as the pointer moves", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const illumination = () =>
+    page.locator(".hero-field").evaluate((canvas) => {
+      const ratio = canvas.width / innerWidth;
+      const pixels = canvas
+        .getContext("2d")
+        .getImageData(140 * ratio, 210 * ratio, 40 * ratio, 40 * ratio).data;
+      let light = 0;
+      for (let i = 0; i < pixels.length; i += 4)
+        light += (pixels[i + 1] * pixels[i + 3]) / 255;
+      return light / (pixels.length / 4);
+    });
+  await page.mouse.move(160, 230);
+  await expect.poll(illumination).toBeGreaterThan(10);
+  const near = await illumination();
+  await page.mouse.move(1110, 520);
+  await expect.poll(illumination).toBeLessThan(near * 0.5);
+});
+
+test("Birmingham photos advance slowly, pause during interaction, and respect reduced motion", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("/#community");
+  const gallery = page.locator("[data-event-gallery]");
+  const buttons = page.locator("[data-event-select]");
+  await gallery.scrollIntoViewIfNeeded();
+  await page.clock.runFor(8200);
+  await expect(buttons.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("[data-event-status]")).toBeEmpty();
+  await gallery.hover();
+  await page.clock.runFor(15000);
+  await expect(buttons.nth(1)).toHaveAttribute("aria-pressed", "true");
+  await page.mouse.move(10, 120);
+  await page.clock.runFor(8200);
+  await expect(buttons.nth(2)).toHaveAttribute("aria-pressed", "true");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.clock.runFor(15000);
+  await expect(buttons.nth(2)).toHaveAttribute("aria-pressed", "true");
+  await buttons.nth(0).click();
+  await expect(buttons.nth(0)).toHaveAttribute("aria-pressed", "true");
+});
+
+for (const [slug, name] of [
+  ["themis", "Themis"],
+  ["dueform", "DueForm"],
+  ["actifact", "ActiFact"],
+]) {
+  test(`${name}: outside click and Escape return to the actual previous page`, async ({
+    page,
+  }) => {
+    await page.addInitScript(() => {
+      addEventListener("pagereveal", (event) => {
+        const previous = window.navigation?.activation?.from?.url;
+        if (!event.viewTransition || !previous) return;
+        const name = new URL(previous).pathname
+          .split("/")
+          .pop()
+          .replace(".html", "");
+        event.viewTransition.ready
+          .then(() => {
+            window.returnAnimationSeconds = parseFloat(
+              getComputedStyle(
+                document.documentElement,
+                `::view-transition-group(project-${name})`,
+              ).animationDuration,
+            );
+          })
+          .catch(() => {});
+      });
+    });
+    await page.goto("/projects.html");
+    const card = page.getByRole("link", {
+      name: `Read case study: ${name}`,
+      exact: true,
+    });
+    await card.click();
+    await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
+    await page.locator(".scene.is-active .scene-title").click();
+    await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
+    await page.mouse.click(8, 200);
+    await expect(page).toHaveURL(/projects.html$/);
+    await expect(card).toBeVisible();
+    await expect
+      .poll(() => page.evaluate(() => window.returnAnimationSeconds))
+      .toBeGreaterThanOrEqual(0.8);
+    await card.click();
+    await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
+    await page.locator(".scene.is-active .scene-title").click();
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/projects.html$/);
+  });
+}
+
+test("direct project links have a safe return and old links retain their scene", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await page.goto("http://127.0.0.1:4178/actifact.html");
+  await page.locator(".scene.is-active .scene-title").click();
+  await page.mouse.click(8, 200);
+  await expect(page).toHaveURL(/index.html#work$/);
+  await page.goto("http://127.0.0.1:4178/billacord.html#results");
+  await expect(page).toHaveURL(/dueform.html#results$/);
+  await expect(page.locator("#results")).toBeVisible();
+  await page.goto("http://127.0.0.1:4178/actionproof.html?view=all#build");
+  await expect(page).toHaveURL(/actifact.html\?view=all#build$/);
+  await expect(page.locator(".scene:visible")).toHaveCount(6);
+  await context.close();
 });

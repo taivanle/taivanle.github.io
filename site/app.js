@@ -1,5 +1,44 @@
 document.documentElement.classList.add("js");
 
+const projectRoute = /\/(?:themis|dueform|actifact)\.html$/;
+function previousPortfolioUrl() {
+  try {
+    const value =
+      window.navigation?.activation?.from?.url ||
+      sessionStorage.getItem("portfolio-previous-url") ||
+      document.referrer;
+    const url = value ? new URL(value) : null;
+    return url?.origin === location.origin ? url : null;
+  } catch {
+    return null;
+  }
+}
+function setReturnTransition() {
+  const previous = previousPortfolioUrl();
+  document.documentElement.classList.toggle(
+    "project-return",
+    Boolean(
+      previous &&
+      projectRoute.test(previous.pathname) &&
+      !projectRoute.test(location.pathname),
+    ),
+  );
+}
+setReturnTransition();
+window.addEventListener("pagereveal", (event) => {
+  setReturnTransition();
+  event.viewTransition?.finished.finally(() =>
+    document.documentElement.classList.remove("project-return"),
+  );
+});
+window.addEventListener("pagehide", () => {
+  try {
+    sessionStorage.setItem("portfolio-previous-url", location.href);
+  } catch {
+    /* Navigation works when session storage is unavailable. */
+  }
+});
+
 const menuButton = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#navigation");
 function closeMenu() {
@@ -19,6 +58,7 @@ document.addEventListener("keydown", (event) => {
     event.key === "Escape" &&
     menuButton?.getAttribute("aria-expanded") === "true"
   ) {
+    event.preventDefault();
     closeMenu();
     menuButton.focus();
   }
@@ -309,7 +349,54 @@ if (presentation) {
   setReading(readAll);
 }
 
-// A small glass point replaces the pointer only after mouse movement.
+if (presentation) {
+  let returning = false;
+  const returnToPreviousPage = () => {
+    if (returning) return;
+    returning = true;
+    const previous = previousPortfolioUrl();
+    if (
+      previous &&
+      /\/(?:index\.html|projects\.html|themis\.html|dueform\.html|actifact\.html)?$/.test(
+        previous.pathname,
+      ) &&
+      history.length > 1
+    )
+      history.back();
+    else location.assign("index.html#work");
+  };
+  document.addEventListener("click", (event) => {
+    if (
+      event.button !== 0 ||
+      event.defaultPrevented ||
+      !event.detail ||
+      window.getSelection()?.toString()
+    )
+      return;
+    if (
+      event.target.closest(
+        ".presentation-shell, .presentation-topbar, .site-header, .contact-section, a, button",
+      )
+    )
+      return;
+    returnToPreviousPage();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key !== "Escape" ||
+      event.defaultPrevented ||
+      event.target.closest("input, textarea, select, [contenteditable]")
+    )
+      return;
+    if (menuButton?.getAttribute("aria-expanded") === "true") return;
+    returnToPreviousPage();
+  });
+  window.addEventListener("pageshow", () => {
+    returning = false;
+  });
+}
+
+// A soft light follows the pointer only after mouse movement.
 const cursorTracker = document.querySelector(".cursor-tracker");
 if (cursorTracker) {
   let cursorFrame = 0;
@@ -382,14 +469,43 @@ if (cursorTracker) {
   responsiveMotion.addEventListener("change", hideCursor);
 }
 
-// The photo feature changes only when a visitor chooses a thumbnail.
+// A slow, silent slideshow, suspended during interaction and outside the viewport.
 document.querySelectorAll("[data-event-gallery]").forEach((gallery) => {
   const photos = [...gallery.querySelectorAll("[data-event-photo]")];
   const buttons = [...gallery.querySelectorAll("[data-event-select]")];
-  const showPhoto = (index, announce = true) => {
+  let current = 0,
+    timer = 0,
+    visible = false,
+    hovered = false;
+  const showPhoto = (index, announce = true, animate = true) => {
+    const previous = current;
+    current = index;
     photos.forEach((photo, i) => {
+      photo.getAnimations().forEach((animation) => animation.cancel());
       photo.hidden = i !== index;
+      photo.setAttribute("aria-hidden", String(i !== index));
     });
+    if (animate && !reducedMotion.matches && index !== previous) {
+      const outgoing = photos[previous];
+      outgoing.hidden = false;
+      outgoing.classList.add("is-outgoing");
+      const exit = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 900,
+        easing: "ease-in-out",
+      });
+      photos[index].animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 900,
+        easing: "ease-in-out",
+      });
+      exit.finished
+        .then(() => {
+          if (current !== previous) outgoing.hidden = true;
+          outgoing.classList.remove("is-outgoing");
+        })
+        .catch(() => {
+          outgoing.classList.remove("is-outgoing");
+        });
+    }
     buttons.forEach((button, i) =>
       button.setAttribute("aria-pressed", String(i === index)),
     );
@@ -397,8 +513,50 @@ document.querySelectorAll("[data-event-gallery]").forEach((gallery) => {
       gallery.querySelector("[data-event-status]").textContent =
         `Photo ${index + 1} of ${photos.length}: ${photos[index].querySelector("img").alt}.`;
   };
+  const schedule = () => {
+    clearTimeout(timer);
+    if (
+      !visible ||
+      hovered ||
+      document.hidden ||
+      reducedMotion.matches ||
+      gallery.contains(document.activeElement)
+    )
+      return;
+    timer = setTimeout(() => {
+      showPhoto((current + 1) % photos.length, false);
+      schedule();
+    }, 7000);
+  };
   buttons.forEach((button, index) =>
-    button.addEventListener("click", () => showPhoto(index)),
+    button.addEventListener("click", () => {
+      showPhoto(index);
+      schedule();
+    }),
   );
-  showPhoto(0, false);
+  gallery.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") {
+      hovered = true;
+      schedule();
+    }
+  });
+  gallery.addEventListener("pointerleave", () => {
+    hovered = false;
+    schedule();
+  });
+  gallery.addEventListener("focusin", schedule);
+  gallery.addEventListener("focusout", () => requestAnimationFrame(schedule));
+  new IntersectionObserver(
+    ([entry]) => {
+      visible = entry.isIntersecting;
+      schedule();
+    },
+    { threshold: 0.2 },
+  ).observe(gallery);
+  document.addEventListener("visibilitychange", schedule);
+  reducedMotion.addEventListener("change", () => {
+    showPhoto(current, false, false);
+    schedule();
+  });
+  showPhoto(0, false, false);
 });

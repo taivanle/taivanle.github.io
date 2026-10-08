@@ -36,9 +36,13 @@
         0,
         lightX,
         lightY,
-        460,
+        Math.max(360, Math.min(650, width * 0.55)),
       );
-      light.addColorStop(0, `rgba(127, 218, 185, ${pointer.strength * 0.13})`);
+      light.addColorStop(0, `rgba(127, 218, 185, ${pointer.strength * 0.34})`);
+      light.addColorStop(
+        0.25,
+        `rgba(127, 218, 185, ${pointer.strength * 0.14})`,
+      );
       light.addColorStop(1, "rgba(127, 218, 185, 0)");
       context.fillStyle = light;
       context.fillRect(0, 0, width, height);
