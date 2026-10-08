@@ -141,24 +141,38 @@ async function analyseFrames(page, frames, records) {
       let bright = 0;
       let unmaskedBright = 0;
       let unmaskedPixels = 0;
-      for (let y = 0; y < canvas.height; y++) {
-        for (let x = 0; x < canvas.width; x++) {
-          const offset = (y * canvas.width + x) * 4;
-          const white =
+      if (!mask) {
+        // Project frames have no video mask. Scan every pixel directly without
+        // recomputing its coordinates; the threshold and coverage stay exact.
+        for (let offset = 0; offset < pixels.length; offset += 4) {
+          if (
             pixels[offset] >= 235 &&
             pixels[offset + 1] >= 235 &&
-            pixels[offset + 2] >= 235;
-          if (white) bright++;
-          if (
-            mask &&
-            x >= mask.left &&
-            x < mask.right &&
-            y >= mask.top &&
-            y < mask.bottom
+            pixels[offset + 2] >= 235
           )
-            continue;
-          unmaskedPixels++;
-          if (white) unmaskedBright++;
+            bright++;
+        }
+        unmaskedBright = bright;
+        unmaskedPixels = pixels.length / 4;
+      } else {
+        for (let y = 0; y < canvas.height; y++) {
+          for (let x = 0; x < canvas.width; x++) {
+            const offset = (y * canvas.width + x) * 4;
+            const white =
+              pixels[offset] >= 235 &&
+              pixels[offset + 1] >= 235 &&
+              pixels[offset + 2] >= 235;
+            if (white) bright++;
+            if (
+              x >= mask.left &&
+              x < mask.right &&
+              y >= mask.top &&
+              y < mask.bottom
+            )
+              continue;
+            unmaskedPixels++;
+            if (white) unmaskedBright++;
+          }
         }
       }
       results.push({
@@ -768,6 +782,10 @@ test.describe("flash regression", () => {
         origin.name === "landing Work" ? "#work-title" : ".page-hero h1";
       const heading = page.locator(headingSelector);
       await expect(heading).toBeVisible();
+      // Establish a completed initial reveal before testing cached restoration.
+      // A first visible frame can precede the observer's class/style update.
+      if (origin.name === "landing Work")
+        await expect(page.locator("#work")).toHaveClass(/is-chapter-active/);
       const documentId = await installPersistedLifecycleProbe(
         page,
         headingSelector,
@@ -958,7 +976,9 @@ test.describe("flash regression", () => {
     test(`${project.name}: all scenes, internal controls, and reverse arrows stay dark`, async ({
       page,
     }) => {
-      test.setTimeout(45000);
+      // Includes image decoding/analysis for every control in all six scenes.
+      // Individual scene/animation assertions keep their shorter deadlines.
+      test.setTimeout(120000);
       // Compact presentation dimensions expose the real design/detail/build
       // controls; selecting hidden controls would miss their rendered states.
       await page.setViewportSize({ width: 760, height: 720 });
