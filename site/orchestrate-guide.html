@@ -72,14 +72,14 @@
     installed version. If you use Homebrew on macOS and need Python 3.11,
     install it with the command below.
   </p>
-  <pre class="guide-code"><code>python3.11 --version
+  <pre class="guide-code" tabindex="0"><code>python3.11 --version
 brew install python@3.11</code></pre>
   <p>
     Create your project, activate a virtual environment, and install the
     package. Keep the virtual environment local to this project so its
     dependencies do not affect your other work.
   </p>
-  <pre class="guide-code"><code>mkdir my-adk-project
+  <pre class="guide-code" tabindex="0"><code>mkdir my-adk-project
 cd my-adk-project
 python3.11 -m venv .venv
 source .venv/bin/activate
@@ -97,8 +97,11 @@ orchestrate --help</code></pre>
     for the supported setup.
   </p>
   <h3>2. Lay out the project</h3>
-  <pre class="guide-code"><code>mkdir agents tools knowledge flows</code></pre>
-  <pre class="guide-code"><code>my-adk-project/
+  <pre
+    class="guide-code"
+    tabindex="0"
+  ><code>mkdir agents tools knowledge flows</code></pre>
+  <pre class="guide-code" tabindex="0"><code>my-adk-project/
 ├── agents/
 │   └── customer_assistant.yaml
 ├── tools/
@@ -133,7 +136,7 @@ orchestrate --help</code></pre>
     example URL with the value from API details. The activation flow requests
     your API key.
   </p>
-  <pre class="guide-code"><code>orchestrate env add -n cloud-dev \
+  <pre class="guide-code" tabindex="0"><code>orchestrate env add -n cloud-dev \
   -u "https://api.eu-de.watson-orchestrate.cloud.ibm.com/instances/YOUR_INSTANCE_ID" \
   --type ibm_iam --activate
 
@@ -220,7 +223,10 @@ def faq_search(query: str) -&gt; str:
   <p class="eyebrow">DEVELOPER ROUTE / 03</p>
   <h2>Define, import, and verify the agent</h2>
   <h3>1. Choose an available model</h3>
-  <pre class="guide-code"><code>orchestrate models list</code></pre>
+  <pre
+    class="guide-code"
+    tabindex="0"
+  ><code>orchestrate models list</code></pre>
   <p>
     Copy a model identifier available in your instance. Replace
     <code>YOUR_AVAILABLE_MODEL_ID</code> below with that value; do not import
@@ -233,7 +239,7 @@ def faq_search(query: str) -&gt; str:
     instructions tell the agent when to call the FAQ tool and what to do when
     the source has no answer.
   </p>
-  <pre class="guide-code"><code>spec_version: v1
+  <pre class="guide-code" tabindex="0"><code>spec_version: v1
 kind: native
 name: CustomerAssistant
 description: &gt;
@@ -345,7 +351,10 @@ orchestrate agents list</code></pre>
     Define how the assistant should answer. This is the equivalent of the
     instructions in the developer route.
   </p>
-  <pre class="guide-code"><code>You answer questions using the coffee shop FAQ.
+  <pre
+    class="guide-code"
+    tabindex="0"
+  ><code>You answer questions using the coffee shop FAQ.
 Keep responses short, clear, and friendly.
 Use the supplied knowledge for opening hours and shop policies.
 If the answer is missing, say so and suggest contacting the shop.
@@ -416,7 +425,7 @@ Do not invent details that are absent from the FAQ.</code></pre>
     Open the preview chat and ask the original example questions. Inspect the
     available tool calls and source information alongside the final answer.
   </p>
-  <pre class="guide-code"><code>What time do you open today?
+  <pre class="guide-code" tabindex="0"><code>What time do you open today?
 How long do refunds take?
 Can I return something I bought last week?</code></pre>
   <figure class="guide-figure">

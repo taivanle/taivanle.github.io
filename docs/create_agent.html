@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>Building an agent with watsonx Orchestrate — Owen Le</title><meta name="description" content="Choose a build path, define a narrow task, connect tools, and evaluate your watsonx Orchestrate agent."><link rel="canonical" href="https://taivanle.github.io/create_agent.html"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="article"><meta property="og:title" content="Building an agent with watsonx Orchestrate"><meta property="og:description" content="Choose a build path, define a narrow task, connect tools, and evaluate your watsonx Orchestrate agent."><meta property="og:url" content="https://taivanle.github.io/create_agent.html"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied Artificial Intelligence Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=7319484200b4"><script src="assets/app.js?v=73d34f31d8ab" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"CreativeWork","name":"Building an agent with watsonx Orchestrate","description":"Choose a build path, define a narrow task, connect tools, and evaluate your watsonx Orchestrate agent.","url":"https://taivanle.github.io/create_agent.html","author":{"@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/"}}</script></head><body class="content-page"><div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le<span class="brand-dot">.</span></span></a><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><a class="nav-link" href="index.html#work">Work</a><a class="nav-link" href="index.html#about">About</a><a class="nav-link" href="index.html#experience">Experience</a><a class="nav-link" href="index.html#community">Speaking</a><a class="nav-link" href="blog_homepage.html">Notes</a><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a></nav></div></header><main id="main"><header class="page-hero wrap"><a class="breadcrumb" href="blog_homepage.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg> Back to engineering notes</a><p class="eyebrow">ENGINEERING NOTES</p><h1>Building an agent with<br><span class="serif">watsonx Orchestrate.</span></h1><p class="page-lead">A complete walkthrough of the developer and visual builder routes: installation, environment setup, a Python FAQ tool, agent configuration, knowledge, and testing.</p><p class="article-meta">Owen Le · Updated 8 October 2026</p></header><div class="case-layout wrap"><nav class="case-toc" aria-label="Article sections"><span>IN THIS NOTE</span><a href="#build-path">Choose a build path</a><a href="#task">Define the task</a><a href="#adk-setup">Developer setup</a><a href="#adk-tool">Python FAQ tool</a><a href="#adk-agent">Agent configuration</a><a href="#visual-builder">Visual builder</a><a href="#evaluate">Check behaviour</a></nav><article class="case-content article-content"><section id="build-path">
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>Building an agent with watsonx Orchestrate — Owen Le</title><meta name="description" content="Choose a build path, define a narrow task, connect tools, and evaluate your watsonx Orchestrate agent."><link rel="canonical" href="https://taivanle.github.io/create_agent.html"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="article"><meta property="og:title" content="Building an agent with watsonx Orchestrate"><meta property="og:description" content="Choose a build path, define a narrow task, connect tools, and evaluate your watsonx Orchestrate agent."><meta property="og:url" content="https://taivanle.github.io/create_agent.html"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied Artificial Intelligence Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=8e089ec8ece7"><script src="assets/app.js?v=73d34f31d8ab" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"CreativeWork","name":"Building an agent with watsonx Orchestrate","description":"Choose a build path, define a narrow task, connect tools, and evaluate your watsonx Orchestrate agent.","url":"https://taivanle.github.io/create_agent.html","author":{"@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/"}}</script></head><body class="content-page"><div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le<span class="brand-dot">.</span></span></a><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><a class="nav-link" href="index.html#work">Work</a><a class="nav-link" href="index.html#about">About</a><a class="nav-link" href="index.html#experience">Experience</a><a class="nav-link" href="index.html#community">Speaking</a><a class="nav-link" href="blog_homepage.html">Notes</a><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a></nav></div></header><main id="main"><header class="page-hero wrap"><a class="breadcrumb" href="blog_homepage.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg> Back to engineering notes</a><p class="eyebrow">ENGINEERING NOTES</p><h1>Building an agent with<br><span class="serif">watsonx Orchestrate.</span></h1><p class="page-lead">A complete walkthrough of the developer and visual builder routes: installation, environment setup, a Python FAQ tool, agent configuration, knowledge, and testing.</p><p class="article-meta">Owen Le · Updated 8 October 2026</p></header><div class="case-layout wrap"><nav class="case-toc" aria-label="Article sections"><span>IN THIS NOTE</span><a href="#build-path">Choose a build path</a><a href="#task">Define the task</a><a href="#adk-setup">Developer setup</a><a href="#adk-tool">Python FAQ tool</a><a href="#adk-agent">Agent configuration</a><a href="#visual-builder">Visual builder</a><a href="#evaluate">Check behaviour</a></nav><article class="case-content article-content"><section id="build-path">
   <h2>Choose your build path</h2>
   <p>
     watsonx Orchestrate gives you two ways to build an agent: the Agent
@@ -73,14 +73,14 @@
     installed version. If you use Homebrew on macOS and need Python 3.11,
     install it with the command below.
   </p>
-  <pre class="guide-code"><code>python3.11 --version
+  <pre class="guide-code" tabindex="0"><code>python3.11 --version
 brew install python@3.11</code></pre>
   <p>
     Create your project, activate a virtual environment, and install the
     package. Keep the virtual environment local to this project so its
     dependencies do not affect your other work.
   </p>
-  <pre class="guide-code"><code>mkdir my-adk-project
+  <pre class="guide-code" tabindex="0"><code>mkdir my-adk-project
 cd my-adk-project
 python3.11 -m venv .venv
 source .venv/bin/activate
@@ -98,8 +98,11 @@ orchestrate --help</code></pre>
     for the supported setup.
   </p>
   <h3>2. Lay out the project</h3>
-  <pre class="guide-code"><code>mkdir agents tools knowledge flows</code></pre>
-  <pre class="guide-code"><code>my-adk-project/
+  <pre
+    class="guide-code"
+    tabindex="0"
+  ><code>mkdir agents tools knowledge flows</code></pre>
+  <pre class="guide-code" tabindex="0"><code>my-adk-project/
 ├── agents/
 │   └── customer_assistant.yaml
 ├── tools/
@@ -134,7 +137,7 @@ orchestrate --help</code></pre>
     example URL with the value from API details. The activation flow requests
     your API key.
   </p>
-  <pre class="guide-code"><code>orchestrate env add -n cloud-dev \
+  <pre class="guide-code" tabindex="0"><code>orchestrate env add -n cloud-dev \
   -u "https://api.eu-de.watson-orchestrate.cloud.ibm.com/instances/YOUR_INSTANCE_ID" \
   --type ibm_iam --activate
 
@@ -221,7 +224,10 @@ def faq_search(query: str) -&gt; str:
   <p class="eyebrow">DEVELOPER ROUTE / 03</p>
   <h2>Define, import, and verify the agent</h2>
   <h3>1. Choose an available model</h3>
-  <pre class="guide-code"><code>orchestrate models list</code></pre>
+  <pre
+    class="guide-code"
+    tabindex="0"
+  ><code>orchestrate models list</code></pre>
   <p>
     Copy a model identifier available in your instance. Replace
     <code>YOUR_AVAILABLE_MODEL_ID</code> below with that value; do not import
@@ -234,7 +240,7 @@ def faq_search(query: str) -&gt; str:
     instructions tell the agent when to call the FAQ tool and what to do when
     the source has no answer.
   </p>
-  <pre class="guide-code"><code>spec_version: v1
+  <pre class="guide-code" tabindex="0"><code>spec_version: v1
 kind: native
 name: CustomerAssistant
 description: &gt;
@@ -346,7 +352,10 @@ orchestrate agents list</code></pre>
     Define how the assistant should answer. This is the equivalent of the
     instructions in the developer route.
   </p>
-  <pre class="guide-code"><code>You answer questions using the coffee shop FAQ.
+  <pre
+    class="guide-code"
+    tabindex="0"
+  ><code>You answer questions using the coffee shop FAQ.
 Keep responses short, clear, and friendly.
 Use the supplied knowledge for opening hours and shop policies.
 If the answer is missing, say so and suggest contacting the shop.
@@ -417,7 +426,7 @@ Do not invent details that are absent from the FAQ.</code></pre>
     Open the preview chat and ask the original example questions. Inspect the
     available tool calls and source information alongside the final answer.
   </p>
-  <pre class="guide-code"><code>What time do you open today?
+  <pre class="guide-code" tabindex="0"><code>What time do you open today?
 How long do refunds take?
 Can I return something I bought last week?</code></pre>
   <figure class="guide-figure">

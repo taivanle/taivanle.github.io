@@ -1137,6 +1137,8 @@ p {
   color: var(--green);
 }
 .case-content {
+  min-width: 0;
+  width: 100%;
   max-width: 840px;
 }
 .case-content section {
