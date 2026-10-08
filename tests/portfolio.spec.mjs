@@ -266,7 +266,9 @@ test("the shared navigation bubble visibly travels between sections and follows 
   await expect.poll(() => aligned(experience)).toBeLessThan(2);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Menu", exact: true }).click();
-  await expect.poll(() => aligned(experience)).toBeLessThan(2);
+  await expect
+    .poll(() => aligned(nav.locator(".nav-link[aria-current]")))
+    .toBeLessThan(2);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await about.click();
   await page.getByRole("button", { name: "Menu", exact: true }).click();
