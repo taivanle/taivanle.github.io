@@ -3479,6 +3479,9 @@ html:not(.js) .stage-track {
 .work-section .filters button:hover {
   background: #263d2c;
 }
+.work-section .filters button span {
+  opacity: 1;
+}
 .work-section .filters button[aria-pressed="true"] {
   color: #163021;
   background: #d5e7ae;
@@ -3976,6 +3979,8 @@ html:not(.js) .stage-track {
   fill: #142d22ed;
 }
 .card-frame {
+  width: 100%;
+  min-width: 0;
   min-height: 420px;
   transition: transform 0.4s ease;
 }
@@ -4061,10 +4066,11 @@ html:not(.js) .stage-track {
 }
 @media (max-width: 760px) {
   .card-frame {
-    aspect-ratio: 420 / 500;
+    aspect-ratio: auto;
     min-height: 400px;
   }
   .card-content {
+    height: auto;
     min-height: 400px;
     padding: 25px 25px 75px;
   }
