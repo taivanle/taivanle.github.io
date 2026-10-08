@@ -206,7 +206,11 @@ async function recordJourney(page, records, label, action, url, selector) {
     await action();
     await expect(page).toHaveURL(url);
     await page.waitForLoadState("domcontentloaded");
-    await expect(page.locator(selector)).toBeVisible();
+    const destination = page.locator(selector);
+    if (selector === ".project-card") {
+      await expect(destination).toHaveCount(3);
+      await expect(destination.first()).toBeVisible();
+    } else await expect(destination).toBeVisible();
     await expect
       .poll(() =>
         records

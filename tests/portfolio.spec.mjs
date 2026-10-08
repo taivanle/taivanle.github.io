@@ -1216,6 +1216,10 @@ test("the reflective sweep covers the full overview visual at every breakpoint",
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/themis.html");
+    await expect(page.locator("html")).not.toHaveAttribute(
+      "data-page-transition",
+      /^(entering|leaving)$/,
+    );
     if (width < 981) {
       await expect(page.locator(".intro-visual")).toBeHidden();
       await page

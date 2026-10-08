@@ -18,7 +18,7 @@ jobs:
       - run: npm run check
       - run: git diff --exit-code -- docs
       - run: npx playwright install --with-deps chromium webkit
-      - run: npm test -- --reporter=line --grep 'landing Work → Themis → Escape stays dark'
+      - run: npm test -- --reporter=line --grep 'landing Work → Themis → Escape stays dark|BFCache return|repeated Escape returns'
       - run: npm test -- --reporter=line
       - uses: actions/upload-artifact@v4
         if: failure()
