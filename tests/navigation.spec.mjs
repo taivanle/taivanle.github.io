@@ -79,95 +79,105 @@ test("project entry and return keep an opaque dark backing throughout native tra
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.addInitScript(() => {
     addEventListener("pagereveal", (event) => {
-      window.transitionReady = false;
+      window.transitionEnded = false;
       if (!event.viewTransition) return;
       event.viewTransition.ready
         .then(() => {
-          window.transitionAnimations = document
-            .getAnimations()
-            .filter((animation) =>
-              animation.effect?.pseudoElement?.startsWith("::view-transition"),
-            );
-          window.transitionAnimations.forEach((animation) => animation.pause());
-          window.transitionReady = true;
+          window.transitionBackings = [];
+          function sample() {
+            const root = document.documentElement;
+            window.transitionBackings.push({
+              background: getComputedStyle(root, "::view-transition")
+                .backgroundColor,
+              outgoingOpacity: getComputedStyle(
+                root,
+                "::view-transition-old(root)",
+              ).opacity,
+              outgoingBlend: getComputedStyle(
+                root,
+                "::view-transition-old(root)",
+              ).mixBlendMode,
+              incomingBlend: getComputedStyle(
+                root,
+                "::view-transition-new(root)",
+              ).mixBlendMode,
+            });
+            if (!window.transitionEnded) requestAnimationFrame(sample);
+          }
+          sample();
+        })
+        .catch(() => {});
+      event.viewTransition.finished
+        .finally(() => {
+          window.transitionEnded = true;
         })
         .catch(() => {});
     });
   });
+  const capture = await page.context().newCDPSession(page);
+  let frames = [];
+  capture.on("Page.screencastFrame", ({ data, sessionId }) => {
+    frames.push(data);
+    capture.send("Page.screencastFrameAck", { sessionId }).catch(() => {});
+  });
 
-  async function inspectFrames() {
+  async function recordTransition(action, url) {
+    frames = [];
+    await page.evaluate(() => {
+      window.transitionEnded = false;
+      window.transitionBackings = [];
+    });
+    await capture.send("Page.startScreencast", {
+      format: "png",
+      maxWidth: 640,
+      maxHeight: 360,
+      everyNthFrame: 1,
+    });
+    await action();
+    await expect(page).toHaveURL(url);
     await expect
-      .poll(() =>
-        page.evaluate(() =>
-          Boolean(
-            window.transitionReady &&
-            window.transitionAnimations?.some(
-              (animation) => animation.playState === "paused",
-            ),
-          ),
-        ),
-      )
+      .poll(() => page.evaluate(() => window.transitionEnded))
       .toBe(true);
-    expect(
-      await page.evaluate(() => window.transitionAnimations.length),
-    ).toBeGreaterThan(0);
-    for (const progress of [0.05, 0.5, 0.95]) {
-      const backing = await page.evaluate(async (progress) => {
-        window.transitionAnimations.forEach((animation) => {
-          animation.currentTime =
-            animation.effect.getTiming().duration * progress;
-        });
-        await new Promise(requestAnimationFrame);
-        const root = document.documentElement;
-        return {
-          background: getComputedStyle(root, "::view-transition")
-            .backgroundColor,
-          outgoingOpacity: getComputedStyle(root, "::view-transition-old(root)")
-            .opacity,
-          outgoingBlend: getComputedStyle(root, "::view-transition-old(root)")
-            .mixBlendMode,
-          incomingBlend: getComputedStyle(root, "::view-transition-new(root)")
-            .mixBlendMode,
-        };
-      }, progress);
+    await capture.send("Page.stopScreencast");
+    const backings = await page.evaluate(() => window.transitionBackings);
+    expect(backings.length).toBeGreaterThan(2);
+    for (const backing of backings)
       expect(backing).toEqual({
         background: "rgb(12, 28, 26)",
         outgoingOpacity: "1",
         outgoingBlend: "normal",
         incomingBlend: "normal",
       });
-      const screenshot = await page.screenshot();
-      const gutterBrightness = await page.evaluate(
-        async (bytes) => {
-          const image = await createImageBitmap(
-            new Blob([Uint8Array.from(bytes)], { type: "image/png" }),
-          );
-          const canvas = new OffscreenCanvas(image.width, image.height);
-          const context = canvas.getContext("2d");
-          context.drawImage(image, 0, 0);
-          const brightness = (x) => {
-            const pixels = context.getImageData(
-              x,
-              Math.floor(image.height / 2),
-              8,
-              8,
-            ).data;
-            let total = 0;
-            for (let i = 0; i < pixels.length; i += 4)
-              total += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
-            return total / (pixels.length / 4);
-          };
-          const result = [brightness(2), brightness(image.width - 10)];
-          image.close();
-          return result;
-        },
-        [...screenshot],
-      );
-      for (const value of gutterBrightness) expect(value).toBeLessThan(90);
-    }
-    await page.evaluate(() =>
-      window.transitionAnimations.forEach((animation) => animation.finish()),
-    );
+    expect(frames.length).toBeGreaterThan(2);
+    const brightness = await page.evaluate(async (frames) => {
+      const results = [];
+      for (const encoded of frames) {
+        const bytes = Uint8Array.from(atob(encoded), (char) =>
+          char.charCodeAt(0),
+        );
+        const image = await createImageBitmap(
+          new Blob([bytes], { type: "image/png" }),
+        );
+        const canvas = new OffscreenCanvas(image.width, image.height);
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0);
+        for (const x of [2, image.width - 10]) {
+          const pixels = context.getImageData(
+            x,
+            Math.floor(image.height / 2),
+            8,
+            8,
+          ).data;
+          let total = 0;
+          for (let i = 0; i < pixels.length; i += 4)
+            total += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / 3;
+          results.push(total / (pixels.length / 4));
+        }
+        image.close();
+      }
+      return results;
+    }, frames);
+    for (const value of brightness) expect(value).toBeLessThan(90);
   }
 
   await page.goto("/projects.html");
@@ -176,13 +186,17 @@ test("project entry and return keep an opaque dark backing throughout native tra
     ["dueform", "DueForm"],
     ["actifact", "ActiFact"],
   ]) {
-    await page
-      .getByRole("link", { name: `Read case study: ${name}`, exact: true })
-      .click();
-    await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
-    await inspectFrames();
-    await page.keyboard.press("Escape");
-    await expect(page).toHaveURL(/projects.html$/);
-    await inspectFrames();
+    await recordTransition(
+      () =>
+        page
+          .getByRole("link", { name: `Read case study: ${name}`, exact: true })
+          .click(),
+      new RegExp(`${slug}.html$`),
+    );
+    await recordTransition(
+      () => page.keyboard.press("Escape"),
+      /projects.html$/,
+    );
   }
+  await capture.detach();
 });
