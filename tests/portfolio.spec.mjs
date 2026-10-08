@@ -116,7 +116,7 @@ test("all five chapter handoffs have moving currents and scroll-driven type in b
   await expect(page.locator("#notes h2")).toBeVisible();
 });
 
-test("chapter settling releases immediately, works in both directions, and updates the active header pill", async ({
+test("chapter locks release immediately, work in both directions, and keep active and hover states distinct", async ({
   page,
 }) => {
   await page.goto("/#experience");
@@ -194,6 +194,85 @@ test("chapter settling releases immediately, works in both directions, and updat
   await page.mouse.wheel(0, -350);
   await page.waitForTimeout(700);
   await expect.poll(top).toBeLessThan(padding - 40);
+});
+
+for (const viewport of [
+  { width: 1280, height: 720 },
+  { width: 390, height: 844 },
+]) {
+  test(`all landing chapters lock on approach and remain readable at ${viewport.width}px`, async ({
+    page,
+  }) => {
+    test.setTimeout(45000);
+    await page.setViewportSize(viewport);
+    await page.goto("/");
+    await page.evaluate(() => document.fonts.ready);
+    const padding = await page.evaluate(() =>
+      parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
+    );
+    const approach = Math.min(280, (viewport.height - padding) * 0.38);
+    const chapters = ["work", "about", "experience", "community", "notes"];
+    const top = (id) =>
+      page.locator(`#${id}`).evaluate((el) => el.getBoundingClientRect().top);
+    for (const id of chapters) {
+      await page.mouse.wheel(0, (await top(id)) - padding - approach);
+      await expect
+        .poll(async () => Math.abs((await top(id)) - padding))
+        .toBeLessThan(2);
+      // The lock is an arrival point, not a trap: a small next gesture continues.
+      await page.mouse.wheel(0, 60);
+      await page.waitForTimeout(750);
+      await expect.poll(() => top(id)).toBeLessThan(padding - 40);
+    }
+    for (const id of chapters.slice(0, -1).reverse()) {
+      await page.mouse.wheel(0, (await top(id)) - padding + approach);
+      await expect
+        .poll(async () => Math.abs((await top(id)) - padding))
+        .toBeLessThan(2);
+    }
+    await page.mouse.wheel(0, -(await page.evaluate(() => scrollY)) + approach);
+    await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+    await expect(page.locator(".nav-link[aria-current]")).toHaveCount(0);
+  });
+}
+
+test("the shared navigation bubble visibly travels between sections and follows menu resizing", async ({
+  page,
+}) => {
+  await page.goto("/#about");
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  const bubble = page.locator(".nav-indicator");
+  const about = nav.getByRole("link", { name: "About", exact: true });
+  const experience = nav.getByRole("link", { name: "Experience", exact: true });
+  await expect(about).toHaveAttribute("aria-current", "location");
+  const aligned = (link) =>
+    Promise.all([bubble.boundingBox(), link.boundingBox()]).then(([a, b]) =>
+      a && b
+        ? Math.abs(a.x - b.x) +
+          Math.abs(a.y - b.y) +
+          Math.abs(a.width - b.width)
+        : Infinity,
+    );
+  await expect.poll(() => aligned(about)).toBeLessThan(2);
+  const target = await experience.boundingBox();
+  await page.mouse.click(
+    target.x + target.width / 2,
+    target.y + target.height / 2,
+  );
+  await expect(experience).toHaveAttribute("aria-current", "location");
+  // At the change of section the shared bubble is still travelling, rather than
+  // replacing one filled link with another instantly.
+  expect(await aligned(experience)).toBeGreaterThan(3);
+  await expect.poll(() => aligned(experience)).toBeLessThan(2);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Menu", exact: true }).click();
+  await expect.poll(() => aligned(experience)).toBeLessThan(2);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await about.click();
+  await page.getByRole("button", { name: "Menu", exact: true }).click();
+  await expect(about).toHaveAttribute("aria-current", "location");
+  await expect.poll(() => aligned(about)).toBeLessThan(2);
+  expect(await bubble.evaluate((el) => el.getAnimations().length)).toBe(0);
 });
 
 test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({

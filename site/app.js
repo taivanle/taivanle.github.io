@@ -108,46 +108,88 @@ const home = document.querySelector(".home-page");
 if (home) {
   const links = [...navigation.querySelectorAll('.nav-link[href^="#"]')];
   const sections = links.map((link) => document.querySelector(link.hash));
-  const stops = [
-    ...document.querySelectorAll(
-      ".hero-scene, .chapter-section, .contact-section",
-    ),
-  ];
+  const indicator = navigation.querySelector(".nav-indicator");
   let trackingFrame = 0;
-  let settleTimer = 0;
-  let settleFrame = 0;
-  let inputPending = false;
-  let settledStop = null;
-  const stopOffset = () =>
-    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
-    0;
+  let activeLink = null;
+  let indicatorReady = false;
+  navigation.classList.add("has-nav-indicator");
+  function moveIndicator(link) {
+    activeLink = link;
+    const bounds = link?.getBoundingClientRect();
+    if (!bounds?.width) {
+      indicator.classList.remove("is-visible");
+      return;
+    }
+    const parent = navigation.getBoundingClientRect();
+    indicator.style.transform = `translate3d(${bounds.left - parent.left}px, ${bounds.top - parent.top}px, 0)`;
+    indicator.style.width = `${bounds.width}px`;
+    indicator.style.height = `${bounds.height}px`;
+    indicator.classList.add("is-visible");
+    if (!indicatorReady) {
+      indicatorReady = true;
+      requestAnimationFrame(() => indicator.classList.add("is-positioned"));
+    }
+  }
   function trackSection() {
     trackingFrame = 0;
-    if (!inputPending && !settleFrame) {
-      const aligned = stops.find(
-        (section) =>
-          Math.abs(section.getBoundingClientRect().top - stopOffset()) < 2,
-      );
-      if (aligned) settledStop = aligned;
-    }
-    const line = Math.max(stopOffset() + 24, innerHeight * 0.25);
+    const padding =
+      parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+      0;
+    const line = Math.max(padding + 24, innerHeight * 0.25);
     const selected = sections.findLastIndex(
       (section) => section.getBoundingClientRect().top <= line,
     );
     const inContact =
       document.querySelector(".contact-section").getBoundingClientRect().top <=
       line;
-    links.forEach((link, index) => {
-      if (index === selected && !inContact)
-        link.setAttribute("aria-current", "location");
+    const current = !inContact && selected >= 0 ? links[selected] : null;
+    links.forEach((link) => {
+      if (link === current) link.setAttribute("aria-current", "location");
       else link.removeAttribute("aria-current");
     });
+    if (current !== activeLink || !indicator.classList.contains("is-visible"))
+      moveIndicator(current);
   }
+  function scheduleTracking() {
+    if (!trackingFrame) trackingFrame = requestAnimationFrame(trackSection);
+  }
+  // Lock on arrival from either direction, then release on the next gesture.
+  const stops = [
+    ...document.querySelectorAll(
+      ".intro-chapter, .chapter-section, .contact-section",
+    ),
+  ];
+  let settleTimer = 0;
+  let settleFrame = 0;
+  let inputPending = false;
+  let direction = 0;
+  let lastY = scrollY;
+  let lockedStop = null;
+  const stopOffset = () =>
+    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+    0;
+  const stopPosition = (element) =>
+    Math.max(
+      0,
+      Math.min(
+        scrollY + element.getBoundingClientRect().top - stopOffset(),
+        document.documentElement.scrollHeight - innerHeight,
+      ),
+    );
   function cancelSettle() {
     clearTimeout(settleTimer);
     cancelAnimationFrame(settleFrame);
     settleFrame = 0;
     inputPending = false;
+    lastY = scrollY;
+  }
+  function rememberStop() {
+    if (!inputPending && !settleFrame) {
+      const aligned = stops.find(
+        (element) => Math.abs(stopPosition(element) - scrollY) < 2,
+      );
+      if (aligned) lockedStop = aligned;
+    }
   }
   function settleChapter() {
     if (
@@ -157,97 +199,130 @@ if (home) {
     )
       return;
     inputPending = false;
-    const offset = stopOffset();
-    const radius = Math.min(140, innerHeight * 0.18);
-    const closest = stops
+    const reach = Math.min(420, (innerHeight - stopOffset()) * 0.5);
+    const candidates = stops
       .map((element) => ({
         element,
-        delta: element.getBoundingClientRect().top - offset,
+        position: stopPosition(element),
       }))
-      .sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta))[0];
-    if (
-      !closest ||
-      Math.abs(closest.delta) > radius ||
-      closest.element === settledStop
-    )
-      return;
-    settledStop = closest.element;
+      .filter(({ element, position }) => {
+        const delta = position - scrollY;
+        return (
+          element !== lockedStop &&
+          (direction > 0
+            ? delta >= -48 && delta <= reach
+            : delta <= 48 && delta >= -reach)
+        );
+      })
+      .sort(
+        (a, b) =>
+          Math.abs(a.position - scrollY) - Math.abs(b.position - scrollY),
+      );
+    const target = candidates[0];
+    if (!target) return;
+    lockedStop = target.element;
     const start = scrollY;
-    const end = Math.max(
-      0,
-      Math.min(
-        start + closest.delta,
-        document.documentElement.scrollHeight - innerHeight,
-      ),
-    );
+    const end = target.position;
     if (Math.abs(end - start) < 2) return;
     const began = performance.now();
     function advance(now) {
-      const progress = Math.min(1, (now - began) / 380);
-      const eased = 1 - (1 - progress) ** 3;
+      const progress = Math.min(1, (now - began) / 500);
+      const eased =
+        progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
       window.scrollTo({
         top: start + (end - start) * eased,
         behavior: "instant",
       });
+      lastY = scrollY;
       settleFrame = progress < 1 ? requestAnimationFrame(advance) : 0;
     }
     settleFrame = requestAnimationFrame(advance);
   }
+  function scheduleSettle() {
+    clearTimeout(settleTimer);
+    if (inputPending && !settleFrame)
+      settleTimer = setTimeout(settleChapter, 140);
+  }
+  function scrollingInput(nextDirection) {
+    cancelSettle();
+    if (reducedMotion.matches) return;
+    direction = nextDirection || direction;
+    inputPending = true;
+    scheduleSettle();
+  }
   function onScroll() {
-    if (!trackingFrame) trackingFrame = requestAnimationFrame(trackSection);
-    if (
-      settledStop &&
-      Math.abs(settledStop.getBoundingClientRect().top - stopOffset()) >
-        Math.min(140, innerHeight * 0.18) + 60
-    )
-      settledStop = null;
-    if (inputPending && !settleFrame) {
-      clearTimeout(settleTimer);
-      settleTimer = setTimeout(settleChapter, 240);
+    scheduleTracking();
+    if (!settleFrame) {
+      if (inputPending && Math.abs(scrollY - lastY) > 0.5)
+        direction = Math.sign(scrollY - lastY);
+      lastY = scrollY;
+      if (
+        lockedStop &&
+        Math.abs(stopPosition(lockedStop) - scrollY) >
+          Math.min(180, innerHeight * 0.22)
+      )
+        lockedStop = null;
+      rememberStop();
+      scheduleSettle();
     }
   }
-  function scrollingInput() {
-    cancelSettle();
-    inputPending = true;
-    settleTimer = setTimeout(settleChapter, 240);
-  }
-  window.addEventListener("wheel", scrollingInput, { passive: true });
   window.addEventListener(
-    "touchmove",
-    () => {
-      cancelSettle();
-      inputPending = true;
+    "wheel",
+    (event) => {
+      if (
+        event.ctrlKey ||
+        Math.abs(event.deltaY) <= Math.abs(event.deltaX) ||
+        event.target.closest(
+          ".site-header, input, textarea, select, [contenteditable]",
+        )
+      )
+        return;
+      scrollingInput(Math.sign(event.deltaY));
     },
     { passive: true },
   );
-  window.addEventListener("touchend", onScroll, { passive: true });
+  window.addEventListener(
+    "touchmove",
+    (event) => {
+      if (!event.target.closest(".site-header")) scrollingInput(0);
+    },
+    { passive: true },
+  );
+  window.addEventListener("touchend", scheduleSettle, { passive: true });
   window.addEventListener("keydown", (event) => {
     if (
-      [
-        "ArrowDown",
-        "ArrowUp",
-        "PageDown",
-        "PageUp",
-        " ",
-        "Home",
-        "End",
-      ].includes(event.key) &&
-      !event.target.closest(
-        "input, textarea, select, button, [contenteditable]",
-      )
+      event.altKey ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.target.closest("input, textarea, select, button, [contenteditable]")
     )
-      scrollingInput();
+      return;
+    if (["ArrowDown", "PageDown", " "].includes(event.key))
+      scrollingInput(event.shiftKey ? -1 : 1);
+    else if (["ArrowUp", "PageUp"].includes(event.key)) scrollingInput(-1);
+    else if (["Home", "End"].includes(event.key)) cancelSettle();
   });
+  document.addEventListener("pointerdown", cancelSettle);
   document.addEventListener("click", (event) => {
     if (event.target.closest('a[href^="#"], .brand')) cancelSettle();
   });
+  reducedMotion.addEventListener("change", cancelSettle);
   window.addEventListener("scroll", onScroll, { passive: true });
   window.addEventListener("resize", () => {
     cancelSettle();
     trackSection();
+    moveIndicator(activeLink);
   });
-  window.addEventListener("pageshow", trackSection);
-  reducedMotion.addEventListener("change", cancelSettle);
+  rememberStop();
+  window.addEventListener("pageshow", () => {
+    trackSection();
+    rememberStop();
+  });
+  new ResizeObserver(() => moveIndicator(activeLink)).observe(navigation);
+  document.fonts?.ready.then(() => {
+    trackSection();
+    moveIndicator(activeLink);
+  });
   trackSection();
 }
 if ("IntersectionObserver" in window) {
