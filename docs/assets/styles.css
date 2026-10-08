@@ -4766,14 +4766,11 @@ html:not(.js) .stage-track {
 
 /* Angled seams and space define the chapters on one continuous ground. */
 /* Landing chapter settling is handled after input stops, never during a gesture. */
-.home-page .hero-other-roles {
+.home-page .hero-roles {
   color: #b6d7c7;
   font-size: 14px;
   line-height: 1.85;
   margin-top: 24px;
-}
-.home-page .hero-role {
-  flex-wrap: wrap;
 }
 .chapter-section.is-chapter-active .chapter-title {
   animation: chapter-title-arrive 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
