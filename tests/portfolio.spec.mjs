@@ -22,7 +22,6 @@ test("project scenes accept immediate arrow keys, animate both ways, and handle 
     .getByRole("link", { name: "Read case study: ActiFact", exact: true })
     .click();
   await expect(page).toHaveURL(/actifact.html$/);
-  const frame = await page.locator(".presentation-deck").boundingBox();
   const arrivalTravel = () =>
     page.evaluate(() => {
       const scene = document.querySelector(".scene.is-active");
@@ -35,6 +34,11 @@ test("project scenes accept immediate arrow keys, animate both ways, and handle 
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("#problem")).toBeVisible();
   await expect.poll(arrivalTravel).toBeGreaterThan(0);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    "entering",
+  );
+  const frame = await page.locator(".presentation-deck").boundingBox();
   await page.keyboard.press("ArrowRight");
   await expect(page.locator("#architecture")).toBeVisible();
   await page.keyboard.press("ArrowLeft");
@@ -915,31 +919,43 @@ for (const file of pages) {
   });
 }
 
-test("project cards continue into a matching dark presentation with native page transitions", async ({
+test("project cards expand into a dark presentation and return through the real frame", async ({
   page,
 }) => {
   await page.addInitScript(() => {
-    window.addEventListener("pagereveal", (event) => {
-      window.projectPageTransition = Boolean(event.viewTransition);
+    document.addEventListener("portfolio-transition", (event) => {
+      if (event.detail.phase === "entering") {
+        requestAnimationFrame(() => {
+          const deck = document.querySelector(".presentation-deck");
+          window.projectArrival = deck?.getAnimations().map((animation) => ({
+            duration: animation.effect.getTiming().duration,
+            frames: animation.effect
+              .getKeyframes()
+              .map(({ transform, opacity }) => ({ transform, opacity })),
+          }));
+        });
+      }
     });
   });
   await page.goto("/");
   const card = page.locator('.project-card[data-category="ai"] .card-frame');
-  const frameName = await card.evaluate(
-    (frame) => getComputedStyle(frame).viewTransitionName,
-  );
+  await expect(card).toHaveAttribute("data-project", "themis");
   await page
     .getByRole("link", { name: "Read case study: Themis", exact: true })
     .click();
   await expect(page).toHaveURL(/themis.html$/);
   await expect(page.locator(".presentation-deck")).toBeVisible();
-  expect(
-    await page
-      .locator(".presentation-deck")
-      .evaluate((deck) => getComputedStyle(deck).viewTransitionName),
-  ).toBe(frameName);
   await expect
-    .poll(() => page.evaluate(() => window.projectPageTransition))
+    .poll(() =>
+      page.evaluate(() =>
+        window.projectArrival?.some(
+          (animation) =>
+            animation.duration >= 500 &&
+            animation.frames[0].transform !== "none" &&
+            animation.frames.at(-1).transform === "none",
+        ),
+      ),
+    )
     .toBe(true);
   expect(
     await page
@@ -1013,23 +1029,15 @@ for (const [slug, name] of [
     page,
   }) => {
     await page.addInitScript(() => {
-      addEventListener("pagereveal", (event) => {
-        const previous = window.navigation?.activation?.from?.url;
-        if (!event.viewTransition || !previous) return;
-        const name = new URL(previous).pathname
-          .split("/")
-          .pop()
-          .replace(".html", "");
-        event.viewTransition.ready
-          .then(() => {
-            window.returnAnimationSeconds = parseFloat(
-              getComputedStyle(
-                document.documentElement,
-                `::view-transition-group(project-${name})`,
-              ).animationDuration,
-            );
-          })
-          .catch(() => {});
+      document.addEventListener("portfolio-transition", (event) => {
+        if (
+          event.detail.phase === "leaving" &&
+          event.detail.direction === "close"
+        )
+          sessionStorage.setItem(
+            "tested-close-duration",
+            String(event.detail.duration),
+          );
       });
     });
     await page.goto("/projects.html");
@@ -1049,8 +1057,12 @@ for (const [slug, name] of [
     await expect(page).toHaveURL(/projects.html$/);
     await expect(card).toBeVisible();
     await expect
-      .poll(() => page.evaluate(() => window.returnAnimationSeconds))
-      .toBeGreaterThanOrEqual(0.8);
+      .poll(() =>
+        page.evaluate(() =>
+          Number(sessionStorage.getItem("tested-close-duration")),
+        ),
+      )
+      .toBeGreaterThanOrEqual(800);
     await card.click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.keyboard.press("Escape");

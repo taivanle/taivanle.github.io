@@ -298,7 +298,9 @@ if (home) {
     moveIndicator(activeLink);
   });
   rememberStop();
+  window.addEventListener("pagehide", cancelSettle);
   window.addEventListener("pageshow", () => {
+    cancelSettle();
     trackSection();
     rememberStop();
   });
@@ -348,10 +350,15 @@ if ("IntersectionObserver" in window) {
   reducedMotion.addEventListener("change", scheduleDividers);
   const chapters = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries)
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        // Latch the reveal once. Observing/replaying the moving title itself
+        // creates a feedback loop when history restores it at the viewport edge.
         entry.target
           .closest(".chapter-section")
-          .classList.toggle("is-chapter-active", entry.isIntersecting);
+          .classList.add("is-chapter-active");
+        chapters.unobserve(entry.target);
+      }
     },
     { rootMargin: "-12% 0px -18% 0px" },
   );
@@ -361,7 +368,7 @@ if ("IntersectionObserver" in window) {
     const title = section.querySelector("h2");
     if (title) {
       title.classList.add("chapter-title");
-      chapters.observe(title);
+      chapters.observe(title.parentElement);
     }
   });
 }

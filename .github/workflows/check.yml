@@ -17,5 +17,10 @@ jobs:
       - run: npm run build
       - run: npm run check
       - run: git diff --exit-code -- docs
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install --with-deps chromium webkit
       - run: npm test
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-check-failures
+          path: test-results/
