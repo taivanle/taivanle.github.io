@@ -3375,13 +3375,39 @@ html:not(.js) .stage-track {
   }
 }
 
-/* A solid header keeps the moving background light from bleeding into its edge. */
+/* One rounded glass surface carries the navigation over the continuous backdrop. */
 .site-header {
   color: #e5eee4;
-  background: #0c1c1a;
-  border-bottom-color: #526d5a66;
-  box-shadow: 0 8px 25px -20px #0008;
-  isolation: isolate;
+  padding-block: 12px 8px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  pointer-events: none;
+}
+.site-header .header-inner {
+  width: min(1200px, calc(100% - 32px));
+  min-height: 68px;
+  padding-inline: 16px;
+  border: 1px solid #d1ead437;
+  border-radius: 34px;
+  background: linear-gradient(125deg, #e4fbe510, #cdeeda03 48%, #d6edd60c)
+    #0c1c1a94;
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
+  backdrop-filter: blur(18px) saturate(145%);
+  box-shadow:
+    inset 0 1px 0 #ecffea30,
+    inset 0 -1px 0 #99c4ad12,
+    0 8px 28px #00000024;
+  pointer-events: auto;
+}
+.content-page .site-header .header-inner {
+  background-color: #0c1c1ac7;
+}
+.site-header .nav-resume,
+.site-header .nav-social {
+  background: #e1f6e908;
+  border-color: #c5e3cf30;
+  border-radius: 20px;
 }
 .site-header .brand-mark {
   border-color: #a9c6af;
@@ -3397,14 +3423,15 @@ html:not(.js) .stage-track {
   background: #d5e7ae;
 }
 .site-header .nav-resume {
-  border-color: #829a826b;
-  background: #8daa7710;
+  white-space: nowrap;
 }
 .site-header .nav-resume:hover {
   background: #304637;
 }
 .site-header .menu-toggle {
-  border-color: #829a826b;
+  border-color: #c5e3cf30;
+  border-radius: 18px;
+  background: #e1f6e908;
 }
 .site-header :focus-visible {
   outline-color: #d5e7ae;
@@ -3412,6 +3439,35 @@ html:not(.js) .stage-track {
 .scroll-progress {
   background: linear-gradient(90deg, #85d5b3, #d5e7ae);
   height: 2px;
+}
+@media (max-width: 760px) {
+  .site-header {
+    padding-block: 10px 6px;
+  }
+  .site-header .header-inner {
+    width: calc(100% - 24px);
+    min-height: 57px;
+    padding-inline: 12px;
+    border-radius: 22px;
+    gap: 16px;
+  }
+  .site-header .navigation {
+    padding-bottom: 12px;
+  }
+}
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .site-header .header-inner {
+    background-color: #142a24;
+  }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .site-header .header-inner {
+    background: #142a24;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 /* A gallery of notched frames, with the middle project offset on wider screens. */
