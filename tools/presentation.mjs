@@ -50,7 +50,7 @@ export function renderPresentation(
         </section>
         <section class="scene results-scene" id="results" aria-label="Results">
           ${heading("05", "THE EVIDENCE", p.slug === "themis" ? "A measurable change in the workflow." : "What the build demonstrates.")}
-          <div class="presentation-results">${p.results.map((result, i) => `<div class="presentation-result"><span class="mono">0${i + 1} / ${escape(result[1].toUpperCase())}</span><strong>${escape(result[0])}</strong><p>${escape(result[2])}</p><span class="result-rule" aria-hidden="true"></span></div>`).join("")}</div>
+          <div class="presentation-results">${p.results.map((result, i) => `<div class="presentation-result ${p.slug === "themis" || /^\d+$/.test(result[0]) ? "" : "result-label"}"><span class="mono">0${i + 1} / ${escape(result[1].toUpperCase())}</span><strong>${escape(result[0])}</strong><p>${escape(result[2])}</p><span class="result-rule" aria-hidden="true"></span></div>`).join("")}</div>
           <div class="results-context"><span class="mono">CONTEXT MATTERS</span><p>${escape(p.slug === "themis" ? "Resume-reported outcomes from the evaluation workflows used at Aptura. The accuracy numbers describe that benchmark context." : p.slug === "billacord" ? "A private local MVP verified with synthetic cases. Commercial outcomes and an independent live extraction baseline remain unvalidated." : "Five isolated synthetic scenarios against our own broken and corrected references. This demonstrates verification behaviour within that example.")}</p></div>
         </section>
         <section class="scene perspective-scene" id="scope" aria-label="Perspective">

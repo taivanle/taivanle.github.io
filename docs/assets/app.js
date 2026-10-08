@@ -82,49 +82,32 @@ if ("IntersectionObserver" in window) {
 }
 
 const portraitVideo = document.querySelector("[data-portrait-video]");
-const motionButton = document.querySelector(".motion-toggle");
-motionButton?.addEventListener("click", () => {
-  const paused = document.documentElement.classList.toggle("motion-paused");
-  motionButton.setAttribute("aria-pressed", String(paused));
-  motionButton.setAttribute(
-    "aria-label",
-    paused ? "Resume motion" : "Pause motion",
-  );
-  motionButton.innerHTML = `${paused ? "Resume motion" : "Pause motion"} <span aria-hidden="true">${paused ? "▷" : "Ⅱ"}</span>`;
-  if (paused) portraitVideo?.pause();
-});
-
-const videoButton = document.querySelector("[data-video-toggle]");
-if (portraitVideo && videoButton) {
-  portraitVideo.controls = false;
-  const syncPlayback = () => {
-    const playing = !portraitVideo.paused;
-    videoButton.setAttribute("aria-pressed", String(playing));
-    videoButton.innerHTML = `${playing ? "Pause clip" : "Play clip"} <span aria-hidden="true">${playing ? "Ⅱ" : "▷"}</span>`;
+const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+if (portraitVideo) {
+  let inView = false;
+  const syncVideo = () => {
+    const shouldPlay = inView && !document.hidden && !reducedMotion.matches;
+    portraitVideo.autoplay = shouldPlay;
+    if (shouldPlay)
+      portraitVideo.play().catch(() => {
+        /* Keep the poster if autoplay is unavailable. */
+      });
+    else portraitVideo.pause();
   };
-  videoButton.addEventListener("click", async () => {
-    if (!portraitVideo.paused) {
-      portraitVideo.pause();
-      return;
-    }
-    try {
-      await portraitVideo.play();
-    } catch {
-      portraitVideo.controls = true;
-      document.querySelector("#clip-status").textContent =
-        "The clip could not play. Try the video’s native controls.";
-    }
-  });
-  portraitVideo.addEventListener("play", syncPlayback);
-  portraitVideo.addEventListener("pause", syncPlayback);
   if ("IntersectionObserver" in window) {
-    new IntersectionObserver((entries) => {
-      if (!entries[0].isIntersecting) portraitVideo.pause();
-    }).observe(portraitVideo);
+    new IntersectionObserver(
+      ([entry]) => {
+        inView = entry.isIntersecting;
+        syncVideo();
+      },
+      { threshold: 0.15 },
+    ).observe(portraitVideo);
+  } else {
+    inView = true;
+    syncVideo();
   }
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) portraitVideo.pause();
-  });
+  reducedMotion.addEventListener("change", syncVideo);
+  document.addEventListener("visibilitychange", syncVideo);
 }
 
 const responsiveMotion = window.matchMedia(
@@ -137,11 +120,7 @@ document
     surface.addEventListener(
       "pointermove",
       (event) => {
-        if (
-          !responsiveMotion.matches ||
-          document.documentElement.classList.contains("motion-paused")
-        )
-          return;
+        if (!responsiveMotion.matches) return;
         cancelAnimationFrame(frame);
         frame = requestAnimationFrame(() => {
           const bounds = surface.getBoundingClientRect();
@@ -149,14 +128,17 @@ document
           const y = event.clientY - bounds.top;
           surface.style.setProperty("--light-x", `${x}px`);
           surface.style.setProperty("--light-y", `${y}px`);
-          if (surface.classList.contains("portrait-panel")) {
+          if (
+            surface.classList.contains("portrait-panel") ||
+            surface.classList.contains("project-card")
+          ) {
             surface.style.setProperty(
               "--tilt-x",
-              `${(0.5 - y / bounds.height) * 2}deg`,
+              `${(0.5 - y / bounds.height) * 4}deg`,
             );
             surface.style.setProperty(
               "--tilt-y",
-              `${(x / bounds.width - 0.5) * 2}deg`,
+              `${(x / bounds.width - 0.5) * 4}deg`,
             );
           }
         });
@@ -171,7 +153,7 @@ document
   });
 
 const animatedElements = document.querySelectorAll(
-  ".project-card, .principles > div, .experience-row, .note-row",
+  ".project-card, .principles > div, .experience-row, .note-row, .event-story, .event-gallery, .mentorship-panel",
 );
 if ("IntersectionObserver" in window) {
   const revealObserver = new IntersectionObserver(
