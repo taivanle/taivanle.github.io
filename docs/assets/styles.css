@@ -1647,19 +1647,6 @@ p {
   min-height: max(570px, calc(100svh - 280px));
   border-bottom: 0;
 }
-.js .scene.is-active {
-  animation: scene-arrive 0.4s ease-out;
-}
-@keyframes scene-arrive {
-  from {
-    opacity: 0.45;
-    transform: translateX(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
 .scene-heading .eyebrow {
   font-size: 10px;
   margin-bottom: 21px;
@@ -4666,45 +4653,6 @@ html:not(.js) .stage-track {
   to {
     opacity: 1;
     transform: translateY(0);
-  }
-}
-.presentation-mode .scene.is-active {
-  view-transition-name: project-scene-content;
-}
-.scene-transition {
-  --page-transition-duration: 520ms;
-  --scene-travel: 32px;
-}
-.scene-transition[data-scene-direction="reverse"] {
-  --scene-travel: -32px;
-}
-.scene-transition .scene.is-active {
-  animation: none;
-}
-.scene-transition::view-transition-old(*),
-.scene-transition::view-transition-new(*) {
-  animation: none;
-}
-.scene-transition::view-transition-old(project-scene-content) {
-  animation: scene-content-out 380ms ease-out both;
-}
-.scene-transition::view-transition-new(project-scene-content) {
-  animation: scene-content-in 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes scene-content-out {
-  to {
-    opacity: 0;
-    transform: translateX(calc(var(--scene-travel) * -1));
-  }
-}
-@keyframes scene-content-in {
-  from {
-    opacity: 0;
-    transform: translateX(var(--scene-travel));
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
   }
 }
 .home-page .chapter-section {

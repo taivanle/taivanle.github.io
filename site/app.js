@@ -335,8 +335,12 @@ if (presentation) {
   );
   let stage = 0;
   let readAll = new URL(location.href).searchParams.get("view") === "all";
-  let sceneTransition;
-  let sceneRequest = 0;
+  let sceneAnimations = [];
+
+  function stopSceneMotion() {
+    sceneAnimations.forEach((animation) => animation.cancel());
+    sceneAnimations = [];
+  }
 
   function showStage(index) {
     const previousStage = stage;
@@ -389,39 +393,22 @@ if (presentation) {
     updateScrollProgress();
   }
   function showScene(index, options = {}) {
-    const request = ++sceneRequest;
     const destination = Math.max(0, Math.min(scenes.length - 1, index));
-    const previousTransition = sceneTransition;
-    sceneTransition = null;
-    previousTransition?.skipTransition();
-    document.documentElement.classList.remove("scene-transition");
-    if (
-      destination === current ||
-      readAll ||
-      reducedMotion.matches ||
-      !document.startViewTransition
-    ) {
-      commitScene(destination, options);
-      return;
-    }
-    const direction = destination > current ? "forward" : "reverse";
-    document.documentElement.dataset.sceneDirection = direction;
-    document.documentElement.classList.add("scene-transition");
-    const transition = document.startViewTransition(() => {
-      if (request === sceneRequest) commitScene(destination, options);
-    });
-    sceneTransition = transition;
-    transition.finished
-      .finally(() => {
-        if (sceneTransition !== transition) return;
-        sceneTransition = null;
-        document.documentElement.classList.remove("scene-transition");
-      })
-      .catch(() => {});
+    const departed = current;
+    stopSceneMotion();
+    commitScene(destination, options);
+    if (destination === departed || readAll || reducedMotion.matches) return;
+    const direction = destination > departed ? 1 : -1;
+    const animation = scenes[current].animate(
+      [
+        { opacity: 0.15, transform: `translateX(${direction * 24}px)` },
+        { opacity: 1, transform: "translateX(0)" },
+      ],
+      { duration: 560, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+    sceneAnimations.push(animation);
   }
-  reducedMotion.addEventListener("change", () =>
-    sceneTransition?.skipTransition(),
-  );
+  reducedMotion.addEventListener("change", stopSceneMotion);
   function setReading(value) {
     readAll = value;
     presentation.classList.toggle("presentation-mode", !value);
@@ -448,12 +435,13 @@ if (presentation) {
     ),
   );
   reading.addEventListener("click", () => setReading(!readAll));
-  shell.addEventListener("keydown", (event) => {
+  document.addEventListener("keydown", (event) => {
     if (
       readAll ||
       event.altKey ||
       event.metaKey ||
       event.ctrlKey ||
+      menuButton?.getAttribute("aria-expanded") === "true" ||
       event.target.closest("input,textarea,select,[contenteditable]")
     )
       return;

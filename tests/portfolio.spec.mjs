@@ -14,34 +14,47 @@ const pages = [
   "404.html",
 ];
 
-test("project scenes animate in both directions and respect reduced motion", async ({
+test("project scenes accept immediate arrow keys, animate both ways, and handle rapid changes", async ({
   page,
 }) => {
-  await page.goto("/actifact.html");
+  await page.goto("/projects.html");
+  await page
+    .getByRole("link", { name: "Read case study: ActiFact", exact: true })
+    .click();
+  await expect(page).toHaveURL(/actifact.html$/);
+  const frame = await page.locator(".presentation-deck").boundingBox();
   const arrivalTravel = () =>
     page.evaluate(() => {
-      const animation = document
+      const scene = document.querySelector(".scene.is-active");
+      const animation = scene
         .getAnimations()
-        .find((item) => item.animationName === "scene-content-in");
+        .find((item) => item.effect.target === scene);
       const transform = animation?.effect.getKeyframes()[0].transform;
       return transform ? new DOMMatrix(transform).m41 : null;
     });
-  await page
-    .getByRole("button", { name: "Scene 3: Architecture", exact: true })
-    .click();
-  await expect(page.locator("#architecture")).toBeVisible();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#problem")).toBeVisible();
   await expect.poll(arrivalTravel).toBeGreaterThan(0);
-  await page
-    .getByRole("button", { name: "Scene 2: The problem", exact: true })
-    .click();
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#architecture")).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
   await expect(page.locator("#problem")).toBeVisible();
   await expect.poll(arrivalTravel).toBeLessThan(0);
   await expect(page.locator(".scene:visible")).toHaveCount(1);
+  const during = await page.locator(".presentation-deck").boundingBox();
+  expect(during.x).toBeCloseTo(frame.x, 0);
+  expect(during.width).toBeCloseTo(frame.width, 0);
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(page).toHaveURL(/#results$/);
+  await expect(page.locator("#results")).toBeVisible();
+  await expect(page.locator(".scene:visible")).toHaveCount(1);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page
-    .getByRole("button", { name: "Scene 5: Results", exact: true })
+    .getByRole("button", { name: "Scene 6: Perspective", exact: true })
     .click();
-  await expect(page.locator("#results")).toBeVisible();
+  await expect(page.locator("#scope")).toBeVisible();
   await expect.poll(arrivalTravel).toBeNull();
 });
 
