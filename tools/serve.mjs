@@ -14,6 +14,7 @@ const mime = {
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".jpg": "image/jpeg",
+  ".webp": "image/webp",
   ".mp4": "video/mp4",
   ".woff2": "font/woff2",
   ".pdf": "application/pdf",

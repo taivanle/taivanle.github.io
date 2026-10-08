@@ -168,30 +168,33 @@ test("resume is served as the supplied PDF", async ({ request }) => {
   expect((await response.body()).subarray(0, 5).toString()).toBe("%PDF-");
 });
 
-test("the demonstration clip starts only on request and can be paused", async ({
+test("the demonstration clip autoplays silently, loops, and stops off screen", async ({
   page,
 }) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto("/");
   const video = page.locator("[data-portrait-video]");
-  expect(
-    await video.evaluate(
-      (element) => element.paused && !element.autoplay && element.muted,
-    ),
-  ).toBeTruthy();
-  await page.getByRole("button", { name: "Play clip", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: "Pause clip", exact: true }),
-  ).toHaveAttribute("aria-pressed", "true");
   await expect
     .poll(() =>
-      video.evaluate((element) => !element.paused && element.readyState >= 2),
+      video.evaluate(
+        (v) =>
+          !v.paused && v.currentTime > 0 && v.muted && v.loop && !v.controls,
+      ),
     )
     .toBeTruthy();
-  await page.getByRole("button", { name: "Pause motion", exact: true }).click();
-  expect(await video.evaluate((element) => element.paused)).toBeTruthy();
+  await video.evaluate((v) => {
+    v.currentTime = v.duration - 0.15;
+  });
+  await expect
+    .poll(() => video.evaluate((v) => v.currentTime < 1 && !v.paused))
+    .toBeTruthy();
+  await page.locator("#community").scrollIntoViewIfNeeded();
+  await expect.poll(() => video.evaluate((v) => v.paused)).toBeTruthy();
+  await page.getByRole("link", { name: "Owen Le home", exact: true }).click();
+  await expect.poll(() => video.evaluate((v) => !v.paused)).toBeTruthy();
   await expect(
-    page.getByRole("button", { name: "Play clip", exact: true }),
-  ).toHaveAttribute("aria-pressed", "false");
+    page.getByRole("button", { name: /Pause|Play clip|Resume motion/ }),
+  ).toHaveCount(0);
 });
 
 test("video delivery supports partial downloads for playback", async ({
@@ -206,28 +209,94 @@ test("video delivery supports partial downloads for playback", async ({
   expect((await response.body()).length).toBe(1024);
 });
 
-test("decorative motion can be paused and respects reduced-motion settings", async ({
+test("the visual field moves and reduced motion stops the field and video", async ({
   page,
 }) => {
   await page.goto("/");
-  await page.getByRole("button", { name: "Pause motion", exact: true }).click();
-  await expect(page.locator("html")).toHaveClass(/motion-paused/);
-  expect(
-    await page
-      .locator(".orbit-lines")
-      .evaluate((element) => getComputedStyle(element).animationPlayState),
-  ).toBe("paused");
-  await page
-    .getByRole("button", { name: "Resume motion", exact: true })
-    .click();
-  await expect(page.locator("html")).not.toHaveClass(/motion-paused/);
+  const field = page.locator(".hero-field");
+  const pixels = () =>
+    field.evaluate((canvas) => {
+      const data = canvas
+        .getContext("2d")
+        .getImageData(0, 0, canvas.width, canvas.height).data;
+      let hash = 0;
+      for (let i = 0; i < data.length; i += 13)
+        hash = Math.imul(hash ^ data[i], 16777619);
+      return hash;
+    });
+  const initial = await pixels();
+  await expect.poll(pixels).not.toBe(initial);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(
-    await page
-      .locator(".orbit-lines")
-      .evaluate((element) => getComputedStyle(element).animationName),
-  ).toBe("none");
-  await expect(page.locator(".motion-toggle")).toBeHidden();
+  await expect
+    .poll(() => page.locator("video").evaluate((v) => v.paused))
+    .toBeTruthy();
+  const still = await pixels();
+  await page.waitForTimeout(200);
+  expect(await pixels()).toBe(still);
+});
+
+test("event photos, showcasing, and both mentoring projects are available", async ({
+  page,
+}) => {
+  await page.goto("/#community");
+  const photos = page.locator(".event-gallery img");
+  await expect(photos).toHaveCount(3);
+  await expect
+    .poll(() =>
+      photos.evaluateAll((images) =>
+        images.every((image) => image.complete && image.naturalWidth > 0),
+      ),
+    )
+    .toBeTruthy();
+  await expect(page.locator("#community")).toContainText(
+    "watsonx Orchestrate to clients",
+  );
+  await expect(page.locator("#community")).toContainText(
+    "watsonx.governance at The AI Summit London in 2025",
+  );
+  await expect(page.locator(".mentorship-panel")).toContainText(
+    "two groups of University of Nottingham",
+  );
+  await expect(
+    page.getByRole("link", { name: /Learning through VR/ }),
+  ).toHaveAttribute("href", /7196899451309805568/);
+  await expect(
+    page.getByRole("link", { name: /Security Crisis/ }),
+  ).toHaveAttribute("href", /7328587937892233216/);
+});
+
+test("result labels stay inside their own columns at every breakpoint", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  for (const project of ["themis", "billacord", "actionproof"]) {
+    await page.goto(`/${project}.html#results`);
+    await page.evaluate(() => document.fonts.ready);
+    for (const width of [2560, 1920, 1440, 1024, 768, 390, 320]) {
+      await page.setViewportSize({ width, height: 1000 });
+      const issues = await page
+        .locator(".presentation-result")
+        .evaluateAll((columns) =>
+          columns.flatMap((column) => {
+            const bounds = column.getBoundingClientRect();
+            return [...column.querySelectorAll("strong, p, .mono")].flatMap(
+              (element) => {
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                return [...range.getClientRects()]
+                  .filter(
+                    (rect) =>
+                      rect.left < bounds.left - 1 ||
+                      rect.right > bounds.right + 1,
+                  )
+                  .map(() => element.textContent);
+              },
+            );
+          }),
+        );
+      expect(issues, `${project} results at ${width}px`).toEqual([]);
+    }
+  }
 });
 
 test("project illustrations and labels stay separate at wide sizes and enlarged zoom", async ({

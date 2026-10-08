@@ -20,11 +20,12 @@ Open `http://127.0.0.1:4178`. The preview server binds to loopback only.
 - `site/content.json`: project descriptions, results, scope, and case-study content.
 - `site/index.html`: homepage content and structure.
 - `site/styles.css` and `site/app.js`: shared styling and progressive interactions.
+- `site/field.js`: the original canvas signal-field visual, loaded only on the homepage.
 - `tools/build.mjs`: common page layout, article content, metadata, and generation.
 - `tools/presentation.mjs`: project scenes, interactive architecture stages, and reading view.
 - `docs/assets/owen-le-resume.pdf`: the provided resume, served without alteration.
 - `docs/assets/social-card.png`: share preview image.
-- `docs/assets/media/`: compressed, silent ten-second demonstration clip from the supplied `owen.MP4`, plus a poster frame. The original source remains untouched. Playback is optional; the video pauses when it leaves the screen.
+- `docs/assets/media/`: compressed, silent ten-second demonstration clip from the supplied `owen.MP4`, plus a poster frame. The original source remains untouched. The video autoplays silently and loops while visible. It pauses off screen and for reduced-motion preferences. Event photographs are optimised WebP copies of the supplied originals.
 
 After editing source, run the build and commit both source and generated `docs/` changes. Existing homepage, projects, and notes URLs remain valid. Git history retains the previous design and long-form guide.
 
@@ -35,7 +36,7 @@ npx playwright install chromium
 npm test
 ```
 
-Tests cover project filters, mobile navigation, Escape and responsive resizing, presentation navigation and architecture stages, reading view and direct scene links, essential content without JavaScript, motion controls, PDF delivery, accessibility, page errors, and horizontal overflow at 320, 390, 768, 1024, 1440, and 1920 pixels. Illustration layout is also checked at 2560 pixels and enlarged zoom. `npm run check` checks local links, assets, fragments, unique IDs, headings, and template expansion. GitHub Actions repeats the build, generated-file consistency check, and browser tests on pushes and pull requests.
+Tests cover project filters, mobile navigation, Escape and responsive resizing, presentation navigation and architecture stages, reading view and direct scene links, essential content without JavaScript, automatic video looping, reduced-motion support, event photos and mentorship links, PDF delivery, accessibility, page errors, and horizontal overflow at 320, 390, 768, 1024, 1440, and 1920 pixels. Illustration layout is also checked at 2560 pixels and enlarged zoom. Result text is checked against its own column bounds across all three projects and seven screen widths. `npm run check` checks local links, assets, fragments, unique IDs, headings, and template expansion. GitHub Actions repeats the build, generated-file consistency check, and browser tests on pushes and pull requests.
 
 If using an existing Chrome installation locally, set `CHROME_PATH` to its executable before running the tests. GitHub Actions installs its own Chromium.
 
@@ -43,9 +44,9 @@ If using an existing Chrome installation locally, set `CHROME_PATH` to its execu
 
 Career history and Themis outcomes come from the supplied resume. Independent-project descriptions reflect current project documentation and implementation summaries. Prototype status and benchmark limitations are explicit in each case study. Illustrative product visuals are labelled. Private employer/product source code and datasets are not included. Billacord is the current working name; older project folders used ClauseTally and ReplyLedger.
 
-Additional background, developer enablement, selected learning, and the profile URL come from [Owen’s LinkedIn](https://www.linkedin.com/in/owen-le/). The speaking and workshops section is supported by [his IBM retrospective](https://www.linkedin.com/feed/update/urn:li:activity:7477268324196782081/). Resume dates and metrics remain the source for the career timeline and Themis results.
+Additional background, developer enablement, selected learning, and the profile URL come from [Owen’s LinkedIn](https://www.linkedin.com/in/owen-le/). The speaking and workshops section combines Owen’s explicit descriptions with [his IBM retrospective](https://www.linkedin.com/feed/update/urn:li:activity:7477268324196782081/). Birmingham photographs are from the user, with 2024 visible on the event backdrop. The London showcase is explicitly dated 2025 by Owen and has no incorrectly relabelled Birmingham photo. Mentoring covers two University of Nottingham final-year groups, with details and team reflections linked from [the immersive VR learning project](https://www.linkedin.com/posts/vuong-luu-nguyen-4510b4204_for-the-past-year-me-and-my-team-abdullah-ugcPost-7196899451309805568-Zqw8/) and [Security Crisis](https://www.linkedin.com/posts/alexgeoman_after-months-of-designing-coding-testing-ugcPost-7328587937892233216-oOb2/). These are credited as student-built projects. Resume dates and metrics remain the source for the career timeline and Themis results.
 
-Visual references supplied by Owen were [Abdalla Elradi](https://aelradi.engineer/) and [Yash Ahire](https://yashahire.info/). The portfolio uses original styling and motion: restrained card lighting, small perspective shifts, scene transitions, and the supplied personal video.
+Visual references supplied by Owen were [Abdalla Elradi](https://aelradi.engineer/) and [Yash Ahire](https://yashahire.info/). The portfolio uses original styling and motion: a luminous rotating signal field, a cinematic hero, perspective and lighting on project illustrations, scene transitions, interactive architecture illumination, and the supplied personal video. The canvas renders locally at a capped pixel density and about 30 frames per second, suspends off screen, and becomes static for reduced motion. No visible pause controls are shown, as requested.
 
 The watsonx Orchestrate note links to current IBM documentation instead of hard-coding installation versions, credentials, or UI procedures.
 
