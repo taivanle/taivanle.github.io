@@ -14,6 +14,7 @@
   let arrivalAnimation = null;
   let coverAnimation = null;
   let arrivalSource = null;
+  let entrySource = null;
 
   function read(key) {
     try {
@@ -28,16 +29,27 @@
     } catch {}
   }
   function previousPortfolioUrl() {
+    let previousEntry = null;
     try {
-      const value =
-        window.navigation?.activation?.from?.url ||
-        arrivalSource ||
-        document.referrer;
-      const url = value ? new URL(value) : null;
-      return url?.origin === location.origin ? url : null;
-    } catch {
-      return null;
+      const navigation = window.navigation;
+      const index = navigation?.currentEntry?.index;
+      if (index > 0)
+        previousEntry = navigation
+          .entries()
+          .find((entry) => entry.index === index - 1)?.url;
+    } catch {}
+    for (const value of [previousEntry, entrySource, document.referrer]) {
+      try {
+        const url = value ? new URL(value) : null;
+        // A reload's activation can point back to the very same project.
+        if (
+          url?.origin === location.origin &&
+          url.pathname !== location.pathname
+        )
+          return url;
+      } catch {}
     }
+    return null;
   }
   function destinationMatches(value) {
     try {
@@ -64,7 +76,9 @@
   }
   let incoming = consumeTransition();
   arrivalSource = incoming?.from || null;
-  let knownSource = Boolean(incoming);
+  // Preserve this history entry's source when a later cached return arrives.
+  entrySource = incoming?.from || document.referrer || null;
+  const knownSource = Boolean(incoming);
   // This state paints a solid dark cover before the external stylesheet arrives.
   if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
 
@@ -295,7 +309,6 @@
   window.addEventListener("pageshow", (event) => {
     if (!initialized || event.persisted) {
       incoming = incoming || consumeTransition();
-      if (incoming) knownSource = true;
       arrivalSource = incoming?.from || arrivalSource;
       const element = document.getElementById("navigation-cover");
       if (element) element.style.pointerEvents = "none";

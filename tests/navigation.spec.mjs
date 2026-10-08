@@ -1,5 +1,54 @@
 import { test, expect } from "@playwright/test";
 
+test("Escape unwinds chained projects and returns to Work", async ({
+  page,
+}) => {
+  await page.goto("/index.html#work");
+  await page
+    .getByRole("link", { name: "Read case study: Themis", exact: true })
+    .click();
+  await expect(page).toHaveURL(/themis.html$/);
+  await page
+    .getByRole("button", { name: "Scene 6: Perspective", exact: true })
+    .click();
+  await page.getByRole("link", { name: /Next project.*DueForm/ }).click();
+  await expect(page).toHaveURL(/dueform.html$/);
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/themis.html#perspective$/);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /^(entering|leaving)$/,
+  );
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/index.html#work$/);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /^(entering|leaving)$/,
+  );
+});
+
+test("Escape after a project reload still leaves the project", async ({
+  page,
+}) => {
+  await page.goto("/index.html#work");
+  await page
+    .getByRole("link", { name: "Read case study: Themis", exact: true })
+    .click();
+  await expect(page).toHaveURL(/themis.html$/);
+  await page.reload();
+  await page.keyboard.press("Escape");
+  await expect(page).toHaveURL(/index.html#work$/);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /^(entering|leaving)$/,
+  );
+  expect(
+    await page
+      .locator("body")
+      .evaluate((body) => getComputedStyle(body).backgroundColor),
+  ).toBe("rgb(12, 28, 26)");
+});
+
 test("Escape refreshes an older source page instead of restoring its cached scripts", async ({
   page,
 }) => {

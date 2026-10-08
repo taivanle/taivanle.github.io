@@ -313,6 +313,241 @@ async function outsideClick(page) {
   );
 }
 
+// This is explicit lifecycle simulation, not browser BFCache coverage. Keep the
+// actual departing DOM and navigation closure alive, then deliver the persisted
+// lifecycle events to their real listeners. Playwright disables browser BFCache.
+async function installPersistedLifecycleProbe(page, selector) {
+  return page.evaluate((selector) => {
+    const heading = document.querySelector(selector);
+    const state = {
+      document,
+      heading,
+      id: `${Date.now()}:${Math.random()}`,
+    };
+    window.__persistedLifecycleState = state;
+    const animationIds = new WeakMap();
+    let nextAnimationId = 0;
+    let running = false;
+    let frame;
+    function report(record) {
+      window
+        .__reportFlashProbe({
+          time: Date.now(),
+          href: location.href,
+          documentId: state.id,
+          ...record,
+        })
+        .catch(() => {});
+    }
+    function sample() {
+      if (!running) return;
+      const style = getComputedStyle(heading);
+      const rect = heading.getBoundingClientRect();
+      let opacity = 1;
+      let visible = rect.width > 0 && rect.height > 0;
+      for (let element = heading; element; element = element.parentElement) {
+        const ancestor = getComputedStyle(element);
+        opacity *= Number(ancestor.opacity);
+        if (
+          ancestor.display === "none" ||
+          ancestor.visibility !== "visible" ||
+          ancestor.contentVisibility === "hidden"
+        )
+          visible = false;
+      }
+      let clip = [0, 0, 0, 0];
+      let supportedClip = style.clipPath === "none";
+      const inset = /^inset\(([^)]*)\)$/.exec(style.clipPath);
+      if (inset) {
+        const values = inset[1]
+          .split(/\s+round\s+/)[0]
+          .trim()
+          .split(/\s+/);
+        const expanded =
+          values.length === 1
+            ? [values[0], values[0], values[0], values[0]]
+            : values.length === 2
+              ? [values[0], values[1], values[0], values[1]]
+              : values.length === 3
+                ? [values[0], values[1], values[2], values[1]]
+                : values;
+        if (expanded.length === 4) {
+          supportedClip = true;
+          clip = expanded.map(
+            (value, index) =>
+              parseFloat(value) *
+              (value.endsWith("%")
+                ? (index % 2 ? rect.width : rect.height) / 100
+                : 1),
+          );
+        }
+      }
+      const width = Math.max(
+        0,
+        Math.min(innerWidth, rect.right - clip[1]) -
+          Math.max(0, rect.left + clip[3]),
+      );
+      const height = Math.max(
+        0,
+        Math.min(innerHeight, rect.bottom - clip[2]) -
+          Math.max(0, rect.top + clip[0]),
+      );
+      const animations = heading
+        .getAnimations({ subtree: true })
+        .map((animation) => {
+          if (!animationIds.has(animation))
+            animationIds.set(animation, ++nextAnimationId);
+          return {
+            id: animationIds.get(animation),
+            currentTime: animation.currentTime,
+            state: animation.playState,
+          };
+        });
+      report({
+        kind: "lifecycle-heading",
+        opacity,
+        clipPath: style.clipPath,
+        supportedClip,
+        visibleFraction: visible
+          ? (width * height) / (rect.width * rect.height)
+          : 0,
+        scrollY,
+        animations,
+      });
+      frame = requestAnimationFrame(sample);
+    }
+    function start() {
+      if (running) return;
+      running = true;
+      sample();
+    }
+    document.addEventListener(
+      "animationstart",
+      (event) => {
+        if (event.target === heading || heading.contains(event.target))
+          report({
+            kind: "lifecycle-heading-start",
+            name: event.animationName,
+          });
+      },
+      true,
+    );
+    window.addEventListener("pagehide", (event) => {
+      report({
+        kind: "lifecycle-hide",
+        persisted: event.persisted,
+        trusted: event.isTrusted,
+      });
+      running = false;
+      cancelAnimationFrame(frame);
+    });
+    window.addEventListener("pageshow", (event) => {
+      report({
+        kind: "lifecycle-show",
+        persisted: event.persisted,
+        trusted: event.isTrusted,
+      });
+      start();
+    });
+    start();
+    return state.id;
+  }, selector);
+}
+
+async function assertPersistedHeading(page, records, firstRecord, documentId) {
+  const timeline = () => records.slice(firstRecord);
+  const settled = timeline().find(
+    (record) => record.kind === "transition" && record.phase === "settled",
+  );
+  await expect
+    .poll(
+      () =>
+        timeline()
+          .filter((record) => record.kind === "lifecycle-heading")
+          .at(-1)?.time - settled.time,
+      { timeout: 5000 },
+    )
+    .toBeGreaterThanOrEqual(2000);
+  const headings = timeline().filter(
+    (record) => record.kind === "lifecycle-heading",
+  );
+  const baselineIds = new Set(
+    records
+      .slice(0, firstRecord)
+      .filter((record) => record.kind === "lifecycle-heading")
+      .flatMap((record) => record.animations.map((animation) => animation.id)),
+  );
+  const newIds = new Set(
+    headings
+      .flatMap((record) => record.animations.map((animation) => animation.id))
+      .filter((id) => !baselineIds.has(id)),
+  );
+  const previousTimes = new Map();
+  let rewinds = 0;
+  for (const record of headings)
+    for (const animation of record.animations) {
+      if (typeof animation.currentTime !== "number") continue;
+      const previous = previousTimes.get(animation.id);
+      if (previous !== undefined && animation.currentTime < previous - 32)
+        rewinds++;
+      previousTimes.set(animation.id, animation.currentTime);
+    }
+  const invisible = headings.find(
+    (record) =>
+      record.documentId !== documentId ||
+      !record.supportedClip ||
+      record.opacity < 0.98 ||
+      record.visibleFraction < 0.98,
+  );
+  const starts = timeline().filter(
+    (record) => record.kind === "lifecycle-heading-start",
+  );
+  const scrollRange =
+    Math.max(...headings.map((record) => record.scrollY)) -
+    Math.min(...headings.map((record) => record.scrollY));
+  if (
+    invisible ||
+    starts.length ||
+    newIds.size ||
+    rewinds ||
+    scrollRange > 2 ||
+    headings.length < 20
+  ) {
+    await test.info().attach("persisted-lifecycle-heading.json", {
+      body: Buffer.from(
+        JSON.stringify(
+          { timeline: timeline(), newIds: [...newIds], rewinds, scrollRange },
+          null,
+          2,
+        ),
+      ),
+      contentType: "application/json",
+    });
+    await test.info().attach("persisted-lifecycle-heading.png", {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
+  }
+  expect(
+    headings.length,
+    "observe the same heading for two seconds",
+  ).toBeGreaterThanOrEqual(20);
+  expect(
+    invisible,
+    "the retained heading stays opaque, unclipped, and in view",
+  ).toBeUndefined();
+  expect(
+    starts,
+    "persisted pageshow must not replay its heading reveal",
+  ).toHaveLength(0);
+  expect(newIds.size, "no replacement heading animation").toBe(0);
+  expect(rewinds, "no heading animation restart").toBe(0);
+  expect(
+    scrollRange,
+    "no scroll jump after lifecycle restoration",
+  ).toBeLessThanOrEqual(2);
+}
+
 async function waitForDeckAnimations(page) {
   await expect
     .poll(
@@ -507,37 +742,170 @@ test.describe("flash regression", () => {
       );
     });
 
-    test(`${origin.name}: a BFCache return and repeated entry stay dark`, async ({
+    test(`${origin.name}: same-document persisted pageshow lifecycle and repeated entry stay dark`, async ({
       page,
     }) => {
+      await page.setViewportSize({ width: 1280, height: 900 });
       const records = await installProbe(page);
       await page.goto(origin.path);
+      await page.evaluate(() => document.fonts.ready);
       const project = projects[1];
-      await recordJourney(
+      const headingSelector =
+        origin.name === "landing Work" ? "#work-title" : ".page-hero h1";
+      const heading = page.locator(headingSelector);
+      await expect(heading).toBeVisible();
+      const documentId = await installPersistedLifecycleProbe(
         page,
-        records,
-        "first-open",
-        () => card(page, project).click(),
-        projectUrl(project),
-        ".presentation-deck",
+        headingSelector,
       );
-      const returned = await recordJourney(
+      await expect
+        .poll(
+          () =>
+            records
+              .filter((record) => record.kind === "lifecycle-heading")
+              .at(-1)?.visibleFraction,
+          { timeout: 8000 },
+        )
+        .toBeGreaterThanOrEqual(0.98);
+      await expect
+        .poll(() =>
+          heading.evaluate(
+            (element) =>
+              element
+                .getAnimations({ subtree: true })
+                .filter(
+                  (animation) =>
+                    animation.playState === "running" || animation.pending,
+                ).length,
+          ),
+        )
+        .toBe(0);
+      // Abort only the first real document navigation so the real leave() state,
+      // opaque cover and departing latch remain in this original document.
+      let abortedRequests = 0;
+      await page.route(
+        projectUrl(project),
+        async (route) => {
+          expect(route.request().isNavigationRequest()).toBe(true);
+          abortedRequests++;
+          await route.abort("aborted");
+        },
+        { times: 1 },
+      );
+      const firstRecord = records.length;
+      const restored = await recordJourney(
         page,
         records,
-        "cached-return",
-        () => page.keyboard.press("Escape"),
+        "synthetic-persisted-restore",
+        async () => {
+          await card(page, project).click({
+            position: { x: 40, y: 24 },
+            noWaitAfter: true,
+          });
+          await expect.poll(() => abortedRequests).toBe(1);
+          await expect(page).toHaveURL(origin.url);
+          const frozen = await page.evaluate(() => {
+            const state = window.__persistedLifecycleState;
+            const cover = document.getElementById("navigation-cover");
+            return {
+              sameDocument: state?.document === document,
+              sameHeading:
+                state?.heading ===
+                document.querySelector("#work-title, .page-hero h1"),
+              phase: document.documentElement.dataset.pageTransition,
+              coverReady: document.documentElement.dataset.coverReady,
+              opacity: cover && getComputedStyle(cover).opacity,
+              pointerEvents: cover && getComputedStyle(cover).pointerEvents,
+              marker: JSON.parse(
+                sessionStorage.getItem("portfolio-navigation-transition"),
+              ),
+            };
+          });
+          expect(frozen).toMatchObject({
+            sameDocument: true,
+            sameHeading: true,
+            phase: "leaving",
+            coverReady: "true",
+            opacity: "1",
+            pointerEvents: "auto",
+          });
+          expect(frozen.marker.from).toBe(page.url());
+          expect(frozen.marker.to).toMatch(projectUrl(project));
+          expect(frozen.marker.direction).toBe("open");
+          // Explicitly simulated persisted events are untrusted. No browser
+          // cache eligibility, freeze or restoration is claimed by this test.
+          await page.evaluate(() =>
+            window.dispatchEvent(
+              new PageTransitionEvent("pagehide", { persisted: true }),
+            ),
+          );
+          await page.waitForTimeout(80);
+          await page.evaluate((outgoing) => {
+            sessionStorage.setItem(
+              "portfolio-navigation-transition",
+              JSON.stringify({
+                ...outgoing,
+                from: outgoing.to,
+                to: outgoing.from,
+                direction: "close",
+                at: Date.now(),
+              }),
+            );
+            window.dispatchEvent(
+              new PageTransitionEvent("pageshow", { persisted: true }),
+            );
+          }, frozen.marker);
+        },
         origin.url,
         ".project-card",
       );
       expect(
-        returned.some(
+        abortedRequests,
+        "exactly one target document was prevented from replacing the source",
+      ).toBe(1);
+      expect(
+        restored.filter((record) => record.kind === "lifecycle-hide"),
+      ).toMatchObject([{ persisted: true, trusted: false, documentId }]);
+      expect(
+        restored.filter((record) => record.kind === "lifecycle-show"),
+      ).toMatchObject([{ persisted: true, trusted: false, documentId }]);
+      expect(
+        restored.some(
           (record) =>
-            record.kind === "pageshow" &&
-            record.persisted &&
-            origin.url.test(record.href),
+            record.kind === "transition" &&
+            record.phase === "entering" &&
+            record.direction === "close",
         ),
-        "this journey must exercise a real BFCache restore",
       ).toBe(true);
+      const cleanup = await page.evaluate(() => {
+        const state = window.__persistedLifecycleState;
+        const cover = document.getElementById("navigation-cover");
+        return {
+          documentId: state?.id,
+          sameDocument: state?.document === document,
+          sameHeading:
+            state?.heading ===
+            document.querySelector("#work-title, .page-hero h1"),
+          phase: document.documentElement.dataset.pageTransition || null,
+          coverReady: document.documentElement.dataset.coverReady || null,
+          marker: sessionStorage.getItem("portfolio-navigation-transition"),
+          opacity: cover && getComputedStyle(cover).opacity,
+          pointerEvents: cover && getComputedStyle(cover).pointerEvents,
+        };
+      });
+      expect(cleanup).toEqual({
+        documentId,
+        sameDocument: true,
+        sameHeading: true,
+        phase: null,
+        coverReady: null,
+        marker: null,
+        opacity: "0",
+        pointerEvents: "none",
+      });
+      await assertPersistedHeading(page, records, firstRecord, documentId);
+      // Normal navigation after the simulation must still work. A stale
+      // departing latch or blocking cover would prevent this repeated entry.
       await recordJourney(
         page,
         records,

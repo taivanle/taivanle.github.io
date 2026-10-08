@@ -14,7 +14,6 @@ export default defineConfig({
       use: {
         browserName: "chromium",
         launchOptions: {
-          ignoreDefaultArgs: ["--disable-back-forward-cache"],
           ...(process.env.CHROME_PATH
             ? { executablePath: process.env.CHROME_PATH }
             : {}),
