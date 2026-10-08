@@ -153,45 +153,6 @@ if (portraitVideo) {
 const responsiveMotion = window.matchMedia(
   "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
 );
-document
-  .querySelectorAll("[data-spotlight], .project-card, .presentation-deck")
-  .forEach((surface) => {
-    let frame;
-    surface.addEventListener(
-      "pointermove",
-      (event) => {
-        if (!responsiveMotion.matches) return;
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          const bounds = surface.getBoundingClientRect();
-          const x = event.clientX - bounds.left;
-          const y = event.clientY - bounds.top;
-          surface.style.setProperty("--light-x", `${x}px`);
-          surface.style.setProperty("--light-y", `${y}px`);
-          if (
-            surface.classList.contains("portrait-panel") ||
-            surface.classList.contains("project-card")
-          ) {
-            surface.style.setProperty(
-              "--tilt-x",
-              `${(0.5 - y / bounds.height) * 4}deg`,
-            );
-            surface.style.setProperty(
-              "--tilt-y",
-              `${(x / bounds.width - 0.5) * 4}deg`,
-            );
-          }
-        });
-      },
-      { passive: true },
-    );
-    surface.addEventListener("pointerleave", () => {
-      cancelAnimationFrame(frame);
-      surface.style.setProperty("--tilt-x", "0deg");
-      surface.style.setProperty("--tilt-y", "0deg");
-    });
-  });
-
 const animatedElements = document.querySelectorAll(
   ".project-card, .principles > div, .experience-row, .note-row, .speaking-feature, .summit-feature, .mentorship-panel",
 );

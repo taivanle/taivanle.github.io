@@ -106,9 +106,9 @@ p {
   line-height: 1.6;
 }
 .serif {
-  font-family: Georgia, "Times New Roman", serif;
-  font-style: italic;
-  font-weight: 400;
+  font-family: inherit;
+  font-style: normal;
+  font-weight: inherit;
   letter-spacing: -1.6px;
 }
 .icon {
@@ -256,10 +256,8 @@ p {
 }
 .hero h1 span {
   color: var(--green);
-  font-family: Georgia, serif;
-  font-weight: 400;
-  font-style: italic;
-  letter-spacing: -3.5px;
+  font: inherit;
+  letter-spacing: inherit;
 }
 .hero-description {
   max-width: 415px;
@@ -979,6 +977,9 @@ p {
 }
 .contact-section .serif {
   color: #d0e4b3;
+  font-family: Georgia, "Times New Roman", serif;
+  font-style: italic;
+  font-weight: 400;
 }
 .contact-copy {
   justify-self: end;
@@ -1487,58 +1488,9 @@ p {
   margin-top: 18px;
   font-size: 11px;
 }
-[data-spotlight]::after,
-.project-card::after,
-.presentation-deck::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  padding: 1px;
-  background: radial-gradient(
-    310px circle at var(--light-x, 50%) var(--light-y, 50%),
-    #a8c878,
-    transparent 70%
-  );
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 0.35s;
-  z-index: 3;
-}
 .presentation-deck,
 .project-card {
   position: relative;
-}
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  [data-spotlight]:hover::after,
-  .project-card:hover::after,
-  .presentation-deck:hover::after {
-    opacity: 1;
-  }
-  .portrait-panel {
-    transform: perspective(1100px) rotateX(var(--tilt-x, 0deg))
-      rotateY(var(--tilt-y, 0deg));
-    transition:
-      transform 0.35s ease-out,
-      box-shadow 0.35s;
-  }
-  .portrait-panel:hover {
-    box-shadow:
-      0 28px 70px -28px #173f3c88,
-      0 1px 0 #ffffff22 inset;
-  }
-}
-.motion-paused [data-spotlight]::after,
-.motion-paused .project-card::after,
-.motion-paused .presentation-deck::after {
-  opacity: 0;
-}
-.motion-paused .portrait-panel {
-  transform: none;
 }
 @media (max-width: 760px) {
   .portrait-heading {
@@ -2068,7 +2020,6 @@ html:not(.js) .stage-track {
   border: 1px solid #d4dfc9;
   border-radius: 7px;
   box-shadow: 0 8px 30px -24px #435f31;
-  backdrop-filter: blur(12px);
 }
 .js .presentation-navigation {
   display: flex;
@@ -3242,7 +3193,6 @@ html:not(.js) .stage-track {
   box-shadow:
     0 35px 80px #020b096b,
     0 1px 0 #d2edd833 inset;
-  backdrop-filter: blur(12px);
 }
 .panel-live {
   color: #b9d5c0;
@@ -3771,7 +3721,7 @@ html:not(.js) .stage-track {
   height: 100svh;
   z-index: -1;
   opacity: 0.62;
-  mask-image: linear-gradient(90deg, #0008, #000c 50%, #000);
+  mask-image: none;
 }
 .home-page .hero-scene {
   background: transparent;
@@ -3789,12 +3739,12 @@ html:not(.js) .stage-track {
   font-weight: 500;
 }
 .home-page .portrait-panel {
+  position: relative;
   border-radius: 9px;
   padding: 8px;
-  background: #0b201aba;
+  background: #0b201a;
   border: 1px solid #829d7977;
   box-shadow: 0 28px 55px #020b0966;
-  backdrop-filter: blur(5px);
   overflow: hidden;
 }
 .home-page .portrait-clip {
@@ -3873,7 +3823,7 @@ html:not(.js) .stage-track {
   }
   .home-page .hero-field {
     opacity: 0.42;
-    mask-image: linear-gradient(90deg, #0004, #000);
+    mask-image: none;
   }
   .home-page .impact-strip {
     padding-block: 0;
@@ -4632,47 +4582,47 @@ html:not(.js) .stage-track {
   }
 }
 
-/* Each chapter has a distinct tonal ground while the same field continues behind it. */
-.home-page .work-section {
-  background: linear-gradient(
-    180deg,
-    transparent,
-    #27302145 12%,
-    #27302145 88%,
-    transparent
-  );
-  border-block: 1px solid #94ab7a30;
+/* Angled seams and space define the chapters on one continuous ground. */
+.home-page .chapter-section {
+  background: transparent;
+  border: 0;
+  padding-block: 82px 100px;
 }
-.home-page .about-section {
-  padding-top: 70px;
-  background: linear-gradient(105deg, #14353170, #14353110 80%);
-  border-block: 1px solid #83ada830;
+.home-page .chapter-rule {
+  height: 32px;
+  margin-bottom: 64px;
 }
-.home-page .experience-section {
-  padding-block: 75px;
+.chapter-rule svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+}
+.chapter-rule path {
+  stroke: #91a58466;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.home-page .chapter-section h2 {
+  font-size: clamp(38px, 4.6vw, 62px);
+  font-weight: 500;
+  letter-spacing: -2px;
+  line-height: 1.12;
+}
+.home-page .impact-strip {
+  border-bottom: 0;
+}
+.home-page .about-grid {
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(45px, 6vw, 90px);
 }
 .home-page .community-section {
-  padding-block: 70px;
-  background: linear-gradient(105deg, #342f1c38, #342f1c10 80%);
-  border-block: 1px solid #b7a97c30;
+  margin-bottom: 0;
 }
-.home-page .notes-section {
-  padding-top: 30px;
+.home-page .section-heading {
+  margin-bottom: 48px;
 }
-.presentation-page .problem-scene {
-  background: #102c2a90;
-}
-.presentation-page .architecture-scene {
-  background: radial-gradient(ellipse at 80% 100%, #67894820, transparent 75%);
-}
-.presentation-page .build-scene {
-  background: #122a3480;
-}
-.presentation-page .results-scene {
-  background: radial-gradient(ellipse at 100% 0, #90713c22, transparent 75%);
-}
-.presentation-page .perspective-scene {
-  background: #25283a70;
+.presentation-page .scene {
+  background: transparent;
 }
 .js .event-slides {
   display: grid;
@@ -4688,12 +4638,19 @@ html:not(.js) .stage-track {
   --page-transition-duration: 900ms;
 }
 @media (max-width: 760px) {
-  .home-page .about-section {
-    padding-top: 45px;
+  .home-page .chapter-section {
+    padding-block: 42px 64px;
   }
-  .home-page .experience-section,
-  .home-page .community-section {
-    padding-block: 45px;
+  .home-page .chapter-rule {
+    height: 24px;
+    margin-bottom: 38px;
+  }
+  .home-page .about-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 42px;
+  }
+  .home-page .section-heading {
+    margin-bottom: 32px;
   }
 }
 @media print {

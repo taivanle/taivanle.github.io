@@ -797,3 +797,59 @@ test("the reflective sweep covers the full overview visual at every breakpoint",
     ).toBeTruthy();
   }
 });
+
+test("the background glow stays smooth across the space below the video frame", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const frame = await page.locator(".portrait-panel").boundingBox();
+  const y = frame.y + frame.height + 40;
+  for (const edge of [frame.x, frame.x + frame.width]) {
+    await page.mouse.move(edge === frame.x ? edge + 90 : edge - 90, y);
+    await expect
+      .poll(() =>
+        page.locator(".hero-field").evaluate(
+          (canvas, point) => {
+            const ratio = canvas.width / innerWidth;
+            const pixels = canvas
+              .getContext("2d")
+              .getImageData(point.x * ratio, point.y * ratio, 1, 1).data;
+            return (pixels[1] * pixels[3]) / 255;
+          },
+          { x: edge, y },
+        ),
+      )
+      .toBeGreaterThan(10);
+    const screenshot = await page.screenshot();
+    const jump = await page.evaluate(
+      async ({ bytes, edge, y }) => {
+        const image = await createImageBitmap(
+          new Blob([Uint8Array.from(bytes)], { type: "image/png" }),
+        );
+        const canvas = new OffscreenCanvas(image.width, image.height);
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0);
+        const green = (x) => {
+          const pixels = context.getImageData(
+            Math.floor(x),
+            Math.floor(y - 6),
+            8,
+            12,
+          ).data;
+          let total = 0;
+          for (let i = 1; i < pixels.length; i += 4) total += pixels[i];
+          return total / (pixels.length / 4);
+        };
+        const difference = Math.abs(green(edge - 12) - green(edge + 4));
+        image.close();
+        return difference;
+      },
+      { bytes: [...screenshot], edge, y },
+    );
+    expect(
+      jump,
+      `No rectangular light boundary below the frame at x=${edge}`,
+    ).toBeLessThan(8);
+  }
+});
