@@ -407,6 +407,20 @@ for (const project of ["themis", "dueform", "actifact"]) {
         expect(fit.bottom).toBeLessThanOrEqual(height);
         expect(fit.page).toBeLessThanOrEqual(height);
         const deck = await page.locator(".presentation-deck").boundingBox();
+        if (scene === 0 && width === 320 && height === 667) {
+          const menu = page.getByRole("button", { name: "Menu", exact: true });
+          await menu.click();
+          await expect(page.locator("#navigation")).toBeVisible();
+          const glass = await page.locator(".site-header").boundingBox();
+          const navBounds = await page.locator("#navigation").boundingBox();
+          expect(navBounds.y + navBounds.height).toBeLessThanOrEqual(
+            glass.y + glass.height,
+          );
+          expect(
+            (await page.locator(".presentation-deck").boundingBox()).height,
+          ).toBeCloseTo(deck.height, 0);
+          await menu.click();
+        }
         for (const selector of [
           ".design-toggle",
           ".detail-toggle",

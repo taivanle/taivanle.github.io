@@ -4941,10 +4941,13 @@ html:not(.js) .stage-track {
     overflow: hidden;
   }
   .js .presentation-page:has(.presentation-mode) .site-header {
-    height: 68px;
+    position: fixed;
+    inset: 12px 0 auto;
+    margin: 0 auto;
   }
   .js .presentation-mode {
     height: calc(100dvh - 88px);
+    margin-top: 88px;
     padding: 0 0 10px;
     display: grid;
     grid-template-rows: 54px minmax(0, 1fr);
@@ -5129,10 +5132,11 @@ html:not(.js) .stage-track {
 }
 @media screen and (max-width: 760px) {
   .js .presentation-page:has(.presentation-mode) .site-header {
-    height: 57px;
+    top: 10px;
   }
   .js .presentation-mode {
     height: calc(100dvh - 73px);
+    margin-top: 73px;
     grid-template-rows: 49px minmax(0, 1fr);
   }
   .js .presentation-mode .presentation-topbar {
