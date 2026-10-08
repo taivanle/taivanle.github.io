@@ -1008,13 +1008,15 @@ test("Birmingham photos advance slowly, pause during interaction, and respect re
   await expect(buttons.nth(1)).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("[data-event-status]")).toBeEmpty();
   await gallery.hover();
-  await page.clock.runFor(15000);
+  // During a pause, fire any wrongly armed timer without replaying every
+  // background animation frame across fifteen seconds of simulated time.
+  await page.clock.fastForward(15000);
   await expect(buttons.nth(1)).toHaveAttribute("aria-pressed", "true");
   await page.mouse.move(10, 120);
   await page.clock.runFor(8200);
   await expect(buttons.nth(2)).toHaveAttribute("aria-pressed", "true");
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.clock.runFor(15000);
+  await page.clock.fastForward(15000);
   await expect(buttons.nth(2)).toHaveAttribute("aria-pressed", "true");
   await buttons.nth(0).click();
   await expect(buttons.nth(0)).toHaveAttribute("aria-pressed", "true");
