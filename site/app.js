@@ -1,44 +1,5 @@
 document.documentElement.classList.add("js");
 
-const projectRoute = /\/(?:themis|dueform|actifact)\.html$/;
-function previousPortfolioUrl() {
-  try {
-    const value =
-      window.navigation?.activation?.from?.url ||
-      sessionStorage.getItem("portfolio-previous-url") ||
-      document.referrer;
-    const url = value ? new URL(value) : null;
-    return url?.origin === location.origin ? url : null;
-  } catch {
-    return null;
-  }
-}
-function setReturnTransition() {
-  const previous = previousPortfolioUrl();
-  document.documentElement.classList.toggle(
-    "project-return",
-    Boolean(
-      previous &&
-      projectRoute.test(previous.pathname) &&
-      !projectRoute.test(location.pathname),
-    ),
-  );
-}
-setReturnTransition();
-window.addEventListener("pagereveal", (event) => {
-  setReturnTransition();
-  event.viewTransition?.finished
-    .finally(() => document.documentElement.classList.remove("project-return"))
-    .catch(() => {});
-});
-window.addEventListener("pagehide", () => {
-  try {
-    sessionStorage.setItem("portfolio-previous-url", location.href);
-  } catch {
-    /* Navigation works when session storage is unavailable. */
-  }
-});
-
 const menuButton = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#navigation");
 function closeMenu() {
@@ -753,52 +714,6 @@ if (presentation) {
     }
   });
   setReading(readAll);
-}
-
-if (presentation) {
-  let returning = false;
-  const returnToPreviousPage = () => {
-    if (returning) return;
-    returning = true;
-    const previous = previousPortfolioUrl();
-    if (
-      previous &&
-      /\/(?:index\.html|projects\.html|themis\.html|dueform\.html|actifact\.html)?$/.test(
-        previous.pathname,
-      ) &&
-      history.length > 1
-    )
-      history.back();
-    else location.assign("index.html#work");
-  };
-  document.addEventListener("click", (event) => {
-    if (
-      event.button !== 0 ||
-      event.defaultPrevented ||
-      window.getSelection()?.toString()
-    )
-      return;
-    if (
-      event.target.closest(
-        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, .contact-section, a, button",
-      )
-    )
-      return;
-    returnToPreviousPage();
-  });
-  document.addEventListener("keydown", (event) => {
-    if (
-      event.key !== "Escape" ||
-      event.defaultPrevented ||
-      event.target.closest("input, textarea, select, [contenteditable]")
-    )
-      return;
-    if (menuButton?.getAttribute("aria-expanded") === "true") return;
-    returnToPreviousPage();
-  });
-  window.addEventListener("pageshow", () => {
-    returning = false;
-  });
 }
 
 // A soft light follows the pointer only after mouse movement.

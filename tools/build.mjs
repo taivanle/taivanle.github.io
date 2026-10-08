@@ -20,6 +20,10 @@ const assetVersions = Object.fromEntries(
     ]),
   ),
 );
+const navigationScript = await readFile(
+  path.join(root, "site/navigation.js"),
+  "utf8",
+);
 const escape = (value) =>
   String(value)
     .replaceAll("&", "&amp;")
@@ -57,6 +61,8 @@ function page(
   );
   const ambient = home || isPresentation || file === "projects.html";
   const bodyClass = `${home ? "home-page" : isPresentation ? "presentation-page" : file === "projects.html" ? "projects-page" : "content-page"}${ambient ? " ambient-page" : ""}`;
+  const pageBackground = ambient ? "#0c1c1a" : "#f7f8f2";
+  const criticalStyle = `<style>html{--page-background:${pageBackground};background:var(--page-background);color-scheme:${ambient ? "dark" : "light"}}body{background:var(--page-background)}</style>`;
   const canonical = `https://taivanle.github.io/${file === "index.html" ? "" : file}`;
   const ld = home
     ? {
@@ -88,7 +94,7 @@ function page(
         },
       };
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="${ambient ? "dark" : "light"}"><title>${escape(title)}${home ? "" : " — Owen Le"}</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${canonical}">`}<meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="${home ? "website" : "article"}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied Artificial Intelligence Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=${assetVersions["styles.css"]}"><script src="assets/app.js?v=${assetVersions["app.js"]}" defer></script>${ambient ? `<script src="assets/field.js?v=${assetVersions["field.js"]}" defer></script>` : ""}<script type="application/ld+json">${JSON.stringify(ld).replaceAll("<", "\\u003c")}</script></head><body class="${bodyClass}">${ambient ? '<canvas class="hero-field" aria-hidden="true"></canvas>' : ""}<div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div>${navigation(home)}${content}${isPresentation ? "" : footer()}</body></html>\n`;
+<html lang="en"><head><meta charset="utf-8">${criticalStyle}<script>${navigationScript}</script><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="${ambient ? "dark" : "light"}"><title>${escape(title)}${home ? "" : " — Owen Le"}</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${canonical}">`}<meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="${home ? "website" : "article"}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied Artificial Intelligence Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=${assetVersions["styles.css"]}"><script src="assets/app.js?v=${assetVersions["app.js"]}" defer></script>${ambient ? `<script src="assets/field.js?v=${assetVersions["field.js"]}" defer></script>` : ""}<script type="application/ld+json">${JSON.stringify(ld).replaceAll("<", "\\u003c")}</script></head><body class="${bodyClass}">${ambient ? '<canvas class="hero-field" aria-hidden="true"></canvas>' : ""}<div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div>${navigation(home)}${content}${isPresentation ? "" : footer()}</body></html>\n`;
 }
 
 function visual(project, index) {
