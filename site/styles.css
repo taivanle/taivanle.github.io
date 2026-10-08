@@ -3272,174 +3272,6 @@ html:not(.js) .stage-track {
 .hero-scene .portrait-clip figcaption {
   background: #19372c;
 }
-.community-section {
-  padding: 65px 0 80px;
-  background: #edf1e7;
-  margin-bottom: 75px;
-  border-block: 1px solid var(--line);
-}
-.community-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 55px;
-  align-items: center;
-}
-.event-gallery figure {
-  margin: 0;
-}
-.event-feature {
-  border: 1px solid #c4d0bb;
-  border-radius: 9px;
-  overflow: hidden;
-  background: #f7f8f2;
-}
-.event-gallery a {
-  display: block;
-  overflow: hidden;
-}
-.event-gallery img {
-  width: 100%;
-  display: block;
-  object-fit: cover;
-  transition: transform 0.7s ease;
-}
-.event-gallery a:hover img {
-  transform: scale(1.035);
-}
-.event-feature img {
-  aspect-ratio: 16 / 11;
-  object-position: center 48%;
-}
-.event-feature figcaption {
-  padding: 17px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--muted);
-}
-.event-feature .mono {
-  font-size: 8px;
-  color: var(--green);
-}
-.event-photo-pair {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-  margin-top: 14px;
-}
-.event-photo-pair a {
-  border-radius: 6px;
-}
-.event-photo-pair img {
-  aspect-ratio: 16 / 11;
-}
-.event-photo-pair figcaption {
-  font-size: 10px;
-  margin-top: 8px;
-  color: var(--muted);
-}
-.event-story {
-  border-top: 1px solid #bccbb1;
-  padding: 27px 0;
-}
-.event-story .eyebrow {
-  font-size: 9px;
-  margin-bottom: 17px;
-}
-.event-story h3 {
-  font-size: 27px;
-  letter-spacing: -0.8px;
-  font-weight: 550;
-}
-.event-story p:not(.eyebrow) {
-  font-size: 13px;
-  margin-top: 17px;
-  line-height: 1.85;
-}
-.event-story p strong {
-  font-weight: 600;
-  color: var(--ink);
-}
-.event-detail {
-  display: block;
-  font-family: var(--mono);
-  font-size: 9px;
-  color: var(--green);
-  margin-top: 18px;
-}
-.event-stories > .text-link {
-  font-size: 11px;
-  margin-top: 8px;
-}
-.mentorship-panel {
-  position: relative;
-  isolation: isolate;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: 0.9fr 1.1fr;
-  gap: 60px;
-  padding: 38px;
-  margin-top: 43px;
-  background: #1b352b;
-  color: #eaf2e2;
-  border: 1px solid #7b9670;
-  border-radius: 9px;
-}
-.mentorship-panel .eyebrow {
-  color: #bdd7aa;
-  font-size: 9px;
-}
-.mentorship-intro h3 {
-  font-size: 36px;
-  letter-spacing: -1px;
-  font-weight: 500;
-}
-.mentorship-intro p:not(.eyebrow) {
-  color: #ccd9c3;
-  font-size: 12px;
-  margin-top: 21px;
-  line-height: 1.85;
-}
-.student-projects {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-.student-projects a {
-  display: block;
-  padding-top: 17px;
-  border-top: 1px solid #61735c;
-}
-.student-projects .mono {
-  color: #bdd7aa;
-  font-size: 8px;
-}
-.student-projects h4 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 18px;
-  font-weight: 550;
-  margin: 9px 0;
-}
-.student-projects p {
-  color: #ccd9c3;
-  font-size: 11px;
-  line-height: 1.8;
-}
-.student-link {
-  display: block;
-  color: #d5e7ae;
-  font-size: 10px;
-  margin-top: 12px;
-}
-.student-projects a:hover h4 {
-  color: #d5e7ae;
-}
-.mentorship-panel :focus-visible {
-  outline-color: #d5e7ae;
-}
 .presentation-result {
   min-width: 0;
 }
@@ -3842,89 +3674,49 @@ html:not(.js) .stage-track {
   box-shadow: 0 25px 45px -14px #0008;
 }
 
-/* The pointer follower uses one small ring and stays clear of content and clicks. */
+/* A translucent glass point: no ring, caption, or trailing particles. */
 .cursor-tracker {
   display: none;
   position: fixed;
   left: 0;
   top: 0;
-  width: 0;
-  height: 0;
+  width: 15px;
+  height: 15px;
   z-index: 100;
   pointer-events: none;
   opacity: 0;
-  mix-blend-mode: difference;
-  transition: opacity 0.2s;
-}
-.cursor-ring {
-  position: absolute;
-  left: -17px;
-  top: -17px;
-  width: 34px;
-  height: 34px;
-  border: 1px solid #c9edb7;
   border-radius: 50%;
+  background:
+    radial-gradient(circle at 30% 25%, #f1fff5 0, #f1fff500 45%), #a5dfbfa6;
+  box-shadow:
+    0 0 14px #9bdcba38,
+    0 1px 3px #081f1c55;
+  backdrop-filter: blur(2px);
   transition:
-    width 0.25s,
-    height 0.25s,
-    left 0.25s,
-    top 0.25s,
-    background 0.25s,
-    transform 0.15s;
-}
-.cursor-dot {
-  position: absolute;
-  left: -2px;
-  top: -2px;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: #c9edb7;
-  transition: opacity 0.2s;
-}
-.cursor-caption {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  left: -30px;
-  top: -30px;
-  display: grid;
-  place-items: center;
-  font-family: var(--mono);
-  font-size: 8px;
-  letter-spacing: 1px;
-  color: #e7ffd3;
-  opacity: 0;
-  transition: opacity 0.2s;
+    opacity 0.15s,
+    width 0.2s,
+    height 0.2s,
+    background-color 0.2s;
 }
 .cursor-tracker.is-visible {
   opacity: 1;
 }
-.cursor-tracker.is-link .cursor-ring {
-  width: 44px;
-  height: 44px;
-  left: -22px;
-  top: -22px;
-  background: #c9edb710;
+.cursor-tracker.is-link {
+  width: 24px;
+  height: 24px;
+  background-color: #c5eaa57a;
 }
-.cursor-tracker.is-project .cursor-ring {
-  width: 60px;
-  height: 60px;
-  left: -30px;
-  top: -30px;
-}
-.cursor-tracker.is-project .cursor-dot {
-  opacity: 0;
-}
-.cursor-tracker.is-project .cursor-caption {
-  opacity: 1;
-}
-.cursor-tracker.is-pressed .cursor-ring {
-  transform: scale(0.85);
+.cursor-tracker.is-pressed {
+  width: 11px;
+  height: 11px;
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .js .cursor-tracker {
     display: block;
+  }
+  .cursor-active,
+  .cursor-active * {
+    cursor: none !important;
   }
 }
 @media (max-width: 1100px) {
@@ -4016,7 +3808,7 @@ html:not(.js) .stage-track {
 }
 
 /* One continuous canvas, with content placed directly on the page. */
-.home-page {
+.ambient-page {
   --paper: #0c1c1a;
   --ink: #e9efe6;
   --muted: #afc1b3;
@@ -4026,7 +3818,7 @@ html:not(.js) .stage-track {
   color: var(--ink);
   isolation: isolate;
 }
-.home-page .hero-field {
+.ambient-page .hero-field {
   position: fixed;
   inset: 0;
   width: 100%;
@@ -4099,65 +3891,6 @@ html:not(.js) .stage-track {
 }
 .home-page .experience-section {
   padding-top: 60px;
-}
-.home-page .community-section {
-  border: 0;
-  padding-top: 40px;
-  padding-bottom: 60px;
-  margin-bottom: 50px;
-}
-.home-page .community-grid {
-  align-items: start;
-  gap: 50px;
-}
-.home-page .event-feature {
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-}
-.home-page .event-feature img {
-  aspect-ratio: 3 / 2;
-}
-.home-page .event-photo-pair {
-  gap: 16px;
-  margin-top: 16px;
-}
-.home-page .event-photo-pair a {
-  border-radius: 4px;
-}
-.home-page .event-photo-pair img {
-  aspect-ratio: 4 / 3;
-}
-.home-page .event-story {
-  border-color: var(--line);
-  padding: 24px 0;
-}
-.home-page .event-story .eyebrow {
-  color: #bfd6a9;
-}
-.home-page .event-story:first-child {
-  padding-top: 0;
-  border-top: 0;
-}
-.home-page .event-stories > .text-link {
-  margin-top: 15px;
-}
-.home-page .mentorship-panel {
-  padding: 32px 0 0;
-  border: 0;
-  border-radius: 0;
-  border-top: 1px solid var(--line);
-  background: transparent;
-  gap: 60px;
-}
-.home-page .mentorship-panel::after {
-  display: none;
-}
-.home-page .student-projects a {
-  border-color: var(--line);
-}
-.home-page .mentorship-intro h3 {
-  font-size: 31px;
 }
 .home-page .notes-section {
   padding-bottom: 80px;
@@ -4383,6 +4116,505 @@ html:not(.js) .stage-track {
   .card-meta .card-status,
   .card-copy .eyebrow,
   .card-caption {
+    color: #286448;
+  }
+}
+
+/* Speaking is an editorial feature, followed by two distinct experience rows. */
+.home-page .community-section {
+  padding: 45px 0 65px;
+  margin-bottom: 35px;
+  border: 0;
+}
+.community-section .section-heading {
+  margin-bottom: 48px;
+}
+.speaking-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: clamp(35px, 6vw, 80px);
+  align-items: center;
+}
+.event-slides {
+  display: grid;
+  gap: 18px;
+}
+.event-gallery figure {
+  margin: 0;
+}
+.event-gallery a {
+  display: block;
+  overflow: hidden;
+  border-radius: 5px;
+}
+.event-gallery img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+.event-gallery a:hover img {
+  transform: none;
+}
+.event-thumbnails {
+  display: none;
+  gap: 10px;
+  margin-top: 12px;
+}
+.js .event-thumbnails {
+  display: flex;
+}
+.event-thumbnails button {
+  width: 78px;
+  aspect-ratio: 4 / 3;
+  padding: 0;
+  background-color: #193529;
+  background-position: center;
+  background-size: cover;
+  border: 2px solid transparent;
+  border-radius: 3px;
+  opacity: 0.6;
+  transition:
+    opacity 0.25s,
+    border-color 0.25s;
+}
+.event-thumbnails button:hover,
+.event-thumbnails button[aria-pressed="true"] {
+  opacity: 1;
+}
+.event-thumbnails button[aria-pressed="true"] {
+  border-color: #d5e7ae;
+}
+.event-date {
+  font-size: 11px;
+  color: #b9cfa8;
+  margin-bottom: 20px;
+}
+.speaking-copy {
+  padding-bottom: 72px;
+}
+.speaking-copy h3 {
+  font-size: clamp(32px, 3.6vw, 48px);
+  letter-spacing: -1.6px;
+  font-weight: 500;
+  line-height: 1.15;
+}
+.speaking-copy > p:not(.event-date) {
+  font-size: 14px;
+  line-height: 1.9;
+  margin-top: 25px;
+  max-width: 390px;
+}
+.speaking-copy strong,
+.summit-feature strong {
+  font-weight: 500;
+  color: var(--ink);
+}
+.speaking-copy .text-link {
+  margin-top: 26px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.summit-feature {
+  display: grid;
+  grid-template-columns: 155px minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 35px;
+  align-items: start;
+  margin-top: 48px;
+  padding: 32px 0;
+  border-block: 1px solid var(--line);
+}
+.summit-feature .event-date {
+  margin: 4px 0 0;
+}
+.summit-feature h3 {
+  font-size: 25px;
+  font-weight: 500;
+  letter-spacing: -0.65px;
+  line-height: 1.35;
+}
+.summit-feature > p:not(.event-date) {
+  font-size: 13px;
+  line-height: 1.85;
+}
+.home-page .mentorship-panel {
+  display: grid;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 38px 0 0;
+  margin-top: 0;
+  gap: 60px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+}
+.mentorship-intro h3 {
+  font-size: 36px;
+  letter-spacing: -1.1px;
+  font-weight: 500;
+}
+.mentorship-intro p:not(.event-date) {
+  font-size: 13px;
+  color: var(--muted);
+  max-width: 335px;
+  margin-top: 20px;
+}
+.student-projects {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 30px;
+}
+.student-projects a {
+  border: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.student-projects h4 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 15px;
+  line-height: 1.35;
+  letter-spacing: -0.4px;
+}
+.student-projects h4 .icon {
+  width: 16px;
+  height: 16px;
+  margin-left: auto;
+}
+.student-projects p {
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+.student-link {
+  margin-top: auto;
+  padding-top: 21px;
+  color: var(--green);
+  font-size: 10px;
+}
+.student-projects a:hover .student-link {
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+@media (max-width: 1000px) {
+  .speaking-feature {
+    gap: 35px;
+  }
+  .summit-feature {
+    grid-template-columns: 110px minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 25px;
+  }
+  .home-page .mentorship-panel {
+    gap: 35px;
+  }
+  .student-projects {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 27px;
+  }
+  .student-projects a + a {
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+}
+@media (max-width: 760px) {
+  .home-page .community-section {
+    padding: 20px 0 40px;
+    margin-bottom: 20px;
+  }
+  .community-section .section-heading {
+    margin-bottom: 30px;
+  }
+  .speaking-feature {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+  .speaking-copy {
+    padding: 0;
+  }
+  .speaking-copy h3 {
+    font-size: 34px;
+  }
+  .speaking-copy h3 br {
+    display: none;
+  }
+  .speaking-copy > p:not(.event-date) {
+    margin-top: 18px;
+    font-size: 13px;
+  }
+  .speaking-copy .text-link {
+    margin-top: 20px;
+  }
+  .event-date {
+    margin-bottom: 14px;
+  }
+  .event-thumbnails button {
+    width: 66px;
+  }
+  .summit-feature {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    margin-top: 32px;
+    padding-block: 27px;
+  }
+  .summit-feature h3 {
+    font-size: 25px;
+  }
+  .summit-feature .event-date {
+    margin: 0;
+  }
+  .home-page .mentorship-panel {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+    padding-top: 27px;
+  }
+  .mentorship-intro h3 {
+    font-size: 32px;
+  }
+  .mentorship-intro p:not(.event-date) {
+    margin-top: 17px;
+  }
+  .student-projects {
+    gap: 24px;
+  }
+}
+
+/* The case-study deck belongs to the same dark, luminous portfolio. */
+.ambient-page {
+  color-scheme: dark;
+}
+.ambient-page .hero-field {
+  view-transition-name: signal-field;
+}
+.ambient-page :focus-visible {
+  outline-color: #d5e7ae;
+}
+.ambient-page .contact-section {
+  background: transparent;
+  border-color: var(--line);
+}
+.ambient-page .footer-inner {
+  border-color: var(--line);
+}
+.presentation-page .hero-field {
+  opacity: 0.4;
+}
+.presentation-page .presentation-topbar {
+  padding-block: 28px;
+}
+.presentation-page .presentation-topbar h1 {
+  font-weight: 500;
+}
+.presentation-page .reading-toggle:hover {
+  background: #a5c58b14;
+}
+.presentation-page .presentation-deck {
+  background: #10241ceb;
+  border-color: #78916b88;
+  border-radius: 9px;
+  box-shadow: 0 24px 65px -25px #0006;
+}
+.presentation-page .scene::before {
+  background: radial-gradient(circle at 95% 5%, #7da16818, transparent 55%);
+}
+.presentation-page .problem-scene {
+  background: transparent;
+}
+.presentation-page .scene-tags span {
+  background: transparent;
+  border-color: var(--line);
+  color: #c0d4b2;
+}
+.presentation-page .intro-visual {
+  border-color: var(--line);
+  background: #081a1680;
+}
+.presentation-page .intro-visual::after {
+  background: linear-gradient(90deg, transparent, #c5f1d616, transparent);
+}
+.presentation-page .project-visual {
+  background: transparent;
+}
+.presentation-page .visual-index,
+.presentation-page .visual-note {
+  color: #b3c8a8;
+}
+.presentation-page .benchmark-window,
+.presentation-page .invoice-window,
+.presentation-page .verification-window {
+  background: #193529;
+  border-color: #79946c99;
+  color: #e9efe6;
+  box-shadow: 0 16px 32px -18px #0009;
+}
+.presentation-page .window-top,
+.presentation-page .cost-result,
+.presentation-page .invoice-line,
+.presentation-page .verification-row {
+  border-color: #8da77c40;
+}
+.presentation-page .cost-row .bar {
+  background: #789575;
+}
+.presentation-page .cost-row.is-themis .bar {
+  background: #d5e7ae;
+}
+.presentation-page .invoice-line.difference {
+  background: #90734425;
+  color: #ebca91;
+}
+.presentation-page .focus-stack,
+.presentation-page .focus-stack > div {
+  border-color: var(--line);
+}
+.presentation-page .focus-stack .mono,
+.presentation-page .stage-number,
+.presentation-page .stage-panel .mono,
+.presentation-page .build-number,
+.presentation-page .presentation-result .mono {
+  color: #b9cfa8;
+}
+.presentation-page .focus-signal {
+  background: #bed5a7;
+  box-shadow: 0 0 0 5px #78916b22;
+}
+.presentation-page .stage-track::before {
+  background: #78916b66;
+}
+.presentation-page .stage-track::after {
+  background: #c5e5a6;
+  box-shadow: 0 0 12px #97bc6655;
+}
+.presentation-page .stage-button {
+  background: #0e2219;
+  border-color: #81977066;
+  color: var(--ink);
+}
+.presentation-page .stage-button:hover {
+  border-color: #b8d59a;
+}
+.presentation-page .stage-button.is-selected {
+  background: #28432a;
+  border-color: #c5e5a6;
+  color: #f1f4e8;
+  box-shadow: 0 0 25px -12px #a1cf6670;
+}
+.presentation-page .stage-button.is-selected .stage-number {
+  color: #d5e7ae;
+}
+.presentation-page .stage-panels {
+  background: #9cbc7310;
+  border-left-color: #b8d59a;
+}
+.presentation-page .build-item {
+  background: transparent;
+  border-color: var(--line);
+}
+.presentation-page .results-context {
+  background: #9cbc7310;
+  border-color: var(--line);
+}
+.presentation-page .perspective-scene blockquote {
+  color: #d5e7ae;
+}
+.presentation-page .presentation-navigation {
+  background: #0e241cf5;
+  border-color: #78916b88;
+  box-shadow: 0 8px 30px -14px #0008;
+}
+.presentation-page .scene-prev,
+.presentation-page .scene-next {
+  background: #1f3828;
+  border-color: #78916b77;
+}
+.presentation-page .scene-prev:hover:not(:disabled),
+.presentation-page .scene-next:hover:not(:disabled) {
+  background: #395336;
+}
+.presentation-page .scene-menu button,
+.presentation-page .scene-counter span {
+  color: #b5c7ae;
+}
+.presentation-page .scene-menu button > span:first-child {
+  border-color: #78916b77;
+}
+.presentation-page .scene-menu button[aria-current] {
+  color: #e9efe6;
+}
+.presentation-page .scene-menu button[aria-current] > span:first-child {
+  background: #d5e7ae;
+  border-color: #d5e7ae;
+  color: #163021;
+}
+
+/* Browser-native transitions preserve the header, background, and project frame. */
+@view-transition {
+  navigation: auto;
+}
+.site-header {
+  view-transition-name: site-header;
+}
+::view-transition-group(*) {
+  animation-duration: 420ms;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+::view-transition-old(root) {
+  animation: page-depart 180ms ease-out both;
+}
+::view-transition-new(root) {
+  animation: page-arrive 280ms ease-out both;
+}
+@keyframes page-depart {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes page-arrive {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+@media print {
+  .ambient-page {
+    --ink: #1d3028;
+    --muted: #5c6962;
+    --green: #286448;
+    --line: #dce1d6;
+    color-scheme: light;
+    background: white;
+  }
+  .ambient-page .hero-field,
+  .event-thumbnails {
+    display: none !important;
+  }
+  .speaking-feature,
+  .summit-feature,
+  .home-page .mentorship-panel {
+    break-inside: avoid;
+  }
+  .presentation-page .presentation-deck,
+  .presentation-page .scene,
+  .presentation-page .stage-panels,
+  .presentation-page .build-item,
+  .presentation-page .results-context {
+    background: white;
+    box-shadow: none;
+  }
+  .presentation-page .scene::before {
+    display: none;
+  }
+  .presentation-page .focus-stack .mono,
+  .presentation-page .stage-number,
+  .presentation-page .stage-panel .mono,
+  .presentation-page .build-number,
+  .presentation-page .presentation-result .mono,
+  .presentation-page .perspective-scene blockquote {
     color: #286448;
   }
 }

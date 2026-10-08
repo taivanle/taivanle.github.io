@@ -245,13 +245,31 @@ test("event photos, showcasing, and both mentoring projects are available", asyn
   await page.goto("/#community");
   const photos = page.locator(".event-gallery img");
   await expect(photos).toHaveCount(3);
-  await expect
-    .poll(() =>
-      photos.evaluateAll((images) =>
-        images.every((image) => image.complete && image.naturalWidth > 0),
-      ),
-    )
-    .toBeTruthy();
+  const buttons = page.locator("[data-event-select]");
+  for (let index = 0; index < 3; index++) {
+    await buttons.nth(index).click();
+    await expect(buttons.nth(index)).toHaveAttribute("aria-pressed", "true");
+    await expect(photos.nth(index)).toBeVisible();
+    await expect
+      .poll(() =>
+        photos
+          .nth(index)
+          .evaluate((image) => image.complete && image.naturalWidth > 0),
+      )
+      .toBeTruthy();
+    await expect(page.locator("[data-event-photo]:visible")).toHaveCount(1);
+    const background = await buttons
+      .nth(index)
+      .evaluate((button) => getComputedStyle(button).backgroundImage);
+    expect(background).not.toContain("assets/assets");
+  }
+  await expect(page.locator(".event-gallery figcaption")).toHaveCount(0);
+  await buttons.nth(0).click();
+  await buttons.nth(1).press("Enter");
+  await expect(photos.nth(1)).toBeVisible();
+  await expect(page.locator("[data-event-status]")).toContainText(
+    "Photo 2 of 3",
+  );
   await expect(page.locator("#community")).toContainText(
     "watsonx Orchestrate to clients",
   );
@@ -314,7 +332,7 @@ test("the cursor follower responds to project hover without blocking navigation"
   await project.scrollIntoViewIfNeeded();
   await project.hover();
   await expect(page.locator(".cursor-tracker")).toHaveClass(/is-visible/);
-  await expect(page.locator(".cursor-tracker")).toHaveClass(/is-project/);
+  await expect(page.locator(".cursor-tracker")).toHaveClass(/is-link/);
   await project.click();
   await expect(page).toHaveURL(/themis.html$/);
   await expect(
@@ -331,6 +349,7 @@ test("the cursor follower stays hidden for reduced motion and touch", async ({
   await expect(page.locator(".cursor-tracker")).toHaveClass(/is-visible/);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator(".cursor-tracker")).toBeHidden();
+  await expect(page.locator("html")).not.toHaveClass(/cursor-active/);
   const context = await browser.newContext({
     hasTouch: true,
     isMobile: true,
@@ -480,3 +499,46 @@ for (const file of pages) {
     expect(problems).toEqual([]);
   });
 }
+
+test("project cards continue into a matching dark presentation with native page transitions", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.addEventListener("pagereveal", (event) => {
+      window.projectPageTransition = Boolean(event.viewTransition);
+    });
+  });
+  await page.goto("/");
+  const card = page.locator('.project-card[data-category="ai"] .card-frame');
+  const frameName = await card.evaluate(
+    (frame) => getComputedStyle(frame).viewTransitionName,
+  );
+  await page
+    .getByRole("link", { name: "Read case study: Themis", exact: true })
+    .click();
+  await expect(page).toHaveURL(/themis.html$/);
+  await expect(page.locator(".presentation-deck")).toBeVisible();
+  expect(
+    await page
+      .locator(".presentation-deck")
+      .evaluate((deck) => getComputedStyle(deck).viewTransitionName),
+  ).toBe(frameName);
+  await expect
+    .poll(() => page.evaluate(() => window.projectPageTransition))
+    .toBe(true);
+  expect(
+    await page
+      .locator("body")
+      .evaluate((body) => getComputedStyle(body).backgroundColor),
+  ).toBe("rgb(12, 28, 26)");
+  await expect(page.locator(".hero-field")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Scene 3: Architecture", exact: true })
+    .click();
+  await expect(page.locator("#architecture")).toBeVisible();
+  await page.getByRole("link", { name: "Selected work", exact: true }).click();
+  await expect(page).toHaveURL(/index.html#work$/);
+  await expect(
+    page.getByRole("link", { name: "Read case study: Themis", exact: true }),
+  ).toBeVisible();
+});

@@ -153,7 +153,7 @@ document
   });
 
 const animatedElements = document.querySelectorAll(
-  ".project-card, .principles > div, .experience-row, .note-row, .event-story, .event-gallery, .mentorship-panel",
+  ".project-card, .principles > div, .experience-row, .note-row, .speaking-feature, .summit-feature, .mentorship-panel",
 );
 if ("IntersectionObserver" in window) {
   const revealObserver = new IntersectionObserver(
@@ -309,7 +309,7 @@ if (presentation) {
   setReading(readAll);
 }
 
-// An auxiliary cursor keeps the native pointer and follows only deliberate mouse movement.
+// A small glass point replaces the pointer only after mouse movement.
 const cursorTracker = document.querySelector(".cursor-tracker");
 if (cursorTracker) {
   let cursorFrame = 0;
@@ -322,17 +322,13 @@ if (cursorTracker) {
     cursorVisible = false;
     cancelAnimationFrame(cursorFrame);
     cursorFrame = 0;
-    cursorTracker.classList.remove(
-      "is-visible",
-      "is-project",
-      "is-link",
-      "is-pressed",
-    );
+    cursorTracker.classList.remove("is-visible", "is-link", "is-pressed");
+    document.documentElement.classList.remove("cursor-active");
   };
   const renderCursor = () => {
-    currentX += (targetX - currentX) * 0.18;
-    currentY += (targetY - currentY) * 0.18;
-    cursorTracker.style.transform = `translate3d(${currentX}px, ${currentY}px, 0)`;
+    currentX += (targetX - currentX) * 0.4;
+    currentY += (targetY - currentY) * 0.4;
+    cursorTracker.style.transform = `translate3d(${currentX}px, ${currentY}px, 0) translate(-50%, -50%)`;
     if (Math.hypot(targetX - currentX, targetY - currentY) > 0.1)
       cursorFrame = requestAnimationFrame(renderCursor);
     else cursorFrame = 0;
@@ -340,7 +336,13 @@ if (cursorTracker) {
   document.addEventListener(
     "pointermove",
     (event) => {
-      if (!responsiveMotion.matches || event.pointerType !== "mouse") {
+      if (
+        !responsiveMotion.matches ||
+        event.pointerType !== "mouse" ||
+        event.target.closest(
+          "input, textarea, select, iframe, [contenteditable]",
+        )
+      ) {
         hideCursor();
         return;
       }
@@ -351,11 +353,8 @@ if (cursorTracker) {
         currentY = targetY;
         cursorVisible = true;
         cursorTracker.classList.add("is-visible");
+        document.documentElement.classList.add("cursor-active");
       }
-      cursorTracker.classList.toggle(
-        "is-project",
-        !!event.target.closest(".project-card"),
-      );
       cursorTracker.classList.toggle(
         "is-link",
         !!event.target.closest("a, button"),
@@ -382,3 +381,24 @@ if (cursorTracker) {
   });
   responsiveMotion.addEventListener("change", hideCursor);
 }
+
+// The photo feature changes only when a visitor chooses a thumbnail.
+document.querySelectorAll("[data-event-gallery]").forEach((gallery) => {
+  const photos = [...gallery.querySelectorAll("[data-event-photo]")];
+  const buttons = [...gallery.querySelectorAll("[data-event-select]")];
+  const showPhoto = (index, announce = true) => {
+    photos.forEach((photo, i) => {
+      photo.hidden = i !== index;
+    });
+    buttons.forEach((button, i) =>
+      button.setAttribute("aria-pressed", String(i === index)),
+    );
+    if (announce)
+      gallery.querySelector("[data-event-status]").textContent =
+        `Photo ${index + 1} of ${photos.length}: ${photos[index].querySelector("img").alt}.`;
+  };
+  buttons.forEach((button, index) =>
+    button.addEventListener("click", () => showPhoto(index)),
+  );
+  showPhoto(0, false);
+});

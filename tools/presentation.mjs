@@ -25,7 +25,7 @@ export function renderPresentation(
   return `<main id="main" class="presentation-main theme-${escape(p.theme)}">
     <div class="presentation-topbar wrap"><a class="breadcrumb" href="index.html#work">${arrow} Selected work</a><h1>${escape(p.name)}</h1><button class="reading-toggle presentation-control" type="button" aria-pressed="false">Read all at once ${external}</button></div>
     <div class="presentation-shell wrap" tabindex="0" role="region" aria-label="${escape(p.name)} project presentation">
-      <div class="presentation-deck">
+      <div class="presentation-deck" style="view-transition-name: project-${p.slug}">
         <section class="scene intro-scene is-active" id="overview" aria-label="Overview">
           <div class="scene-intro-grid"><div>${heading("01", "THE OVERVIEW", p.title)}<p class="scene-lead">${escape(p.summary)}</p><div class="scene-tags">${p.tags.map((tag) => `<span>${escape(tag)}</span>`).join("")}</div><dl class="presentation-meta"><div><dt>ROLE</dt><dd>${escape(p.role)}</dd></div>${p.period ? `<div><dt>PERIOD</dt><dd>${escape(p.period)}</dd></div>` : ""}<div><dt>STATUS</dt><dd>${escape(p.status)}</dd></div></dl></div><div class="intro-visual">${visual(p, index)}</div></div>
         </section>
