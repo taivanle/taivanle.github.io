@@ -254,25 +254,64 @@ test("the shared navigation bubble visibly travels between sections and follows 
         : Infinity,
     );
   await expect.poll(() => aligned(about)).toBeLessThan(2);
+  // Sample rendered frames while the user clicks. Polling an attribute can
+  // otherwise miss the entire short transition on a busy CI worker.
+  const travel = page.evaluate(
+    () =>
+      new Promise((resolve) => {
+        const samples = [];
+        const start = performance.now();
+        let alignedFrames = 0;
+        function sample() {
+          const current = document.querySelector(".nav-link[aria-current]");
+          const bubble = document
+            .querySelector(".nav-indicator")
+            .getBoundingClientRect();
+          const target = current?.getBoundingClientRect();
+          const error = target
+            ? Math.abs(bubble.x - target.x) +
+              Math.abs(bubble.width - target.width)
+            : Infinity;
+          samples.push({ section: current?.textContent, error });
+          if (current?.textContent === "Experience" && error < 2)
+            alignedFrames++;
+          else alignedFrames = 0;
+          if (alignedFrames >= 3 || performance.now() - start > 5000)
+            resolve(samples);
+          else requestAnimationFrame(sample);
+        }
+        requestAnimationFrame(sample);
+      }),
+  );
   const target = await experience.boundingBox();
   await page.mouse.click(
     target.x + target.width / 2,
     target.y + target.height / 2,
   );
   await expect(experience).toHaveAttribute("aria-current", "location");
-  // At the change of section the shared bubble is still travelling, rather than
-  // replacing one filled link with another instantly.
-  expect(await aligned(experience)).toBeGreaterThan(3);
+  expect(
+    (await travel).some(
+      (frame) => frame.section === "Experience" && frame.error > 3,
+    ),
+  ).toBe(true);
   await expect.poll(() => aligned(experience)).toBeLessThan(2);
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.getByRole("button", { name: "Menu", exact: true }).click();
+  const clickVisible = async (element) => {
+    const bounds = await element.boundingBox();
+    await page.mouse.click(
+      bounds.x + bounds.width / 2,
+      bounds.y + bounds.height / 2,
+    );
+  };
+  const menu = page.getByRole("button", { name: "Menu", exact: true });
+  await clickVisible(menu);
   await expect
     .poll(() => aligned(nav.locator(".nav-link[aria-current]")))
     .toBeLessThan(2);
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await about.click();
-  await page.getByRole("button", { name: "Menu", exact: true }).click();
+  await clickVisible(about);
   await expect(about).toHaveAttribute("aria-current", "location");
+  await clickVisible(menu);
   await expect.poll(() => aligned(about)).toBeLessThan(2);
   expect(await bubble.evaluate((el) => el.getAnimations().length)).toBe(0);
 });
