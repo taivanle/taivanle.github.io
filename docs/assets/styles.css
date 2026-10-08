@@ -4696,22 +4696,22 @@ html:not(.js) .stage-track {
 @view-transition {
   navigation: auto;
 }
+::view-transition {
+  background: var(--page-background, #0c1c1a);
+}
 ::view-transition-group(*) {
   animation-duration: var(--page-transition-duration, 420ms);
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 ::view-transition-old(root) {
-  animation: page-depart calc(var(--page-transition-duration, 420ms) * 0.45)
-    ease-out both;
+  animation: none;
+  opacity: 1;
+  mix-blend-mode: normal;
 }
 ::view-transition-new(root) {
   animation: page-arrive calc(var(--page-transition-duration, 420ms) * 0.7)
     ease-out both;
-}
-@keyframes page-depart {
-  to {
-    opacity: 0;
-  }
+  mix-blend-mode: normal;
 }
 @keyframes page-arrive {
   from {
@@ -4726,6 +4726,11 @@ html:not(.js) .stage-track {
   }
 }
 @media print {
+  html {
+    --page-background: white;
+    background: white;
+    color-scheme: light;
+  }
   .ambient-page {
     --ink: #1d3028;
     --muted: #5c6962;
@@ -4902,6 +4907,7 @@ html:not(.js) .stage-track {
 }
 .home-page .impact-strip {
   border-bottom: 0;
+  margin-bottom: 32px;
 }
 .home-page .about-grid {
   grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);

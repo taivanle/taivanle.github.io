@@ -1053,7 +1053,10 @@ for (const [slug, name] of [
       .toBeGreaterThanOrEqual(0.8);
     await card.click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
-    await page.locator(".scene.is-active .scene-title").click();
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/projects.html$/);
+    await card.click();
+    await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.keyboard.press("Escape");
     await expect(page).toHaveURL(/projects.html$/);
   });
