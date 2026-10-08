@@ -24,6 +24,7 @@ Open `http://127.0.0.1:4178`. The preview server binds to loopback only.
 - `tools/presentation.mjs`: project scenes, interactive architecture stages, and reading view.
 - `docs/assets/owen-le-resume.pdf`: the provided resume, served without alteration.
 - `docs/assets/social-card.png`: share preview image.
+- `docs/assets/media/`: compressed, silent ten-second demonstration clip from the supplied `owen.MP4`, plus a poster frame. The original source remains untouched. Playback is optional; the video pauses when it leaves the screen.
 
 After editing source, run the build and commit both source and generated `docs/` changes. Existing homepage, projects, and notes URLs remain valid. Git history retains the previous design and long-form guide.
 
@@ -41,6 +42,10 @@ If using an existing Chrome installation locally, set `CHROME_PATH` to its execu
 ## Content and scope
 
 Career history and Themis outcomes come from the supplied resume. Independent-project descriptions reflect current project documentation and implementation summaries. Prototype status and benchmark limitations are explicit in each case study. Illustrative product visuals are labelled. Private employer/product source code and datasets are not included. Billacord is the current working name; older project folders used ClauseTally and ReplyLedger.
+
+Additional background, developer enablement, selected learning, and the profile URL come from [Owen’s LinkedIn](https://www.linkedin.com/in/owen-le/). The speaking and workshops section is supported by [his IBM retrospective](https://www.linkedin.com/feed/update/urn:li:activity:7477268324196782081/). Resume dates and metrics remain the source for the career timeline and Themis results.
+
+Visual references supplied by Owen were [Abdalla Elradi](https://aelradi.engineer/) and [Yash Ahire](https://yashahire.info/). The portfolio uses original styling and motion: restrained card lighting, small perspective shifts, scene transitions, and the supplied personal video.
 
 The watsonx Orchestrate note links to current IBM documentation instead of hard-coding installation versions, credentials, or UI procedures.
 

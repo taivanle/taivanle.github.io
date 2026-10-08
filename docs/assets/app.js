@@ -81,6 +81,7 @@ if ("IntersectionObserver" in window) {
     .forEach((section) => observer.observe(section));
 }
 
+const portraitVideo = document.querySelector("[data-portrait-video]");
 const motionButton = document.querySelector(".motion-toggle");
 motionButton?.addEventListener("click", () => {
   const paused = document.documentElement.classList.toggle("motion-paused");
@@ -90,7 +91,84 @@ motionButton?.addEventListener("click", () => {
     paused ? "Resume motion" : "Pause motion",
   );
   motionButton.innerHTML = `${paused ? "Resume motion" : "Pause motion"} <span aria-hidden="true">${paused ? "▷" : "Ⅱ"}</span>`;
+  if (paused) portraitVideo?.pause();
 });
+
+const videoButton = document.querySelector("[data-video-toggle]");
+if (portraitVideo && videoButton) {
+  portraitVideo.controls = false;
+  const syncPlayback = () => {
+    const playing = !portraitVideo.paused;
+    videoButton.setAttribute("aria-pressed", String(playing));
+    videoButton.innerHTML = `${playing ? "Pause clip" : "Play clip"} <span aria-hidden="true">${playing ? "Ⅱ" : "▷"}</span>`;
+  };
+  videoButton.addEventListener("click", async () => {
+    if (!portraitVideo.paused) {
+      portraitVideo.pause();
+      return;
+    }
+    try {
+      await portraitVideo.play();
+    } catch {
+      portraitVideo.controls = true;
+      document.querySelector("#clip-status").textContent =
+        "The clip could not play. Try the video’s native controls.";
+    }
+  });
+  portraitVideo.addEventListener("play", syncPlayback);
+  portraitVideo.addEventListener("pause", syncPlayback);
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) portraitVideo.pause();
+    }).observe(portraitVideo);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) portraitVideo.pause();
+  });
+}
+
+const responsiveMotion = window.matchMedia(
+  "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+);
+document
+  .querySelectorAll("[data-spotlight], .project-card, .presentation-deck")
+  .forEach((surface) => {
+    let frame;
+    surface.addEventListener(
+      "pointermove",
+      (event) => {
+        if (
+          !responsiveMotion.matches ||
+          document.documentElement.classList.contains("motion-paused")
+        )
+          return;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const bounds = surface.getBoundingClientRect();
+          const x = event.clientX - bounds.left;
+          const y = event.clientY - bounds.top;
+          surface.style.setProperty("--light-x", `${x}px`);
+          surface.style.setProperty("--light-y", `${y}px`);
+          if (surface.classList.contains("portrait-panel")) {
+            surface.style.setProperty(
+              "--tilt-x",
+              `${(0.5 - y / bounds.height) * 2}deg`,
+            );
+            surface.style.setProperty(
+              "--tilt-y",
+              `${(x / bounds.width - 0.5) * 2}deg`,
+            );
+          }
+        });
+      },
+      { passive: true },
+    );
+    surface.addEventListener("pointerleave", () => {
+      cancelAnimationFrame(frame);
+      surface.style.setProperty("--tilt-x", "0deg");
+      surface.style.setProperty("--tilt-y", "0deg");
+    });
+  });
 
 const animatedElements = document.querySelectorAll(
   ".project-card, .principles > div, .experience-row, .note-row",

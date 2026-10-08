@@ -1325,6 +1325,280 @@ p {
   max-width: 450px;
 }
 
+/* Light, depth, and small responses to the reader. */
+.hero {
+  position: relative;
+  isolation: isolate;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 8%;
+  width: 58%;
+  height: 84%;
+  background: radial-gradient(ellipse, #c4d5ae75, transparent 67%);
+  filter: blur(20px);
+  z-index: -1;
+  pointer-events: none;
+}
+.portrait-panel {
+  isolation: isolate;
+  border: 1px solid #48624c;
+  background: linear-gradient(150deg, #21362a, #14251f);
+  box-shadow:
+    0 24px 65px -28px #173f3c66,
+    0 1px 0 #ffffff22 inset;
+}
+.portrait-panel .system-art {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.14;
+  z-index: -1;
+  pointer-events: none;
+}
+.portrait-panel .panel-heading {
+  margin: 0 24px;
+}
+.portrait-heading {
+  padding: 22px 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.portrait-heading > strong {
+  font-size: 37px;
+  letter-spacing: -1.5px;
+  font-weight: 600;
+}
+.portrait-heading > span {
+  font-size: 11px;
+  color: #c4d3bd;
+}
+.portrait-clip {
+  margin: 0 24px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid #698171;
+  border-radius: 8px;
+  background: #1b3025;
+  box-shadow: 0 12px 30px #06190c66;
+}
+.portrait-clip video {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.portrait-clip figcaption {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: #d0dec6;
+  padding: 12px 14px;
+  background: #203629;
+}
+.clip-toggle {
+  display: none;
+  position: absolute;
+  right: 12px;
+  bottom: 48px;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  min-height: 36px;
+  font-size: 11px;
+  background: #15291fec;
+  color: #f6f9ed;
+  border: 1px solid #d3e3c199;
+  border-radius: 5px;
+  backdrop-filter: blur(12px);
+}
+.js .clip-toggle {
+  display: flex;
+}
+.clip-toggle:hover {
+  background: #315239;
+}
+.clip-toggle:focus-visible,
+.portrait-link:focus-visible {
+  outline-color: #e9f4cf;
+}
+.portrait-panel .panel-bottom {
+  margin: 22px 24px 0;
+  font-size: 13px;
+}
+.portrait-link {
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #e0ecca;
+}
+.about-background {
+  max-width: 440px;
+  font-size: 13px;
+  margin-top: 18px;
+  line-height: 1.85;
+}
+.credentials {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 28px;
+  padding: 26px 0;
+  border-top: 1px solid var(--line);
+}
+.credentials > .mono {
+  font-size: 9px;
+  color: var(--muted);
+}
+.credentials > div {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+.credentials a {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 11px;
+}
+.credentials a strong {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.credentials a span {
+  color: var(--muted);
+  font-size: 10px;
+}
+.credentials a:hover strong {
+  color: var(--green);
+}
+.talks-panel {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  grid-template-columns: 0.9fr 1.1fr;
+  gap: 65px;
+  padding: 32px 36px;
+  margin-top: 43px;
+  background: #21362b;
+  border: 1px solid #516b4a;
+  border-radius: 10px;
+  color: #e5edda;
+  overflow: hidden;
+}
+.talks-panel .eyebrow {
+  color: #c5dcae;
+  font-size: 9px;
+}
+.talks-panel h3 {
+  font-size: 28px;
+  font-weight: 550;
+  letter-spacing: -0.8px;
+}
+.talks-panel > div > p:not(.eyebrow) {
+  font-size: 13px;
+  line-height: 1.8;
+}
+.talks-panel .text-link {
+  color: #d9e9c6;
+  margin-top: 18px;
+  font-size: 11px;
+}
+[data-spotlight]::after,
+.project-card::after,
+.presentation-deck::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: radial-gradient(
+    310px circle at var(--light-x, 50%) var(--light-y, 50%),
+    #a8c878,
+    transparent 70%
+  );
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s;
+  z-index: 3;
+}
+.presentation-deck,
+.project-card {
+  position: relative;
+}
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  [data-spotlight]:hover::after,
+  .project-card:hover::after,
+  .presentation-deck:hover::after {
+    opacity: 1;
+  }
+  .portrait-panel {
+    transform: perspective(1100px) rotateX(var(--tilt-x, 0deg))
+      rotateY(var(--tilt-y, 0deg));
+    transition:
+      transform 0.35s ease-out,
+      box-shadow 0.35s;
+  }
+  .portrait-panel:hover {
+    box-shadow:
+      0 28px 70px -28px #173f3c88,
+      0 1px 0 #ffffff22 inset;
+  }
+}
+.motion-paused [data-spotlight]::after,
+.motion-paused .project-card::after,
+.motion-paused .presentation-deck::after {
+  opacity: 0;
+}
+.motion-paused .portrait-panel {
+  transform: none;
+}
+@media (max-width: 760px) {
+  .portrait-heading {
+    padding: 18px 18px 16px;
+  }
+  .portrait-heading > strong {
+    font-size: 31px;
+  }
+  .portrait-panel .panel-heading,
+  .portrait-panel .portrait-clip {
+    margin-left: 18px;
+    margin-right: 18px;
+  }
+  .portrait-clip figcaption {
+    font-size: 8px;
+    padding: 10px 11px;
+  }
+  .portrait-panel .panel-bottom {
+    margin: 18px 18px 0;
+    gap: 12px;
+    font-size: 11px;
+  }
+  .talks-panel {
+    grid-template-columns: 1fr;
+    gap: 22px;
+    padding: 24px;
+  }
+  .about-background {
+    font-size: 12px;
+  }
+  .credentials,
+  .credentials > div {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
 /* Project stories are paced by the reader, with six presentation scenes. */
 .presentation-main {
   padding-bottom: 62px;
@@ -2799,7 +3073,7 @@ html:not(.js) .stage-track {
     font-size: 10px;
   }
   .page-hero h1 {
-    font-size: 43px;
+    font-size: clamp(34px, 10vw, 43px);
     letter-spacing: -2.1px;
   }
   .page-hero .page-lead {

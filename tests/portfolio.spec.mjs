@@ -168,6 +168,44 @@ test("resume is served as the supplied PDF", async ({ request }) => {
   expect((await response.body()).subarray(0, 5).toString()).toBe("%PDF-");
 });
 
+test("the demonstration clip starts only on request and can be paused", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const video = page.locator("[data-portrait-video]");
+  expect(
+    await video.evaluate(
+      (element) => element.paused && !element.autoplay && element.muted,
+    ),
+  ).toBeTruthy();
+  await page.getByRole("button", { name: "Play clip", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Pause clip", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect
+    .poll(() =>
+      video.evaluate((element) => !element.paused && element.readyState >= 2),
+    )
+    .toBeTruthy();
+  await page.getByRole("button", { name: "Pause motion", exact: true }).click();
+  expect(await video.evaluate((element) => element.paused)).toBeTruthy();
+  await expect(
+    page.getByRole("button", { name: "Play clip", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
+});
+
+test("video delivery supports partial downloads for playback", async ({
+  request,
+}) => {
+  const response = await request.get("/assets/media/owen-at-work.mp4", {
+    headers: { Range: "bytes=0-1023" },
+  });
+  expect(response.status()).toBe(206);
+  expect(response.headers()["content-type"]).toBe("video/mp4");
+  expect(response.headers()["content-range"]).toMatch(/^bytes 0-1023\//);
+  expect((await response.body()).length).toBe(1024);
+});
+
 test("decorative motion can be paused and respects reduced-motion settings", async ({
   page,
 }) => {
