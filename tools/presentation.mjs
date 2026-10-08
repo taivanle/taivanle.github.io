@@ -37,8 +37,8 @@ export function renderPresentation(
         <section class="scene architecture-scene" id="architecture" aria-label="Architecture">
           ${heading("03", "THE ARCHITECTURE", "Follow the system, stage by stage.")}
           <p class="scene-subtitle presentation-control">Select a stage to explore the design.</p>
-          <div class="stage-explorer" style="--stage-progress:0">
-            <div class="stage-track" role="group" aria-label="System stages">${p.flow.map((stage, i) => `<button type="button" class="stage-button ${i === 0 ? "is-selected" : ""}" data-stage="${i}" aria-pressed="${i === 0}" aria-controls="stage-panel-${i}"><span class="stage-number">0${i + 1}</span><strong>${escape(stage)}</strong><span class="stage-dot" aria-hidden="true"></span></button>`).join("")}</div>
+          <div class="stage-explorer">
+            <div class="stage-track" role="group" aria-label="System stages"><svg class="stage-wires" aria-hidden="true" focusable="false"></svg>${p.flow.map((stage, i) => `<button type="button" class="stage-button ${i === 0 ? "is-selected" : ""}" data-stage="${i}" aria-pressed="${i === 0}" aria-controls="stage-panel-${i}"><svg class="stage-outline" aria-hidden="true" focusable="false"><rect class="stage-charge" pathLength="100"/><rect class="stage-arrival" pathLength="100"/></svg><span class="stage-number">0${i + 1}</span><strong>${escape(stage)}</strong><span class="stage-dot" aria-hidden="true"></span></button>`).join("")}</div>
             <div class="stage-panels">${p.stages.map((detail, i) => `<div class="stage-panel" id="stage-panel-${i}" data-stage-panel="${i}"><span class="mono">STAGE 0${i + 1}</span><h3>${escape(p.flow[i])}</h3><p>${escape(detail)}</p></div>`).join("")}</div>
           </div>
           <div class="presentation-decision"><span class="mono">KEY DESIGN DECISION</span><p>${escape(p.decision)}</p></div>
@@ -51,7 +51,7 @@ export function renderPresentation(
         <section class="scene results-scene" id="results" aria-label="Results">
           ${heading("05", "THE EVIDENCE", p.slug === "themis" ? "A measurable change in the workflow." : "What the build demonstrates.")}
           <div class="presentation-results">${p.results.map((result, i) => `<div class="presentation-result ${p.slug === "themis" || /^\d+$/.test(result[0]) ? "" : "result-label"}"><span class="mono">0${i + 1} / ${escape(result[1].toUpperCase())}</span><strong>${escape(result[0])}</strong><p>${escape(result[2])}</p><span class="result-rule" aria-hidden="true"></span></div>`).join("")}</div>
-          <div class="results-context"><span class="mono">CONTEXT MATTERS</span><p>${escape(p.slug === "themis" ? "Resume-reported outcomes for a specific evaluation benchmark. The accuracy figures describe that test set and workflow." : p.slug === "billacord" ? "A private local MVP verified with synthetic cases. Commercial outcomes and an independent live extraction baseline remain unvalidated." : "Five isolated synthetic scenarios against our own broken and corrected references. This demonstrates verification behaviour within that example.")}</p></div>
+          <div class="results-context"><span class="mono">CONTEXT MATTERS</span><p>${escape(p.slug === "themis" ? "Resume-reported outcomes for a specific evaluation benchmark. The accuracy figures describe that test set and workflow." : p.slug === "dueform" ? "A private local MVP verified with synthetic cases. Commercial outcomes and an independent live extraction baseline remain unvalidated." : "Five isolated synthetic scenarios against our own broken and corrected references. This demonstrates verification behaviour within that example.")}</p></div>
         </section>
         <section class="scene perspective-scene" id="scope" aria-label="Perspective">
           ${heading("06", "THE PERSPECTIVE", "What I take forward.")}

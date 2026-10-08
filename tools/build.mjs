@@ -94,12 +94,12 @@ function visual(project, index) {
       break;
     case "billing":
       body =
-        '<div class="invoice-window"><div class="invoice-header"><span class="tiny-dot"></span>Billacord</div><div class="invoice-line"><span>Approved contract amount</span><b>£1,200.00</b></div><div class="invoice-line"><span>Invoiced amount</span><b>£1,350.00</b></div><div class="invoice-line difference"><span>Potential difference · review required</span><b>+£150.00</b></div></div>';
+        '<div class="invoice-window"><div class="invoice-header"><span class="tiny-dot"></span>DueForm</div><div class="invoice-line"><span>Approved contract amount</span><b>£1,200.00</b></div><div class="invoice-line"><span>Invoiced amount</span><b>£1,350.00</b></div><div class="invoice-line difference"><span>Potential difference · review required</span><b>+£150.00</b></div></div>';
       note = "ILLUSTRATIVE / SYNTHETIC AMOUNTS";
       break;
     case "controls":
       body =
-        '<div class="verification-window"><div class="window-top"><span>ACTIONPROOF / VERIFIER STATES</span><span>↗</span></div><div class="verification-row"><span>Approved action verified</span><span class="result-pill result-pass">PASS</span></div><div class="verification-row"><span>Wrong target changed</span><span class="result-pill result-fail">FAIL</span></div><div class="verification-row"><span>State evidence unavailable</span><span class="result-pill result-unknown">INCONCLUSIVE</span></div></div>';
+        '<div class="verification-window"><div class="window-top"><span>ACTIFACT / VERIFIER STATES</span><span>↗</span></div><div class="verification-row"><span>Approved action verified</span><span class="result-pill result-pass">PASS</span></div><div class="verification-row"><span>Wrong target changed</span><span class="result-pill result-fail">FAIL</span></div><div class="verification-row"><span>State evidence unavailable</span><span class="result-pill result-unknown">INCONCLUSIVE</span></div></div>';
       note = "SYNTHETIC REFERENCE SCENARIOS";
       break;
   }
@@ -169,6 +169,16 @@ for (const [index, project] of projects.entries())
     project.summary,
     casePage(project, index),
   );
+// Preserve existing project bookmarks, including direct scene links.
+for (const [oldSlug, newSlug, name] of [
+  ["billacord", "dueform", "DueForm"],
+  ["actionproof", "actifact", "ActiFact"],
+]) {
+  await writeFile(
+    path.join(docs, `${oldSlug}.html`),
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${name} — Owen Le</title><meta name="robots" content="noindex"><link rel="canonical" href="https://taivanle.github.io/${newSlug}.html"><meta http-equiv="refresh" content="0;url=${newSlug}.html"><script>location.replace("${newSlug}.html" + location.search + location.hash)</script></head><body><main><h1>${name}</h1><a href="${newSlug}.html">Continue to the project presentation.</a></main></body></html>\n`,
+  );
+}
 await emit(
   "projects.html",
   "Selected work",
@@ -216,8 +226,8 @@ await emit(
     "The engineering around the model determines whether an AI capability becomes a reliable product.",
     `
 <section id="context"><h2>Give the model useful context</h2><p>Start with the information the task requires and the information the user may access. A context layer can select, rank, and assemble source material within a token budget. Preserve provenance so a later answer or failure can be traced back to the material actually supplied.</p><p>A useful baseline starts with a small, well-understood source set. Measure whether the right information reaches the model before adding retrieval complexity.</p></section>
-<section id="boundary"><h2>Separate judgement from computation</h2><p>A model can propose a structured interpretation without owning every downstream decision. In Billacord, proposed commercial terms go through source review and human approval before deterministic invoice checking. In Themis, machine-checkable properties go through deterministic validation, while rubric-guided judgement handles other criteria.</p><p>The right boundary depends on the task. Make it visible so each stage can be checked independently.</p></section>
-<section id="effects"><h2>Observe what actually changed</h2><p>An action returning “allowed” is an observation about a decision. It does not prove that the correct record changed. ActionProof tests the resulting ticket state against the scoped approval. If that state cannot be read, the verifier reports an inconclusive result.</p><p>This principle applies beyond agents: define the effect you need, collect the evidence, and avoid converting missing observations into a pass.</p></section>
+<section id="boundary"><h2>Separate judgement from computation</h2><p>A model can propose a structured interpretation without owning every downstream decision. In DueForm, proposed commercial terms go through source review and human approval before deterministic invoice checking. In Themis, machine-checkable properties go through deterministic validation, while rubric-guided judgement handles other criteria.</p><p>The right boundary depends on the task. Make it visible so each stage can be checked independently.</p></section>
+<section id="effects"><h2>Observe what actually changed</h2><p>An action returning “allowed” is an observation about a decision. It does not prove that the correct record changed. ActiFact tests the resulting ticket state against the scoped approval. If that state cannot be read, the verifier reports an inconclusive result.</p><p>This principle applies beyond agents: define the effect you need, collect the evidence, and avoid converting missing observations into a pass.</p></section>
 <section id="measure"><h2>Make evaluation part of delivery</h2><p>Choose explicit criteria, representative cases, and a repeatable execution path. Disclose the sample size and test conditions with the score. Track cost and time alongside quality so improvements are useful in practice.</p><p>Themis brings these concerns together with deterministic validation, structured rubrics, and model judgement. The goal is an evaluation workflow that can be repeated and understood.</p><div class="design-decision"><p class="eyebrow">THE COMMON THREAD</p><p>Keep context, reasoning, approval, execution, and evidence as distinct responsibilities. Clear boundaries make both the product and its failures easier to understand.</p></div></section>`,
     [
       ["context", "Useful context"],
@@ -243,4 +253,4 @@ await writeFile(
   "User-agent: *\nAllow: /\nSitemap: https://taivanle.github.io/sitemap.xml\n",
 );
 await writeFile(path.join(docs, ".nojekyll"), "");
-console.log(`Built ${outputs.length + 1} pages into docs/.`);
+console.log(`Built ${outputs.length + 3} pages into docs/.`);

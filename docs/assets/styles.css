@@ -1737,20 +1737,24 @@ p {
 .intro-visual::after {
   content: "";
   position: absolute;
-  top: -30%;
-  left: -40%;
-  width: 35%;
-  height: 160%;
-  transform: rotate(22deg) translateX(-100%);
-  background: linear-gradient(90deg, transparent, #ffffff6b, transparent);
+  inset: 0;
+  border-radius: inherit;
+  background-image: linear-gradient(
+    110deg,
+    transparent 40%,
+    #ffffff6b 50%,
+    transparent 60%
+  );
+  background-size: 300% 100%;
+  background-position: 100% 50%;
   pointer-events: none;
 }
 .js .scene.is-active .intro-visual::after {
-  animation: light-sweep 1.8s ease-out both;
+  animation: light-sweep 2.2s ease-in-out both;
 }
 @keyframes light-sweep {
   to {
-    transform: rotate(22deg) translateX(600%);
+    background-position: 0% 50%;
   }
 }
 .problem-scene {
@@ -1819,16 +1823,6 @@ p {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 20px;
 }
-.stage-track::before {
-  content: "";
-  height: 1px;
-  background: #b6c9a5;
-  position: absolute;
-  left: 10%;
-  right: 10%;
-  top: 40px;
-  z-index: -1;
-}
 html:not(.js) .stage-track {
   display: none;
 }
@@ -1884,12 +1878,6 @@ html:not(.js) .stage-track {
 }
 .stage-button.is-selected .stage-dot {
   background: #d0e6b6;
-  animation: stage-pulse 0.7s ease-out;
-}
-@keyframes stage-pulse {
-  50% {
-    box-shadow: 0 0 0 5px #819a6470;
-  }
 }
 .stage-button.is-selected:focus-visible {
   outline-color: #52783e;
@@ -2294,9 +2282,6 @@ html:not(.js) .stage-track {
   .stage-track {
     grid-template-columns: 1fr 1fr;
     gap: 10px;
-  }
-  .stage-track::before {
-    display: none;
   }
   .stage-button {
     padding: 14px;
@@ -3299,20 +3284,6 @@ html:not(.js) .stage-track {
 .stage-track {
   isolation: isolate;
 }
-.stage-track::after {
-  content: "";
-  position: absolute;
-  left: 10%;
-  top: 40px;
-  height: 2px;
-  width: 80%;
-  background: linear-gradient(90deg, #397c55, #c4dfa4);
-  z-index: -1;
-  transform: scaleX(var(--stage-progress, 0));
-  transform-origin: left;
-  transition: transform 0.65s cubic-bezier(0.2, 0.7, 0.2, 1);
-  box-shadow: 0 0 10px #78a96088;
-}
 .stage-button.is-selected {
   box-shadow:
     0 9px 25px -12px #305c3d88,
@@ -3369,9 +3340,6 @@ html:not(.js) .stage-track {
   }
   .mentorship-intro h3 {
     font-size: 31px;
-  }
-  .stage-track::after {
-    display: none;
   }
 }
 @media print {
@@ -3677,41 +3645,43 @@ html:not(.js) .stage-track {
   box-shadow: 0 25px 45px -14px #0008;
 }
 
-/* A translucent glass point: no ring, caption, or trailing particles. */
+/* A luminous point with a diffuse halo, rather than a solid cursor ornament. */
 .cursor-tracker {
   display: none;
   position: fixed;
   left: 0;
   top: 0;
-  width: 15px;
-  height: 15px;
+  width: 64px;
+  height: 64px;
   z-index: 100;
   pointer-events: none;
   opacity: 0;
   border-radius: 50%;
-  background:
-    radial-gradient(circle at 30% 25%, #f1fff5 0, #f1fff500 45%), #a5dfbfa6;
-  box-shadow:
-    0 0 14px #9bdcba38,
-    0 1px 3px #081f1c55;
-  backdrop-filter: blur(2px);
+  background: radial-gradient(
+    circle,
+    #f4ffe9 0 3%,
+    #dafbd2dd 7%,
+    #a8f4c875 18%,
+    #87e3b62b 36%,
+    #87e3b600 70%
+  );
+  mix-blend-mode: screen;
+  filter: blur(0.6px);
   transition:
-    opacity 0.15s,
-    width 0.2s,
-    height 0.2s,
-    background-color 0.2s;
+    opacity 0.2s,
+    width 0.35s,
+    height 0.35s;
 }
 .cursor-tracker.is-visible {
   opacity: 1;
 }
 .cursor-tracker.is-link {
-  width: 24px;
-  height: 24px;
-  background-color: #c5eaa57a;
+  width: 84px;
+  height: 84px;
 }
 .cursor-tracker.is-pressed {
-  width: 11px;
-  height: 11px;
+  width: 52px;
+  height: 52px;
 }
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
   .js .cursor-tracker {
@@ -3828,7 +3798,7 @@ html:not(.js) .stage-track {
   height: 100svh;
   z-index: -1;
   opacity: 0.62;
-  mask-image: linear-gradient(90deg, #0004, #0009 50%, #000);
+  mask-image: linear-gradient(90deg, #0008, #000c 50%, #000);
 }
 .home-page .hero-scene {
   background: transparent;
@@ -4438,7 +4408,12 @@ html:not(.js) .stage-track {
   background: #081a1680;
 }
 .presentation-page .intro-visual::after {
-  background: linear-gradient(90deg, transparent, #c5f1d616, transparent);
+  background-image: linear-gradient(
+    110deg,
+    transparent 40%,
+    #c5f1d620 50%,
+    transparent 60%
+  );
 }
 .presentation-page .project-visual {
   background: transparent;
@@ -4486,13 +4461,6 @@ html:not(.js) .stage-track {
   background: #bed5a7;
   box-shadow: 0 0 0 5px #78916b22;
 }
-.presentation-page .stage-track::before {
-  background: #78916b66;
-}
-.presentation-page .stage-track::after {
-  background: #c5e5a6;
-  box-shadow: 0 0 12px #97bc6655;
-}
 .presentation-page .stage-button {
   background: #0e2219;
   border-color: #81977066;
@@ -4500,6 +4468,7 @@ html:not(.js) .stage-track {
 }
 .presentation-page .stage-button:hover {
   border-color: #b8d59a;
+  transform: none;
 }
 .presentation-page .stage-button.is-selected {
   background: #28432a;
@@ -4509,6 +4478,66 @@ html:not(.js) .stage-track {
 }
 .presentation-page .stage-button.is-selected .stage-number {
   color: #d5e7ae;
+}
+.stage-wires,
+.stage-outline {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  fill: none;
+}
+.stage-wires {
+  z-index: -1;
+}
+.stage-wire {
+  stroke: #78916b66;
+  stroke-width: 1;
+  transition: stroke 520ms ease;
+}
+.stage-wire.is-energized {
+  stroke: #bdd99b99;
+}
+.stage-current {
+  stroke: #e4f7c1;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 28 100;
+  opacity: 0;
+  filter: drop-shadow(0 0 4px #bbf290);
+}
+.stage-charge,
+.stage-arrival {
+  stroke: #e4f7c1;
+  stroke-width: 1.5;
+  opacity: 0;
+  filter: drop-shadow(0 0 4px #c5ef8e);
+}
+.stage-charge {
+  stroke-dasharray: 18 82;
+  stroke-linecap: round;
+}
+.js .scene.is-active .stage-button.is-selected .stage-charge {
+  opacity: 1;
+  animation: stage-trace 3.8s linear var(--charge-delay, 0ms) infinite;
+  animation-direction: var(--charge-direction, normal);
+}
+.stage-track[data-direction="reverse"] {
+  --charge-direction: reverse;
+}
+@keyframes stage-trace {
+  to {
+    stroke-dashoffset: -100;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage-charge,
+  .stage-arrival,
+  .stage-current {
+    opacity: 0 !important;
+  }
 }
 .presentation-page .stage-panels {
   background: #9cbc7310;
@@ -4563,14 +4592,16 @@ html:not(.js) .stage-track {
   view-transition-name: site-header;
 }
 ::view-transition-group(*) {
-  animation-duration: 420ms;
+  animation-duration: var(--page-transition-duration, 420ms);
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
 }
 ::view-transition-old(root) {
-  animation: page-depart 180ms ease-out both;
+  animation: page-depart calc(var(--page-transition-duration, 420ms) * 0.45)
+    ease-out both;
 }
 ::view-transition-new(root) {
-  animation: page-arrive 280ms ease-out both;
+  animation: page-arrive calc(var(--page-transition-duration, 420ms) * 0.7)
+    ease-out both;
 }
 @keyframes page-depart {
   to {
@@ -4625,5 +4656,82 @@ html:not(.js) .stage-track {
   .presentation-page .presentation-result .mono,
   .presentation-page .perspective-scene blockquote {
     color: #286448;
+  }
+}
+
+/* Each chapter has a distinct tonal ground while the same field continues behind it. */
+.home-page .work-section {
+  background: linear-gradient(
+    180deg,
+    transparent,
+    #27302145 12%,
+    #27302145 88%,
+    transparent
+  );
+  border-block: 1px solid #94ab7a30;
+}
+.home-page .about-section {
+  padding-top: 70px;
+  background: linear-gradient(105deg, #14353170, #14353110 80%);
+  border-block: 1px solid #83ada830;
+}
+.home-page .experience-section {
+  padding-block: 75px;
+}
+.home-page .community-section {
+  padding-block: 70px;
+  background: linear-gradient(105deg, #342f1c38, #342f1c10 80%);
+  border-block: 1px solid #b7a97c30;
+}
+.home-page .notes-section {
+  padding-top: 30px;
+}
+.presentation-page .problem-scene {
+  background: #102c2a90;
+}
+.presentation-page .architecture-scene {
+  background: radial-gradient(ellipse at 80% 100%, #67894820, transparent 75%);
+}
+.presentation-page .build-scene {
+  background: #122a3480;
+}
+.presentation-page .results-scene {
+  background: radial-gradient(ellipse at 100% 0, #90713c22, transparent 75%);
+}
+.presentation-page .perspective-scene {
+  background: #25283a70;
+}
+.js .event-slides {
+  display: grid;
+  gap: 0;
+}
+.js .event-slides > figure {
+  grid-area: 1 / 1;
+}
+.event-slides .is-outgoing {
+  pointer-events: none;
+}
+.project-return {
+  --page-transition-duration: 900ms;
+}
+@media (max-width: 760px) {
+  .home-page .about-section {
+    padding-top: 45px;
+  }
+  .home-page .experience-section,
+  .home-page .community-section {
+    padding-block: 45px;
+  }
+}
+@media print {
+  .home-page .work-section,
+  .home-page .about-section,
+  .home-page .community-section,
+  .presentation-page .problem-scene,
+  .presentation-page .architecture-scene,
+  .presentation-page .build-scene,
+  .presentation-page .results-scene,
+  .presentation-page .perspective-scene {
+    background: white;
   }
 }

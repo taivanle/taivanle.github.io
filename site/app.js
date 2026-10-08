@@ -1,5 +1,44 @@
 document.documentElement.classList.add("js");
 
+const projectRoute = /\/(?:themis|dueform|actifact)\.html$/;
+function previousPortfolioUrl() {
+  try {
+    const value =
+      window.navigation?.activation?.from?.url ||
+      sessionStorage.getItem("portfolio-previous-url") ||
+      document.referrer;
+    const url = value ? new URL(value) : null;
+    return url?.origin === location.origin ? url : null;
+  } catch {
+    return null;
+  }
+}
+function setReturnTransition() {
+  const previous = previousPortfolioUrl();
+  document.documentElement.classList.toggle(
+    "project-return",
+    Boolean(
+      previous &&
+      projectRoute.test(previous.pathname) &&
+      !projectRoute.test(location.pathname),
+    ),
+  );
+}
+setReturnTransition();
+window.addEventListener("pagereveal", (event) => {
+  setReturnTransition();
+  event.viewTransition?.finished
+    .finally(() => document.documentElement.classList.remove("project-return"))
+    .catch(() => {});
+});
+window.addEventListener("pagehide", () => {
+  try {
+    sessionStorage.setItem("portfolio-previous-url", location.href);
+  } catch {
+    /* Navigation works when session storage is unavailable. */
+  }
+});
+
 const menuButton = document.querySelector(".menu-toggle");
 const navigation = document.querySelector("#navigation");
 function closeMenu() {
@@ -19,6 +58,7 @@ document.addEventListener("keydown", (event) => {
     event.key === "Escape" &&
     menuButton?.getAttribute("aria-expanded") === "true"
   ) {
+    event.preventDefault();
     closeMenu();
     menuButton.focus();
   }
@@ -204,6 +244,108 @@ if (presentation) {
   const reading = presentation.querySelector(".reading-toggle");
   const stageButtons = [...presentation.querySelectorAll("[data-stage]")];
   const stagePanels = [...presentation.querySelectorAll("[data-stage-panel]")];
+  const stageTrack = presentation.querySelector(".stage-track");
+  const stageWires = stageTrack.querySelector(".stage-wires");
+  const svgNamespace = "http://www.w3.org/2000/svg";
+  const connections = stageButtons.slice(1).map(() => {
+    const wire = document.createElementNS(svgNamespace, "path");
+    const current = document.createElementNS(svgNamespace, "path");
+    wire.classList.add("stage-wire");
+    current.classList.add("stage-current");
+    current.setAttribute("pathLength", "100");
+    stageWires.append(wire, current);
+    return { wire, current };
+  });
+  let stageAnimations = [];
+
+  function stopStageCurrent() {
+    stageAnimations.forEach((animation) => animation.cancel());
+    stageAnimations = [];
+  }
+
+  function measureStages() {
+    const track = stageTrack.getBoundingClientRect();
+    if (!track.width || !track.height) return;
+    stageWires.setAttribute("viewBox", `0 0 ${track.width} ${track.height}`);
+    const boxes = stageButtons.map((button) => {
+      const box = button.getBoundingClientRect();
+      const outline = button.querySelector(".stage-outline");
+      outline.setAttribute("viewBox", `0 0 ${box.width} ${box.height}`);
+      outline.querySelectorAll("rect").forEach((rect) => {
+        rect.setAttribute("x", "1");
+        rect.setAttribute("y", "1");
+        rect.setAttribute("width", String(box.width - 2));
+        rect.setAttribute("height", String(box.height - 2));
+        rect.setAttribute("rx", "6");
+      });
+      return {
+        left: box.left - track.left,
+        right: box.right - track.left,
+        top: box.top - track.top,
+        bottom: box.bottom - track.top,
+        x: box.left - track.left + box.width / 2,
+        y: box.top - track.top + box.height / 2,
+      };
+    });
+    connections.forEach(({ wire, current }, i) => {
+      const from = boxes[i];
+      const to = boxes[i + 1];
+      // At the row break, route the wire through the gap between rows.
+      const d =
+        Math.abs(from.top - to.top) < 2
+          ? `M ${from.right} ${from.y} H ${to.left}`
+          : `M ${from.x} ${from.bottom} V ${(from.bottom + to.top) / 2} H ${to.x} V ${to.top}`;
+      wire.setAttribute("d", d);
+      current.setAttribute("d", d);
+    });
+  }
+
+  function sendStageCurrent(from, to) {
+    stopStageCurrent();
+    if (reducedMotion.matches || readAll || from === to) return;
+    measureStages();
+    const direction = to > from ? 1 : -1;
+    stageTrack.dataset.direction = direction > 0 ? "forward" : "reverse";
+    const hopDuration = 520;
+    const hops = Math.abs(to - from);
+    stageButtons[to].style.setProperty(
+      "--charge-delay",
+      `${hops * hopDuration}ms`,
+    );
+    for (let hop = 0; hop < hops; hop++) {
+      const departure = from + hop * direction;
+      const arrival = departure + direction;
+      const { current } = connections[Math.min(departure, arrival)];
+      stageAnimations.push(
+        current.animate(
+          [
+            { strokeDashoffset: direction > 0 ? 28 : -100, opacity: 0 },
+            { opacity: 1, offset: 0.15 },
+            { opacity: 1, offset: 0.8 },
+            { strokeDashoffset: direction > 0 ? -100 : 28, opacity: 0 },
+          ],
+          {
+            duration: hopDuration,
+            delay: hop * hopDuration,
+            easing: "ease-in-out",
+          },
+        ),
+        stageButtons[arrival]
+          .querySelector(".stage-arrival")
+          .animate(
+            [{ opacity: 0 }, { opacity: 0.95, offset: 0.3 }, { opacity: 0 }],
+            {
+              duration: 650,
+              delay: (hop + 1) * hopDuration - 70,
+              easing: "ease-out",
+            },
+          ),
+      );
+    }
+  }
+  const stageResize = new ResizeObserver(measureStages);
+  stageResize.observe(stageTrack);
+  reducedMotion.addEventListener("change", stopStageCurrent);
   const hashAliases = { challenge: "problem", implementation: "build" };
   const requested = location.hash.slice(1);
   let current = Math.max(
@@ -216,20 +358,20 @@ if (presentation) {
   let readAll = new URL(location.href).searchParams.get("view") === "all";
 
   function showStage(index) {
+    const previousStage = stage;
     stage = index;
     stageButtons.forEach((button, i) => {
+      button.style.removeProperty("--charge-delay");
       button.setAttribute("aria-pressed", String(i === index));
       button.classList.toggle("is-selected", i === index);
     });
     stagePanels.forEach((panel, i) => {
       panel.hidden = !readAll && i !== index;
     });
-    presentation
-      .querySelector(".stage-explorer")
-      .style.setProperty(
-        "--stage-progress",
-        String(index / Math.max(1, stageButtons.length - 1)),
-      );
+    connections.forEach(({ wire }, i) =>
+      wire.classList.toggle("is-energized", i < index),
+    );
+    sendStageCurrent(previousStage, index);
   }
   function showScene(index, { focus = false, updateUrl = true } = {}) {
     current = Math.max(0, Math.min(scenes.length - 1, index));
@@ -237,6 +379,7 @@ if (presentation) {
       scene.hidden = !readAll && i !== current;
       scene.classList.toggle("is-active", i === current);
     });
+    if (readAll || scenes[current].id !== "architecture") stopStageCurrent();
     sceneButtons.forEach((button, i) => {
       if (i === current) button.setAttribute("aria-current", "step");
       else button.removeAttribute("aria-current");
@@ -309,7 +452,54 @@ if (presentation) {
   setReading(readAll);
 }
 
-// A small glass point replaces the pointer only after mouse movement.
+if (presentation) {
+  let returning = false;
+  const returnToPreviousPage = () => {
+    if (returning) return;
+    returning = true;
+    const previous = previousPortfolioUrl();
+    if (
+      previous &&
+      /\/(?:index\.html|projects\.html|themis\.html|dueform\.html|actifact\.html)?$/.test(
+        previous.pathname,
+      ) &&
+      history.length > 1
+    )
+      history.back();
+    else location.assign("index.html#work");
+  };
+  document.addEventListener("click", (event) => {
+    if (
+      event.button !== 0 ||
+      event.defaultPrevented ||
+      !event.detail ||
+      window.getSelection()?.toString()
+    )
+      return;
+    if (
+      event.target.closest(
+        ".presentation-shell, .presentation-topbar, .site-header, .contact-section, a, button",
+      )
+    )
+      return;
+    returnToPreviousPage();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key !== "Escape" ||
+      event.defaultPrevented ||
+      event.target.closest("input, textarea, select, [contenteditable]")
+    )
+      return;
+    if (menuButton?.getAttribute("aria-expanded") === "true") return;
+    returnToPreviousPage();
+  });
+  window.addEventListener("pageshow", () => {
+    returning = false;
+  });
+}
+
+// A soft light follows the pointer only after mouse movement.
 const cursorTracker = document.querySelector(".cursor-tracker");
 if (cursorTracker) {
   let cursorFrame = 0;
@@ -382,14 +572,43 @@ if (cursorTracker) {
   responsiveMotion.addEventListener("change", hideCursor);
 }
 
-// The photo feature changes only when a visitor chooses a thumbnail.
+// A slow, silent slideshow, suspended during interaction and outside the viewport.
 document.querySelectorAll("[data-event-gallery]").forEach((gallery) => {
   const photos = [...gallery.querySelectorAll("[data-event-photo]")];
   const buttons = [...gallery.querySelectorAll("[data-event-select]")];
-  const showPhoto = (index, announce = true) => {
+  let current = 0,
+    timer = 0,
+    visible = false,
+    hovered = false;
+  const showPhoto = (index, announce = true, animate = true) => {
+    const previous = current;
+    current = index;
     photos.forEach((photo, i) => {
+      photo.getAnimations().forEach((animation) => animation.cancel());
       photo.hidden = i !== index;
+      photo.setAttribute("aria-hidden", String(i !== index));
     });
+    if (animate && !reducedMotion.matches && index !== previous) {
+      const outgoing = photos[previous];
+      outgoing.hidden = false;
+      outgoing.classList.add("is-outgoing");
+      const exit = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 900,
+        easing: "ease-in-out",
+      });
+      photos[index].animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: 900,
+        easing: "ease-in-out",
+      });
+      exit.finished
+        .then(() => {
+          if (current !== previous) outgoing.hidden = true;
+          outgoing.classList.remove("is-outgoing");
+        })
+        .catch(() => {
+          outgoing.classList.remove("is-outgoing");
+        });
+    }
     buttons.forEach((button, i) =>
       button.setAttribute("aria-pressed", String(i === index)),
     );
@@ -397,8 +616,50 @@ document.querySelectorAll("[data-event-gallery]").forEach((gallery) => {
       gallery.querySelector("[data-event-status]").textContent =
         `Photo ${index + 1} of ${photos.length}: ${photos[index].querySelector("img").alt}.`;
   };
+  const schedule = () => {
+    clearTimeout(timer);
+    if (
+      !visible ||
+      hovered ||
+      document.hidden ||
+      reducedMotion.matches ||
+      gallery.contains(document.activeElement)
+    )
+      return;
+    timer = setTimeout(() => {
+      showPhoto((current + 1) % photos.length, false);
+      schedule();
+    }, 7000);
+  };
   buttons.forEach((button, index) =>
-    button.addEventListener("click", () => showPhoto(index)),
+    button.addEventListener("click", () => {
+      showPhoto(index);
+      schedule();
+    }),
   );
-  showPhoto(0, false);
+  gallery.addEventListener("pointerenter", (event) => {
+    if (event.pointerType === "mouse") {
+      hovered = true;
+      schedule();
+    }
+  });
+  gallery.addEventListener("pointerleave", () => {
+    hovered = false;
+    schedule();
+  });
+  gallery.addEventListener("focusin", schedule);
+  gallery.addEventListener("focusout", () => requestAnimationFrame(schedule));
+  new IntersectionObserver(
+    ([entry]) => {
+      visible = entry.isIntersecting;
+      schedule();
+    },
+    { threshold: 0.2 },
+  ).observe(gallery);
+  document.addEventListener("visibilitychange", schedule);
+  reducedMotion.addEventListener("change", () => {
+    showPhoto(current, false, false);
+    schedule();
+  });
+  showPhoto(0, false, false);
 });

@@ -50,8 +50,8 @@
       ]
     },
     {
-      "slug": "billacord",
-      "name": "Billacord",
+      "slug": "dueform",
+      "name": "DueForm",
       "category": "product",
       "eyebrow": "APPLIED AI · FINANCE PRODUCT",
       "status": "Private MVP",
@@ -86,7 +86,7 @@
           "Workspace-specific records and exports"
         ]
       ],
-      "scope": "A private local MVP with synthetic verification and a separate evaluation dataset. Customer demand and commercial outcomes remain unvalidated. Live extraction accuracy has not yet been established by the planned independent baseline. Billacord is the current working name; older folders use ClauseTally or ReplyLedger.",
+      "scope": "A private local MVP with synthetic verification and a separate evaluation dataset. Customer demand and commercial outcomes remain unvalidated. Live extraction accuracy has not yet been established by the planned independent baseline.",
       "flow": [
         "Contract & amendments",
         "Evidence-backed proposal",
@@ -114,8 +114,8 @@
       ]
     },
     {
-      "slug": "actionproof",
-      "name": "ActionProof",
+      "slug": "actifact",
+      "name": "ActiFact",
       "category": "governance",
       "eyebrow": "AGENT CONTROLS · VERIFICATION",
       "status": "Local demonstration",
