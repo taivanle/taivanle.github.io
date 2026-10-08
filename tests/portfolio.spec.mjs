@@ -14,6 +14,108 @@ const pages = [
   "404.html",
 ];
 
+test("project scenes animate in both directions and respect reduced motion", async ({
+  page,
+}) => {
+  await page.goto("/actifact.html");
+  const arrivalTravel = () =>
+    page.evaluate(() => {
+      const animation = document
+        .getAnimations()
+        .find((item) => item.animationName === "scene-content-in");
+      const transform = animation?.effect.getKeyframes()[0].transform;
+      return transform ? new DOMMatrix(transform).m41 : null;
+    });
+  await page
+    .getByRole("button", { name: "Scene 3: Architecture", exact: true })
+    .click();
+  await expect(page.locator("#architecture")).toBeVisible();
+  await expect.poll(arrivalTravel).toBeGreaterThan(0);
+  await page
+    .getByRole("button", { name: "Scene 2: The problem", exact: true })
+    .click();
+  await expect(page.locator("#problem")).toBeVisible();
+  await expect.poll(arrivalTravel).toBeLessThan(0);
+  await expect(page.locator(".scene:visible")).toHaveCount(1);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page
+    .getByRole("button", { name: "Scene 5: Results", exact: true })
+    .click();
+  await expect(page.locator("#results")).toBeVisible();
+  await expect.poll(arrivalTravel).toBeNull();
+});
+
+test("chapter arrivals follow navigation in both directions without hiding content", async ({
+  page,
+}) => {
+  await page.goto("/");
+  for (const [link, section] of [
+    ["About", "about"],
+    ["Work", "work"],
+  ]) {
+    await page
+      .getByRole("navigation", { name: "Main navigation" })
+      .getByRole("link", { name: link, exact: true })
+      .click();
+    await expect(page.locator(`#${section}`)).toHaveClass(/is-chapter-active/);
+    await expect(page.locator(`#${section} h2`)).toBeVisible();
+    const animations = await page
+      .locator(`#${section} h2`)
+      .evaluate((el) =>
+        el.getAnimations().map((animation) => animation.animationName),
+      );
+    expect(animations).toContain("chapter-title-arrive");
+  }
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator("#work h2")).toBeVisible();
+  expect(
+    await page.locator("#work h2").evaluate((el) => el.getAnimations().length),
+  ).toBe(0);
+});
+
+test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/create_agent.html");
+  const toc = page.getByRole("navigation", { name: "Article sections" });
+  await toc.getByRole("link", { name: "Python FAQ tool", exact: true }).click();
+  await expect(page).toHaveURL(/#adk-tool$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Create the Python FAQ tool",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await toc.getByRole("link", { name: "Visual builder", exact: true }).click();
+  await expect(page).toHaveURL(/#visual-builder$/);
+  const firstScreenshot = page.locator("#visual-builder img").first();
+  await firstScreenshot.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      firstScreenshot.evaluate(
+        (image) => image.complete && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+  const download = page.getByRole("link", {
+    name: "Download the original sample FAQ document",
+    exact: true,
+  });
+  const response = await request.get(await download.getAttribute("href"));
+  expect(response.ok()).toBeTruthy();
+  expect(response.headers()["content-type"]).toBe("application/pdf");
+  expect((await response.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBeTruthy();
+  }
+});
+
 test("project filters update visible cards and announce the result", async ({
   page,
 }) => {
@@ -626,7 +728,11 @@ for (const [slug, name] of [
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.locator(".scene.is-active .scene-title").click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
-    await page.mouse.click(8, 200);
+    const backdrop = await page.locator(".presentation-topbar").boundingBox();
+    await page.mouse.click(
+      backdrop.x + backdrop.width * 0.55,
+      backdrop.y + backdrop.height / 2,
+    );
     await expect(page).toHaveURL(/projects.html$/);
     await expect(card).toBeVisible();
     await expect

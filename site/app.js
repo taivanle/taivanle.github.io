@@ -123,6 +123,24 @@ if ("IntersectionObserver" in window) {
 
 const portraitVideo = document.querySelector("[data-portrait-video]");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+if ("IntersectionObserver" in window) {
+  const chapters = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries)
+        entry.target
+          .closest(".chapter-section")
+          .classList.toggle("is-chapter-active", entry.isIntersecting);
+    },
+    { rootMargin: "-12% 0px -18% 0px" },
+  );
+  document.querySelectorAll(".chapter-section").forEach((section) => {
+    section
+      .querySelector(".chapter-rule path")
+      ?.setAttribute("pathLength", "100");
+    const title = section.querySelector("h2");
+    if (title) chapters.observe(title);
+  });
+}
 if (portraitVideo) {
   let inView = false;
   const syncVideo = () => {
@@ -317,6 +335,8 @@ if (presentation) {
   );
   let stage = 0;
   let readAll = new URL(location.href).searchParams.get("view") === "all";
+  let sceneTransition;
+  let sceneRequest = 0;
 
   function showStage(index) {
     const previousStage = stage;
@@ -334,7 +354,7 @@ if (presentation) {
     );
     sendStageCurrent(previousStage, index);
   }
-  function showScene(index, { focus = false, updateUrl = true } = {}) {
+  function commitScene(index, { focus = false, updateUrl = true } = {}) {
     current = Math.max(0, Math.min(scenes.length - 1, index));
     scenes.forEach((scene, i) => {
       scene.hidden = !readAll && i !== current;
@@ -368,6 +388,40 @@ if (presentation) {
       shell.scrollIntoView({ block: "start", behavior: "instant" });
     updateScrollProgress();
   }
+  function showScene(index, options = {}) {
+    const request = ++sceneRequest;
+    const destination = Math.max(0, Math.min(scenes.length - 1, index));
+    const previousTransition = sceneTransition;
+    sceneTransition = null;
+    previousTransition?.skipTransition();
+    document.documentElement.classList.remove("scene-transition");
+    if (
+      destination === current ||
+      readAll ||
+      reducedMotion.matches ||
+      !document.startViewTransition
+    ) {
+      commitScene(destination, options);
+      return;
+    }
+    const direction = destination > current ? "forward" : "reverse";
+    document.documentElement.dataset.sceneDirection = direction;
+    document.documentElement.classList.add("scene-transition");
+    const transition = document.startViewTransition(() => {
+      if (request === sceneRequest) commitScene(destination, options);
+    });
+    sceneTransition = transition;
+    transition.finished
+      .finally(() => {
+        if (sceneTransition !== transition) return;
+        sceneTransition = null;
+        document.documentElement.classList.remove("scene-transition");
+      })
+      .catch(() => {});
+  }
+  reducedMotion.addEventListener("change", () =>
+    sceneTransition?.skipTransition(),
+  );
   function setReading(value) {
     readAll = value;
     presentation.classList.toggle("presentation-mode", !value);
@@ -433,13 +487,12 @@ if (presentation) {
     if (
       event.button !== 0 ||
       event.defaultPrevented ||
-      !event.detail ||
       window.getSelection()?.toString()
     )
       return;
     if (
       event.target.closest(
-        ".presentation-shell, .presentation-topbar, .site-header, .contact-section, a, button",
+        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, .contact-section, a, button",
       )
     )
       return;
