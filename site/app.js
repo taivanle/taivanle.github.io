@@ -1,0 +1,328 @@
+document.documentElement.classList.add("js");
+
+const menuButton = document.querySelector(".menu-toggle");
+const navigation = document.querySelector("#navigation");
+function closeMenu() {
+  menuButton?.setAttribute("aria-expanded", "false");
+  navigation?.classList.remove("is-open");
+}
+menuButton?.addEventListener("click", () => {
+  const open = menuButton.getAttribute("aria-expanded") !== "true";
+  menuButton.setAttribute("aria-expanded", String(open));
+  navigation?.classList.toggle("is-open", open);
+});
+navigation?.addEventListener("click", (event) => {
+  if (event.target.closest("a")) closeMenu();
+});
+document.addEventListener("keydown", (event) => {
+  if (
+    event.key === "Escape" &&
+    menuButton?.getAttribute("aria-expanded") === "true"
+  ) {
+    closeMenu();
+    menuButton.focus();
+  }
+});
+document.addEventListener("click", (event) => {
+  if (!event.target.closest(".site-header")) closeMenu();
+});
+window.matchMedia("(min-width: 761px)").addEventListener("change", closeMenu);
+
+const filterButtons = [...document.querySelectorAll("[data-filter]")];
+const projectCards = [...document.querySelectorAll("[data-category]")];
+filterButtons.forEach((button) =>
+  button.addEventListener("click", () => {
+    const filter = button.dataset.filter;
+    filterButtons.forEach((item) =>
+      item.setAttribute("aria-pressed", String(item === button)),
+    );
+    projectCards.forEach((card) => {
+      card.hidden = filter !== "all" && card.dataset.category !== filter;
+    });
+    const count = projectCards.filter((card) => !card.hidden).length;
+    document.querySelector("#filter-status").textContent =
+      `${count} ${count === 1 ? "project" : "projects"} shown: ${button.textContent.trim().replace(/\s+\d+$/, "")}.`;
+  }),
+);
+
+const copyButton = document.querySelector("[data-copy-email]");
+copyButton?.addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText("taivan@hotmail.co.uk");
+    document.querySelector("#copy-status").textContent =
+      "Email address copied.";
+    copyButton.setAttribute("aria-label", "Email address copied");
+    setTimeout(() => {
+      document.querySelector("#copy-status").textContent = "";
+      copyButton.setAttribute("aria-label", "Copy email address");
+    }, 3500);
+  } catch {
+    document.querySelector("#copy-status").textContent =
+      "Please copy this address: taivan@hotmail.co.uk";
+  }
+});
+
+if ("IntersectionObserver" in window) {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        document.querySelectorAll('.nav-link[href^="#"]').forEach((link) => {
+          if (link.getAttribute("href") === `#${entry.target.id}`)
+            link.setAttribute("aria-current", "location");
+          else link.removeAttribute("aria-current");
+        });
+      });
+    },
+    { rootMargin: "-15% 0px -65% 0px" },
+  );
+  document
+    .querySelectorAll("main > section[id]")
+    .forEach((section) => observer.observe(section));
+}
+
+const portraitVideo = document.querySelector("[data-portrait-video]");
+const motionButton = document.querySelector(".motion-toggle");
+motionButton?.addEventListener("click", () => {
+  const paused = document.documentElement.classList.toggle("motion-paused");
+  motionButton.setAttribute("aria-pressed", String(paused));
+  motionButton.setAttribute(
+    "aria-label",
+    paused ? "Resume motion" : "Pause motion",
+  );
+  motionButton.innerHTML = `${paused ? "Resume motion" : "Pause motion"} <span aria-hidden="true">${paused ? "▷" : "Ⅱ"}</span>`;
+  if (paused) portraitVideo?.pause();
+});
+
+const videoButton = document.querySelector("[data-video-toggle]");
+if (portraitVideo && videoButton) {
+  portraitVideo.controls = false;
+  const syncPlayback = () => {
+    const playing = !portraitVideo.paused;
+    videoButton.setAttribute("aria-pressed", String(playing));
+    videoButton.innerHTML = `${playing ? "Pause clip" : "Play clip"} <span aria-hidden="true">${playing ? "Ⅱ" : "▷"}</span>`;
+  };
+  videoButton.addEventListener("click", async () => {
+    if (!portraitVideo.paused) {
+      portraitVideo.pause();
+      return;
+    }
+    try {
+      await portraitVideo.play();
+    } catch {
+      portraitVideo.controls = true;
+      document.querySelector("#clip-status").textContent =
+        "The clip could not play. Try the video’s native controls.";
+    }
+  });
+  portraitVideo.addEventListener("play", syncPlayback);
+  portraitVideo.addEventListener("pause", syncPlayback);
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) portraitVideo.pause();
+    }).observe(portraitVideo);
+  }
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) portraitVideo.pause();
+  });
+}
+
+const responsiveMotion = window.matchMedia(
+  "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+);
+document
+  .querySelectorAll("[data-spotlight], .project-card, .presentation-deck")
+  .forEach((surface) => {
+    let frame;
+    surface.addEventListener(
+      "pointermove",
+      (event) => {
+        if (
+          !responsiveMotion.matches ||
+          document.documentElement.classList.contains("motion-paused")
+        )
+          return;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const bounds = surface.getBoundingClientRect();
+          const x = event.clientX - bounds.left;
+          const y = event.clientY - bounds.top;
+          surface.style.setProperty("--light-x", `${x}px`);
+          surface.style.setProperty("--light-y", `${y}px`);
+          if (surface.classList.contains("portrait-panel")) {
+            surface.style.setProperty(
+              "--tilt-x",
+              `${(0.5 - y / bounds.height) * 2}deg`,
+            );
+            surface.style.setProperty(
+              "--tilt-y",
+              `${(x / bounds.width - 0.5) * 2}deg`,
+            );
+          }
+        });
+      },
+      { passive: true },
+    );
+    surface.addEventListener("pointerleave", () => {
+      cancelAnimationFrame(frame);
+      surface.style.setProperty("--tilt-x", "0deg");
+      surface.style.setProperty("--tilt-y", "0deg");
+    });
+  });
+
+const animatedElements = document.querySelectorAll(
+  ".project-card, .principles > div, .experience-row, .note-row",
+);
+if ("IntersectionObserver" in window) {
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-inview");
+          revealObserver.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.12 },
+  );
+  animatedElements.forEach((element) => revealObserver.observe(element));
+} else {
+  animatedElements.forEach((element) => element.classList.add("is-inview"));
+}
+
+let scrollQueued = false;
+function updateScrollProgress() {
+  const available = document.documentElement.scrollHeight - window.innerHeight;
+  document.documentElement.style.setProperty(
+    "--scroll-progress",
+    String(available > 0 ? Math.min(1, window.scrollY / available) : 0),
+  );
+  scrollQueued = false;
+}
+window.addEventListener(
+  "scroll",
+  () => {
+    if (!scrollQueued) {
+      scrollQueued = true;
+      requestAnimationFrame(updateScrollProgress);
+    }
+  },
+  { passive: true },
+);
+window.addEventListener("resize", updateScrollProgress);
+updateScrollProgress();
+
+const presentation = document.querySelector(".presentation-main");
+if (presentation) {
+  const shell = presentation.querySelector(".presentation-shell");
+  const scenes = [...presentation.querySelectorAll(".scene")];
+  const sceneButtons = [...presentation.querySelectorAll("[data-scene]")];
+  const previous = presentation.querySelector(".scene-prev");
+  const next = presentation.querySelector(".scene-next");
+  const reading = presentation.querySelector(".reading-toggle");
+  const stageButtons = [...presentation.querySelectorAll("[data-stage]")];
+  const stagePanels = [...presentation.querySelectorAll("[data-stage-panel]")];
+  const hashAliases = { challenge: "problem", implementation: "build" };
+  const requested = location.hash.slice(1);
+  let current = Math.max(
+    0,
+    scenes.findIndex(
+      (scene) => scene.id === (hashAliases[requested] || requested),
+    ),
+  );
+  let stage = 0;
+  let readAll = new URL(location.href).searchParams.get("view") === "all";
+
+  function showStage(index) {
+    stage = index;
+    stageButtons.forEach((button, i) => {
+      button.setAttribute("aria-pressed", String(i === index));
+      button.classList.toggle("is-selected", i === index);
+    });
+    stagePanels.forEach((panel, i) => {
+      panel.hidden = !readAll && i !== index;
+    });
+    presentation
+      .querySelector(".stage-explorer")
+      .style.setProperty(
+        "--stage-progress",
+        String(index / Math.max(1, stageButtons.length - 1)),
+      );
+  }
+  function showScene(index, { focus = false, updateUrl = true } = {}) {
+    current = Math.max(0, Math.min(scenes.length - 1, index));
+    scenes.forEach((scene, i) => {
+      scene.hidden = !readAll && i !== current;
+      scene.classList.toggle("is-active", i === current);
+    });
+    sceneButtons.forEach((button, i) => {
+      if (i === current) button.setAttribute("aria-current", "step");
+      else button.removeAttribute("aria-current");
+    });
+    previous.disabled = current === 0;
+    next.disabled = current === scenes.length - 1;
+    presentation.querySelector(".scene-counter").innerHTML =
+      `${String(current + 1).padStart(2, "0")} <span>/ ${String(scenes.length).padStart(2, "0")}</span>`;
+    presentation.querySelector("#presentation-status").textContent =
+      `${presentation.querySelector("h1").textContent}: scene ${current + 1} of ${scenes.length}, ${scenes[current].getAttribute("aria-label")}.`;
+    if (updateUrl && !readAll) {
+      const url = new URL(location.href);
+      url.hash = scenes[current].id;
+      history.replaceState(null, "", url);
+    }
+    if (focus)
+      scenes[current]
+        .querySelector(".scene-title")
+        .focus({ preventScroll: true });
+    if (
+      !readAll &&
+      shell.getBoundingClientRect().top <
+        document.querySelector(".site-header").getBoundingClientRect().bottom
+    )
+      shell.scrollIntoView({ block: "start", behavior: "instant" });
+    updateScrollProgress();
+  }
+  function setReading(value) {
+    readAll = value;
+    presentation.classList.toggle("presentation-mode", !value);
+    presentation.classList.toggle("reading-mode", value);
+    reading.setAttribute("aria-pressed", String(value));
+    reading.textContent = value ? "Presentation view" : "Read all at once";
+    const url = new URL(location.href);
+    if (value) url.searchParams.set("view", "all");
+    else url.searchParams.delete("view");
+    history.replaceState(null, "", url);
+    showStage(stage);
+    showScene(current, { updateUrl: false });
+  }
+  previous.addEventListener("click", () => showScene(current - 1));
+  next.addEventListener("click", () => showScene(current + 1));
+  sceneButtons.forEach((button) =>
+    button.addEventListener("click", () =>
+      showScene(Number(button.dataset.scene)),
+    ),
+  );
+  stageButtons.forEach((button) =>
+    button.addEventListener("click", () =>
+      showStage(Number(button.dataset.stage)),
+    ),
+  );
+  reading.addEventListener("click", () => setReading(!readAll));
+  shell.addEventListener("keydown", (event) => {
+    if (
+      readAll ||
+      event.altKey ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.target.closest("input,textarea,select,[contenteditable]")
+    )
+      return;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      showScene(current + (event.key === "ArrowRight" ? 1 : -1), {
+        focus: true,
+      });
+    }
+  });
+  setReading(readAll);
+}

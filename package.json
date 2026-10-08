@@ -1,0 +1,19 @@
+{
+  "name": "owen-le-portfolio",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "check": "node tools/check.mjs",
+    "preview": "node tools/serve.mjs",
+    "test": "playwright test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.64.0",
+    "prettier": "^3.9.9"
+  }
+}

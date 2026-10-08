@@ -1,0 +1,176 @@
+{
+  "projects": [
+    {
+      "slug": "themis",
+      "name": "Themis",
+      "category": "ai",
+      "eyebrow": "AI EVALUATION · APTURA",
+      "status": "Professional work",
+      "title": "Better evaluations. A fraction of the cost.",
+      "summary": "A hybrid agentic grader combining deterministic checks, structured rubrics, and model judgement to benchmark AI-generated spreadsheets and presentations.",
+      "tags": ["Evaluation pipelines", "LLM as a judge", "Golden datasets"],
+      "theme": "themis",
+      "role": "Member of Technical Staff, Aptura",
+      "period": "June – August 2026",
+      "challenge": "Evaluating model-generated artefacts needs more than a plausible-sounding answer. The grader has to assess correctness against expected outputs and explicit criteria, while keeping repeated benchmarking affordable and reproducible.",
+      "approach": [
+        "Designed and implemented Themis as a hybrid grading pipeline: deterministic validation for machine-checkable properties, rubric-based assessment, and LLM judgement for the remaining criteria.",
+        "Built custom evaluation environments that execute grading workflows end to end and compare model outputs with golden datasets and structured rubrics.",
+        "Automated repeatable benchmarking across multiple models and compared the approach with Gandalf the Grader and LLM-as-a-Judge methods."
+      ],
+      "decision": "Different criteria need different graders. Combining deterministic checks with rubric-guided model assessment creates a clearer boundary between what can be verified directly and what requires judgement.",
+      "results": [
+        ["98.7%", "lower cost per run", "Approximately $25 → $0.33"],
+        ["~40%", "less evaluation time", "Reported workflow improvement"],
+        ["+2 pp", "benchmark accuracy", "95% → 97%"]
+      ],
+      "scope": "Results are reported in my resume for the evaluation workflows used at Aptura. They describe that benchmark context; they are not a general claim about model accuracy. This case study summarises my contribution without publishing employer code or datasets.",
+      "flow": [
+        "Model artefact",
+        "Deterministic checks",
+        "Rubric & model grading",
+        "Benchmark report"
+      ],
+      "reflection": "Evaluation is part of the engineering system. Cost, reproducibility, and the ability to explain a score matter alongside the score itself.",
+      "problemHeadline": "Evaluation should be as useful as the model.",
+      "focus": [
+        "Cost per run",
+        "Consistency across models",
+        "Rubric-level explainability"
+      ],
+      "buildLabels": [
+        "Hybrid grading",
+        "Execution environments",
+        "Repeatable benchmarking"
+      ],
+      "stages": [
+        "Start with model-generated artefacts, expected outputs, and the criteria in a structured rubric. The test conditions make the score meaningful.",
+        "Use deterministic validation for machine-checkable properties. These checks create a repeatable foundation for the rest of the assessment.",
+        "Assess the remaining criteria with rubric-guided model judgement in a controlled evaluation environment.",
+        "Bring the results into a repeatable benchmark report and compare quality, evaluation time, and cost across the tested workflows."
+      ]
+    },
+    {
+      "slug": "billacord",
+      "name": "Billacord",
+      "category": "product",
+      "eyebrow": "APPLIED AI · FINANCE PRODUCT",
+      "status": "Private MVP",
+      "title": "From contract terms to billing evidence.",
+      "summary": "A contract-to-invoice checking product with source-backed term review, deterministic calculations, separate client workspaces, and exportable evidence.",
+      "tags": ["Node.js", "Structured extraction", "Human approval"],
+      "theme": "billing",
+      "role": "Independent product design & engineering",
+      "period": "Current build",
+      "challenge": "Negotiated terms, amendments, discounts, and renewal increases can drift from what is billed. A useful finance tool must show the source of a finding and its calculation, and distinguish a potential difference from a confirmed error or recovered payment.",
+      "approach": [
+        "Built a local Node.js application with owner and client logins, separate ledgers, invitations, membership revocation, and workspace-specific reports.",
+        "Added document and invoice imports, a replaceable AI extraction provider, and manual term entry. Reviewers see exact supporting excerpts beside proposed terms and approve them before checking invoices.",
+        "Implemented deterministic comparison of approved terms and before-tax invoice amounts, including multiple charges, supported seat-based pricing, and monthly, quarterly, and annual periods.",
+        "Built findings review, renewal tracking, billing setup sheets, and PDF, CSV, and HTML evidence exports. Potential differences, confirmed errors, corrections, and collected cash retain distinct statuses."
+      ],
+      "decision": "Use the model to propose structured terms, then make approval and arithmetic explicit. The billing checker runs against approved data, making a finding traceable to both contract evidence and a reproducible calculation.",
+      "results": [
+        [
+          "Review first",
+          "approval before checking",
+          "Source excerpts remain visible"
+        ],
+        [
+          "Deterministic",
+          "invoice comparison",
+          "Supported billing rules are explicit"
+        ],
+        [
+          "Separated",
+          "client workspaces",
+          "Workspace-specific records and exports"
+        ]
+      ],
+      "scope": "A private local MVP with synthetic verification and a separate evaluation dataset. Customer demand and commercial outcomes remain unvalidated. Live extraction accuracy has not yet been established by the planned independent baseline. Billacord is the current working name; older folders use ClauseTally or ReplyLedger.",
+      "flow": [
+        "Contract & amendments",
+        "Evidence-backed proposal",
+        "Human approval",
+        "Invoice check & report"
+      ],
+      "reflection": "Finance reviewers need evidence they can inspect. Treating extraction, approval, calculation, and resolution as separate stages makes the product easier to audit and improve.",
+      "problemHeadline": "The agreement and the invoice should tell the same story.",
+      "focus": [
+        "Negotiated amendments",
+        "Renewal price changes",
+        "Evidence for finance review"
+      ],
+      "buildLabels": [
+        "Client workspaces",
+        "Extraction & approval",
+        "Billing rules",
+        "Review & reporting"
+      ],
+      "stages": [
+        "Import the contract and supplied amendments. Preserve the original sources so proposed terms can be traced to the agreement.",
+        "Propose structured commercial terms with exact supporting excerpts, using a replaceable AI provider or manual entry.",
+        "Let the reviewer inspect the evidence, resolve ambiguities, and explicitly approve the terms that the checker will use.",
+        "Compare supported billing amounts deterministically and export the calculation and evidence. A potential difference still requires finance review."
+      ]
+    },
+    {
+      "slug": "actionproof",
+      "name": "ActionProof",
+      "category": "governance",
+      "eyebrow": "AGENT CONTROLS · VERIFICATION",
+      "status": "Local demonstration",
+      "title": "Did the agent do only what was approved?",
+      "summary": "A TypeScript verifier that checks approval boundaries against actual state changes and keeps missing evidence visible.",
+      "tags": ["TypeScript", "Permission checks", "State verification"],
+      "theme": "controls",
+      "role": "Independent design & engineering",
+      "period": "Current build",
+      "challenge": "An allowed decision does not prove that an action was correct. Approval can refer to the wrong target, cross an account boundary, or become unverifiable when post-execution evidence is unavailable.",
+      "approach": [
+        "Built a dependency-free TypeScript demonstration around a synthetic ticket store, with deliberately broken and corrected reference controls.",
+        "Ran five isolated scenarios covering an approved action, missing approval, a changed ticket target, customer separation, and unavailable post-execution evidence.",
+        "Compared before-and-after state with the authorised action and produced a self-contained HTML and JSON report with explicit pass, fail, and inconclusive results."
+      ],
+      "decision": "Verify the observable effect, not just the control's returned decision. Missing state evidence remains inconclusive, so a successful function return cannot silently become a security pass.",
+      "results": [
+        ["5", "isolated scenarios", "Fresh synthetic fixtures per check"],
+        [
+          "Detected",
+          "seeded target-binding bug",
+          "Broken control changes the wrong ticket"
+        ],
+        [
+          "3 states",
+          "pass / fail / inconclusive",
+          "Missing evidence never passes"
+        ]
+      ],
+      "scope": "This verifies our own synthetic reference example. It is a local demonstration, not a production security product or a customer vulnerability finding. Real identity, transport, concurrency, expiry, and customer-system adapters require separate work.",
+      "flow": [
+        "Scoped approval",
+        "Reference action",
+        "Observe state change",
+        "Verification evidence"
+      ],
+      "reflection": "A useful verifier must be willing to say it cannot conclude. Keeping uncertainty visible is as important as detecting a seeded failure.",
+      "problemHeadline": "Permission is only the start. Verify the effect.",
+      "focus": [
+        "Approval scoped to a target",
+        "Customer boundaries",
+        "Observable side effects"
+      ],
+      "buildLabels": [
+        "Synthetic reference",
+        "Isolated scenarios",
+        "Inspectable evidence"
+      ],
+      "stages": [
+        "Create approval for a specific actor, organisation, action, and ticket in a fresh synthetic fixture.",
+        "Execute the deliberately broken or corrected reference control against the synthetic ticket store.",
+        "Read the resulting state and compare it with the before-state. The actual record change is the evidence.",
+        "Report pass, fail, or inconclusive. An unavailable state reader cannot turn an allowed decision into a verified pass."
+      ]
+    }
+  ]
+}
