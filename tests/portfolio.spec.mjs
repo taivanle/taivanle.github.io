@@ -58,32 +58,56 @@ test("project scenes accept immediate arrow keys, animate both ways, and handle 
   await expect.poll(arrivalTravel).toBeNull();
 });
 
-test("chapter arrivals follow navigation in both directions without hiding content", async ({
+test("all five chapter handoffs have moving currents and scroll-driven type in both directions", async ({
   page,
 }) => {
   await page.goto("/");
-  for (const [link, section] of [
-    ["About", "about"],
-    ["Work", "work"],
-  ]) {
-    await page
-      .getByRole("navigation", { name: "Main navigation" })
-      .getByRole("link", { name: link, exact: true })
-      .click();
-    await expect(page.locator(`#${section}`)).toHaveClass(/is-chapter-active/);
-    await expect(page.locator(`#${section} h2`)).toBeVisible();
-    const animations = await page
-      .locator(`#${section} h2`)
-      .evaluate((el) =>
-        el.getAnimations().map((animation) => animation.animationName),
+  await expect(page.locator(".chapter-rule")).toHaveCount(5);
+  for (const section of ["work", "about", "experience", "community", "notes"]) {
+    const divider = page.locator(`#${section} .chapter-rule`);
+    await divider.scrollIntoViewIfNeeded();
+    await expect(divider).toHaveClass(/is-divider-active/);
+    const current = divider.locator(".chapter-current-core");
+    const offset = () =>
+      current.evaluate((el) =>
+        parseFloat(getComputedStyle(el).strokeDashoffset),
       );
-    expect(animations).toContain("chapter-title-arrive");
+    const firstOffset = await offset();
+    await expect
+      .poll(async () => Math.abs((await offset()) - firstOffset))
+      .toBeGreaterThan(2);
+    const word = divider.locator(".chapter-word");
+    const travel = () =>
+      word.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41);
+    const start = await travel();
+    await page.mouse.wheel(0, 120);
+    await expect.poll(travel).toBeLessThan(start - 5);
+    const forward = await travel();
+    await page.mouse.wheel(0, -120);
+    await expect.poll(travel).toBeGreaterThan(forward + 5);
+    await expect(page.locator(`#${section} h2`).first()).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
   }
+  await expect(page.locator("#work .chapter-rule")).not.toHaveClass(
+    /is-divider-active/,
+  );
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator("#work h2")).toBeVisible();
   expect(
-    await page.locator("#work h2").evaluate((el) => el.getAnimations().length),
+    await page
+      .locator("#notes .chapter-word")
+      .evaluate((el) => getComputedStyle(el).transform),
+  ).toBe("none");
+  expect(
+    await page
+      .locator("#notes .chapter-word")
+      .evaluate((el) => el.getAnimations().length),
   ).toBe(0);
+  await expect(page.locator("#notes .chapter-current-core")).not.toBeVisible();
+  await expect(page.locator("#notes h2")).toBeVisible();
 });
 
 test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({

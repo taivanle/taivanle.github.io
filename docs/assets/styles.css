@@ -4628,30 +4628,16 @@ html:not(.js) .stage-track {
 .home-page .hero-role {
   flex-wrap: wrap;
 }
-.chapter-section.is-chapter-active .chapter-rule path {
-  stroke-dasharray: 100;
-  animation: chapter-line-arrive 850ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-.chapter-section.is-chapter-active h2 {
-  animation: chapter-title-arrive 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes chapter-line-arrive {
-  from {
-    stroke-dashoffset: 100;
-    opacity: 0.3;
-  }
-  to {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
+.chapter-section.is-chapter-active .chapter-title {
+  animation: chapter-title-arrive 900ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes chapter-title-arrive {
   from {
-    opacity: 0.45;
-    transform: translateY(18px);
+    clip-path: inset(0 0 100% 0);
+    transform: translateY(52px);
   }
   to {
-    opacity: 1;
+    clip-path: inset(0);
     transform: translateY(0);
   }
 }
@@ -4661,18 +4647,108 @@ html:not(.js) .stage-track {
   padding-block: 82px 100px;
 }
 .home-page .chapter-rule {
-  height: 32px;
-  margin-bottom: 64px;
+  position: relative;
+  height: clamp(170px, 18vw, 230px);
+  margin-bottom: 54px;
+  overflow: hidden;
+}
+.chapter-index {
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #b8caa7;
+  font: 11px var(--mono);
+  letter-spacing: 2px;
+}
+.chapter-word {
+  position: absolute;
+  bottom: 48px;
+  left: clamp(32px, 4vw, 52px);
+  font-size: clamp(38px, 11.5vw, 144px);
+  font-weight: 500;
+  letter-spacing: -0.065em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-stroke: 1px #b8d7ab99;
+  transform: translate3d(var(--chapter-shift, 0px), 0, 0);
+}
+.is-divider-active .chapter-word {
+  animation: chapter-word-uncover 950ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform;
+}
+@keyframes chapter-word-uncover {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0);
+  }
 }
 .chapter-rule svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
   width: 100%;
-  height: 100%;
+  height: 40px;
   fill: none;
 }
 .chapter-rule path {
   stroke: #91a58466;
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
+}
+.chapter-rule .chapter-current {
+  stroke-dasharray: 16 116;
+  stroke-linecap: round;
+  opacity: 0;
+}
+.chapter-rule .chapter-current-halo {
+  stroke: #a8f4ce;
+  stroke-width: 10;
+}
+.chapter-rule .chapter-current-core {
+  stroke: #d7f4af;
+  stroke-width: 2.5;
+}
+.is-divider-active .chapter-current {
+  animation: chapter-current-travel 3.4s linear infinite;
+}
+@keyframes chapter-current-travel {
+  0% {
+    stroke-dashoffset: 18;
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  82% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: -102;
+    opacity: 0;
+  }
+}
+.is-divider-active .chapter-current-halo {
+  animation-name: chapter-current-halo;
+}
+@keyframes chapter-current-halo {
+  0% {
+    stroke-dashoffset: 18;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.16;
+  }
+  82% {
+    opacity: 0.16;
+  }
+  100% {
+    stroke-dashoffset: -102;
+    opacity: 0;
+  }
 }
 .home-page .chapter-section h2 {
   font-size: clamp(38px, 4.6vw, 62px);
@@ -4714,7 +4790,7 @@ html:not(.js) .stage-track {
     padding-block: 42px 64px;
   }
   .home-page .chapter-rule {
-    height: 24px;
+    height: 150px;
     margin-bottom: 38px;
   }
   .home-page .about-grid {
@@ -4725,7 +4801,18 @@ html:not(.js) .stage-track {
     margin-bottom: 32px;
   }
 }
+@media (prefers-reduced-motion: reduce) {
+  .chapter-word {
+    transform: none;
+  }
+  .chapter-rule .chapter-current {
+    display: none;
+  }
+}
 @media print {
+  .home-page .chapter-rule {
+    display: none;
+  }
   .home-page .work-section,
   .home-page .about-section,
   .home-page .community-section,

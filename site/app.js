@@ -124,6 +124,42 @@ if ("IntersectionObserver" in window) {
 const portraitVideo = document.querySelector("[data-portrait-video]");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
 if ("IntersectionObserver" in window) {
+  const visibleDividers = new Set();
+  let dividerFrame = 0;
+  function moveDividers() {
+    dividerFrame = 0;
+    for (const divider of visibleDividers) {
+      const bounds = divider.getBoundingClientRect();
+      const progress = Math.max(
+        0,
+        Math.min(1, (innerHeight - bounds.top) / (innerHeight + bounds.height)),
+      );
+      divider.style.setProperty(
+        "--chapter-shift",
+        `${reducedMotion.matches ? 0 : (0.5 - progress) * Math.min(100, innerWidth * 0.18)}px`,
+      );
+    }
+  }
+  function scheduleDividers() {
+    if (!dividerFrame) dividerFrame = requestAnimationFrame(moveDividers);
+  }
+  const dividers = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        entry.target.classList.toggle(
+          "is-divider-active",
+          entry.isIntersecting,
+        );
+        if (entry.isIntersecting) visibleDividers.add(entry.target);
+        else visibleDividers.delete(entry.target);
+      }
+      scheduleDividers();
+    },
+    { rootMargin: "-80px 0px 0px" },
+  );
+  window.addEventListener("scroll", scheduleDividers, { passive: true });
+  window.addEventListener("resize", scheduleDividers);
+  reducedMotion.addEventListener("change", scheduleDividers);
   const chapters = new IntersectionObserver(
     (entries) => {
       for (const entry of entries)
@@ -134,11 +170,13 @@ if ("IntersectionObserver" in window) {
     { rootMargin: "-12% 0px -18% 0px" },
   );
   document.querySelectorAll(".chapter-section").forEach((section) => {
-    section
-      .querySelector(".chapter-rule path")
-      ?.setAttribute("pathLength", "100");
+    const divider = section.querySelector(".chapter-rule");
+    if (divider) dividers.observe(divider);
     const title = section.querySelector("h2");
-    if (title) chapters.observe(title);
+    if (title) {
+      title.classList.add("chapter-title");
+      chapters.observe(title);
+    }
   });
 }
 if (portraitVideo) {
