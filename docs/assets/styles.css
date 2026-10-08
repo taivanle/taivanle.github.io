@@ -1479,6 +1479,7 @@ p {
   letter-spacing: -0.8px;
 }
 .talks-panel > div > p:not(.eyebrow) {
+  color: #ccd9c3;
   font-size: 13px;
   line-height: 1.8;
 }
