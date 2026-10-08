@@ -79,6 +79,7 @@ test("project entry and return keep an opaque dark backing throughout native tra
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.addInitScript(() => {
     addEventListener("pagereveal", (event) => {
+      window.transitionReady = false;
       if (!event.viewTransition) return;
       event.viewTransition.ready
         .then(() => {
@@ -96,7 +97,16 @@ test("project entry and return keep an opaque dark backing throughout native tra
 
   async function inspectFrames() {
     await expect
-      .poll(() => page.evaluate(() => window.transitionReady))
+      .poll(() =>
+        page.evaluate(() =>
+          Boolean(
+            window.transitionReady &&
+            window.transitionAnimations?.some(
+              (animation) => animation.playState === "paused",
+            ),
+          ),
+        ),
+      )
       .toBe(true);
     expect(
       await page.evaluate(() => window.transitionAnimations.length),
