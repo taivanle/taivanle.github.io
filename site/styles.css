@@ -220,6 +220,35 @@ p {
 .nav-resume:hover {
   background: var(--lime);
 }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.nav-social {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #73918566;
+  border-radius: 5px;
+  background: #60826b13;
+  transition:
+    color 0.2s,
+    background 0.2s,
+    border-color 0.2s;
+}
+.nav-social svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+.nav-social:hover {
+  color: #d5e7ae;
+  background: #60826b33;
+  border-color: #91a584;
+}
 .menu-toggle {
   display: none;
   border: 1px solid var(--line);
