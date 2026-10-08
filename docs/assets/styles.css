@@ -5481,3 +5481,11 @@ html:not(.js) .stage-track {
     display: none;
   }
 }
+
+@media print {
+  .build-tabs,
+  .design-toggle,
+  .detail-toggle {
+    display: none !important;
+  }
+}

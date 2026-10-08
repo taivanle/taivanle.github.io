@@ -156,6 +156,20 @@ test("chapter settling releases immediately, works in both directions, and updat
   await expect(page.locator(".nav-link[aria-current]")).toHaveCount(0);
   const nav = page.getByRole("navigation", { name: "Main navigation" });
   await nav.getByRole("link", { name: "About", exact: true }).click();
+  await expect
+    .poll(() =>
+      page
+        .locator("#about")
+        .evaluate((el) =>
+          Math.abs(
+            el.getBoundingClientRect().top -
+              parseFloat(
+                getComputedStyle(document.documentElement).scrollPaddingTop,
+              ),
+          ),
+        ),
+    )
+    .toBeLessThan(2);
   await expect(page.locator(".nav-link[aria-current]")).toHaveText("About");
   const active = nav.getByRole("link", { name: "About", exact: true });
   const hover = nav.getByRole("link", { name: "Experience", exact: true });
@@ -379,6 +393,9 @@ for (const project of ["themis", "dueform", "actifact"]) {
             viewport: innerHeight,
           };
         });
+        const size = `${width}×${height}`;
+        if (!frames.has(size)) frames.set(size, fit.frame);
+        expect(fit.frame).toBeCloseTo(frames.get(size), 0);
         expect(
           fit.content,
           `${project} ${scene + 1}: unclipped at ${width}×${height}`,
@@ -1046,6 +1063,13 @@ test("the reflective sweep covers the full overview visual at every breakpoint",
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("/themis.html");
+    if (width < 981) {
+      await expect(page.locator(".intro-visual")).toBeHidden();
+      await page
+        .getByRole("button", { name: "Read all at once", exact: true })
+        .click();
+      await expect(page.locator(".intro-visual")).toBeVisible();
+    }
     expect(
       await page.locator(".intro-visual").evaluate((visual) => {
         const sheen = getComputedStyle(visual, "::after");
