@@ -31,7 +31,24 @@
         "Rubric & model grading",
         "Benchmark report"
       ],
-      "reflection": "Evaluation is part of the engineering system. Cost, reproducibility, and the ability to explain a score matter alongside the score itself."
+      "reflection": "Evaluation is part of the engineering system. Cost, reproducibility, and the ability to explain a score matter alongside the score itself.",
+      "problemHeadline": "Evaluation should be as useful as the model.",
+      "focus": [
+        "Cost per run",
+        "Consistency across models",
+        "Rubric-level explainability"
+      ],
+      "buildLabels": [
+        "Hybrid grading",
+        "Execution environments",
+        "Repeatable benchmarking"
+      ],
+      "stages": [
+        "Start with model-generated artefacts, expected outputs, and the criteria in a structured rubric. The test conditions make the score meaningful.",
+        "Use deterministic validation for machine-checkable properties. These checks create a repeatable foundation for the rest of the assessment.",
+        "Assess the remaining criteria with rubric-guided model judgement in a controlled evaluation environment.",
+        "Bring the results into a repeatable benchmark report and compare quality, evaluation time, and cost across the tested workflows."
+      ]
     },
     {
       "slug": "billacord",
@@ -77,7 +94,25 @@
         "Human approval",
         "Invoice check & report"
       ],
-      "reflection": "Finance reviewers need evidence they can inspect. Treating extraction, approval, calculation, and resolution as separate stages makes the product easier to audit and improve."
+      "reflection": "Finance reviewers need evidence they can inspect. Treating extraction, approval, calculation, and resolution as separate stages makes the product easier to audit and improve.",
+      "problemHeadline": "The agreement and the invoice should tell the same story.",
+      "focus": [
+        "Negotiated amendments",
+        "Renewal price changes",
+        "Evidence for finance review"
+      ],
+      "buildLabels": [
+        "Client workspaces",
+        "Extraction & approval",
+        "Billing rules",
+        "Review & reporting"
+      ],
+      "stages": [
+        "Import the contract and supplied amendments. Preserve the original sources so proposed terms can be traced to the agreement.",
+        "Propose structured commercial terms with exact supporting excerpts, using a replaceable AI provider or manual entry.",
+        "Let the reviewer inspect the evidence, resolve ambiguities, and explicitly approve the terms that the checker will use.",
+        "Compare supported billing amounts deterministically and export the calculation and evidence. A potential difference still requires finance review."
+      ]
     },
     {
       "slug": "actionproof",
@@ -118,128 +153,24 @@
         "Observe state change",
         "Verification evidence"
       ],
-      "reflection": "A useful verifier must be willing to say it cannot conclude. Keeping uncertainty visible is as important as detecting a seeded failure."
-    },
-    {
-      "slug": "financial-qa",
-      "name": "Financial document QA",
-      "category": "ai",
-      "eyebrow": "CONVERSATIONAL AI · EVALUATION",
-      "status": "Evaluated prototype",
-      "title": "Model reasoning. Verified arithmetic.",
-      "summary": "A conversational financial QA pipeline with structured model output, restricted expression execution, and resumable evaluation on ConvFinQA.",
-      "tags": ["Python", "Pydantic", "OpenAI & Gemini"],
-      "theme": "finance",
-      "role": "Independent prototype & evaluation",
-      "period": "2026 prototype",
-      "challenge": "Financial questions combine language understanding with precise calculation. Follow-up questions also depend on earlier answers, so a single-turn score can conceal errors across a conversation.",
-      "approach": [
-        "Built a CLI pipeline that loads a financial record, preserves question-and-answer history, and requests a structured response validated with Pydantic.",
-        "Separated model reasoning from arithmetic with a restricted Python expression interpreter that blocks imports, function calls, and arbitrary code execution.",
-        "Added interchangeable OpenAI and Gemini adapters, explicit abstention, and resumable JSONL evaluation using seeded sampling.",
-        "Reported strict turn accuracy, disclosed percentage-normalised accuracy, and conversation accuracy separately. Supported both gold and predicted conversation history."
+      "reflection": "A useful verifier must be willing to say it cannot conclude. Keeping uncertainty visible is as important as detecting a seeded failure.",
+      "problemHeadline": "Permission is only the start. Verify the effect.",
+      "focus": [
+        "Approval scoped to a target",
+        "Customer boundaries",
+        "Observable side effects"
       ],
-      "decision": "The model selects values and operations; deterministic code computes the numerical answer. For the supplied small records, full-document context avoided adding retrieval errors to the first baseline.",
-      "results": [
-        ["11 / 14", "strict turn matches", "78.57% on the small live sample"],
-        [
-          "13 / 14",
-          "normalised turn matches",
-          "92.86% with percentage normalisation"
-        ],
-        ["1 / 4", "strict conversation matches", "25% with gold history"]
+      "buildLabels": [
+        "Synthetic reference",
+        "Isolated scenarios",
+        "Inspectable evidence"
       ],
-      "scope": "The recorded Gemini live run covers four development conversations and fourteen turns with seed 42 and gold history. It is a prototype smoke test, not a stable benchmark estimate. Evidence quotes are not yet verified against source text, and this run does not measure predicted-history error propagation. The project report records 82 passing tests and 87% source coverage at that verification point.",
-      "flow": [
-        "Document & history",
-        "Structured model response",
-        "Restricted arithmetic",
-        "Answer & evaluation"
-      ],
-      "reflection": "Disclose the denominator and history setting with every accuracy number. A high turn score can coexist with weak whole-conversation performance."
-    },
-    {
-      "slug": "tampstamp",
-      "name": "TampStamp",
-      "category": "product",
-      "eyebrow": "FULL-STACK PRODUCT · CAFÉ LOYALTY",
-      "status": "Private build",
-      "title": "A loyalty loop for independent cafés.",
-      "summary": "A digital stamp and coffee-gifting platform with rotating QR codes, database-enforced access rules, and a vendor portal.",
-      "tags": ["Next.js", "Supabase", "Stripe"],
-      "theme": "coffee",
-      "role": "Independent full-stack product engineering",
-      "period": "Ongoing product build",
-      "challenge": "Replacing paper loyalty cards needs a fast customer experience and controls that vendors can rely on. Stamps must be tied to the right café and user, and a QR scan must not create repeated rewards.",
-      "approach": [
-        "Built customer and vendor journeys with Next.js, TypeScript, Tailwind, and Supabase authentication, Postgres, and row-level security.",
-        "Implemented short-lived rotating QR sessions and database functions for stamp issuance and reward redemption. A uniqueness constraint limits each customer card to one stamp per QR rotation.",
-        "Added vendor onboarding, guarded café management, loyalty programme editing, and a portal displaying customers, stamps, and redemptions.",
-        "Built a Stripe Checkout coffee-gifting flow with addressed and shareable gifts, vendor redemption, and reimbursement tracking."
-      ],
-      "decision": "Enforce the loyalty rules in database functions and constraints. The customer interface initiates a scan; the database validates the token, ownership, expiry, and duplicate-stamp condition.",
-      "results": [
-        [
-          "Rotating QR",
-          "short-lived stamp sessions",
-          "Expiry validated server-side"
-        ],
-        [
-          "One stamp",
-          "per card per rotation",
-          "Enforced by a database constraint"
-        ],
-        ["Two journeys", "customer & vendor", "Separate access and workflows"]
-      ],
-      "scope": "A private product build. The repository documents implemented loyalty, vendor, and gifting flows; this portfolio does not claim a public launch, adoption, or revenue. Paid loyalty upgrades remain separate from the implemented gifting checkout, and app-store release requires further work.",
-      "flow": [
-        "Vendor QR session",
-        "Customer scan",
-        "Database validation",
-        "Stamp or reward"
-      ],
-      "reflection": "The simplest customer interaction can have a substantial system behind it. Put the invariant where every client has to obey it."
-    },
-    {
-      "slug": "nationwide-governance",
-      "name": "Enterprise AI governance",
-      "category": "governance",
-      "eyebrow": "ENTERPRISE DELIVERY · IBM",
-      "status": "Governance pilot",
-      "title": "Making governance part of the workflow.",
-      "summary": "An enterprise pilot translating policy and risk criteria into structured inputs, approval gates, and traceable lifecycle decisions.",
-      "tags": ["watsonx.governance", "MCP", "OpenShift"],
-      "theme": "governance",
-      "role": "Platform & AI Engineer / FDE, IBM",
-      "period": "IBM, 2023 – July 2026",
-      "challenge": "Governance policies describe requirements, but delivery systems still need an interpretable way to decide what can happen next. In the Nationwide pilot, the work was to turn risk and compliance intent into structured workflow constraints.",
-      "approach": [
-        "Defined metadata schemas and risk-tier inputs, separating customer impact from data sensitivity so reviewers could understand what triggered a control.",
-        "Mapped risk tiers to conditional workflow paths, mandatory evidence, and approval checkpoints, with state transitions that constrained lifecycle progression.",
-        "Worked across orchestration and enterprise content services, including watsonx, MCP interfaces, FileNet on OpenShift, and supporting metadata and artefact storage."
-      ],
-      "decision": "Keep the rule and the rationale connected. A reviewer should be able to trace a required control back to the structured input that triggered it, with proportionate requirements for lower-risk paths.",
-      "results": [
-        ["Structured", "risk-tier inputs", "Explainable control triggers"],
-        [
-          "Gated",
-          "lifecycle progression",
-          "Evidence and approvals as prerequisites"
-        ],
-        [
-          "Traceable",
-          "review decisions",
-          "Linked inputs, checkpoints, and artefacts"
-        ]
-      ],
-      "scope": "This is a qualitative pilot case study based on the existing public portfolio account. It describes engineering contributions and the integration approach, not an independent compliance certification or a quantified customer outcome.",
-      "flow": [
-        "Risk metadata",
-        "Tier & required controls",
-        "Evidence & approval",
-        "Lifecycle progression"
-      ],
-      "reflection": "Governance becomes useful to engineering teams when policy is expressed as clear inputs, enforceable transitions, and evidence they can inspect."
+      "stages": [
+        "Create approval for a specific actor, organisation, action, and ticket in a fresh synthetic fixture.",
+        "Execute the deliberately broken or corrected reference control against the synthetic ticket store.",
+        "Read the resulting state and compare it with the before-state. The actual record change is the evidence.",
+        "Report pass, fail, or inconclusive. An unavailable state reader cannot turn an allowed decision into a verified pass."
+      ]
     }
   ]
 }

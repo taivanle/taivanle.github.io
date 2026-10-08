@@ -2,7 +2,7 @@
 
 Live at **https://taivanle.github.io/**. GitHub Pages serves the committed `docs/` directory from `main`.
 
-The portfolio covers applied AI, evaluation, enterprise delivery, and independent product engineering. It includes six case studies, current career details, engineering notes, and the supplied resume PDF.
+The portfolio covers applied AI, evaluation, enterprise delivery, and independent product engineering. Themis, Billacord, and ActionProof each have a six-scene interactive presentation, alongside current career details, engineering notes, and the supplied resume PDF.
 
 ## Update the site
 
@@ -21,10 +21,11 @@ Open `http://127.0.0.1:4178`. The preview server binds to loopback only.
 - `site/index.html`: homepage content and structure.
 - `site/styles.css` and `site/app.js`: shared styling and progressive interactions.
 - `tools/build.mjs`: common page layout, article content, metadata, and generation.
+- `tools/presentation.mjs`: project scenes, interactive architecture stages, and reading view.
 - `docs/assets/owen-le-resume.pdf`: the provided resume, served without alteration.
 - `docs/assets/social-card.png`: share preview image.
 
-After editing source, run the build and commit both source and generated `docs/` changes. All six original page URLs remain valid. Git history retains the previous design and long-form guide.
+After editing source, run the build and commit both source and generated `docs/` changes. Existing homepage, projects, and notes URLs remain valid. Git history retains the previous design and long-form guide.
 
 ## Browser verification
 
@@ -33,7 +34,7 @@ npx playwright install chromium
 npm test
 ```
 
-Tests cover project filters, mobile navigation, Escape and responsive resizing, essential content without JavaScript, PDF delivery, accessibility, page errors, and horizontal overflow at 320, 390, 768, and 1440 pixels. `npm run check` checks local links, assets, fragments, unique IDs, headings, and template expansion. GitHub Actions repeats the build, generated-file consistency check, and browser tests on pushes and pull requests.
+Tests cover project filters, mobile navigation, Escape and responsive resizing, presentation navigation and architecture stages, reading view and direct scene links, essential content without JavaScript, motion controls, PDF delivery, accessibility, page errors, and horizontal overflow at 320, 390, 768, 1024, 1440, and 1920 pixels. Illustration layout is also checked at 2560 pixels and enlarged zoom. `npm run check` checks local links, assets, fragments, unique IDs, headings, and template expansion. GitHub Actions repeats the build, generated-file consistency check, and browser tests on pushes and pull requests.
 
 If using an existing Chrome installation locally, set `CHROME_PATH` to its executable before running the tests. GitHub Actions installs its own Chromium.
 

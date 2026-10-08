@@ -41,7 +41,7 @@ filterButtons.forEach((button) =>
     });
     const count = projectCards.filter((card) => !card.hidden).length;
     document.querySelector("#filter-status").textContent =
-      `${count} projects shown: ${button.textContent.trim().replace(/\s+06$/, "")}.`;
+      `${count} ${count === 1 ? "project" : "projects"} shown: ${button.textContent.trim().replace(/\s+\d+$/, "")}.`;
   }),
 );
 
@@ -79,4 +79,172 @@ if ("IntersectionObserver" in window) {
   document
     .querySelectorAll("main > section[id]")
     .forEach((section) => observer.observe(section));
+}
+
+const motionButton = document.querySelector(".motion-toggle");
+motionButton?.addEventListener("click", () => {
+  const paused = document.documentElement.classList.toggle("motion-paused");
+  motionButton.setAttribute("aria-pressed", String(paused));
+  motionButton.setAttribute(
+    "aria-label",
+    paused ? "Resume motion" : "Pause motion",
+  );
+  motionButton.innerHTML = `${paused ? "Resume motion" : "Pause motion"} <span aria-hidden="true">${paused ? "▷" : "Ⅱ"}</span>`;
+});
+
+const animatedElements = document.querySelectorAll(
+  ".project-card, .principles > div, .experience-row, .note-row",
+);
+if ("IntersectionObserver" in window) {
+  const revealObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-inview");
+          revealObserver.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.12 },
+  );
+  animatedElements.forEach((element) => revealObserver.observe(element));
+} else {
+  animatedElements.forEach((element) => element.classList.add("is-inview"));
+}
+
+let scrollQueued = false;
+function updateScrollProgress() {
+  const available = document.documentElement.scrollHeight - window.innerHeight;
+  document.documentElement.style.setProperty(
+    "--scroll-progress",
+    String(available > 0 ? Math.min(1, window.scrollY / available) : 0),
+  );
+  scrollQueued = false;
+}
+window.addEventListener(
+  "scroll",
+  () => {
+    if (!scrollQueued) {
+      scrollQueued = true;
+      requestAnimationFrame(updateScrollProgress);
+    }
+  },
+  { passive: true },
+);
+window.addEventListener("resize", updateScrollProgress);
+updateScrollProgress();
+
+const presentation = document.querySelector(".presentation-main");
+if (presentation) {
+  const shell = presentation.querySelector(".presentation-shell");
+  const scenes = [...presentation.querySelectorAll(".scene")];
+  const sceneButtons = [...presentation.querySelectorAll("[data-scene]")];
+  const previous = presentation.querySelector(".scene-prev");
+  const next = presentation.querySelector(".scene-next");
+  const reading = presentation.querySelector(".reading-toggle");
+  const stageButtons = [...presentation.querySelectorAll("[data-stage]")];
+  const stagePanels = [...presentation.querySelectorAll("[data-stage-panel]")];
+  const hashAliases = { challenge: "problem", implementation: "build" };
+  const requested = location.hash.slice(1);
+  let current = Math.max(
+    0,
+    scenes.findIndex(
+      (scene) => scene.id === (hashAliases[requested] || requested),
+    ),
+  );
+  let stage = 0;
+  let readAll = new URL(location.href).searchParams.get("view") === "all";
+
+  function showStage(index) {
+    stage = index;
+    stageButtons.forEach((button, i) => {
+      button.setAttribute("aria-pressed", String(i === index));
+      button.classList.toggle("is-selected", i === index);
+    });
+    stagePanels.forEach((panel, i) => {
+      panel.hidden = !readAll && i !== index;
+    });
+    presentation
+      .querySelector(".stage-explorer")
+      .style.setProperty(
+        "--stage-progress",
+        String(index / Math.max(1, stageButtons.length - 1)),
+      );
+  }
+  function showScene(index, { focus = false, updateUrl = true } = {}) {
+    current = Math.max(0, Math.min(scenes.length - 1, index));
+    scenes.forEach((scene, i) => {
+      scene.hidden = !readAll && i !== current;
+      scene.classList.toggle("is-active", i === current);
+    });
+    sceneButtons.forEach((button, i) => {
+      if (i === current) button.setAttribute("aria-current", "step");
+      else button.removeAttribute("aria-current");
+    });
+    previous.disabled = current === 0;
+    next.disabled = current === scenes.length - 1;
+    presentation.querySelector(".scene-counter").innerHTML =
+      `${String(current + 1).padStart(2, "0")} <span>/ ${String(scenes.length).padStart(2, "0")}</span>`;
+    presentation.querySelector("#presentation-status").textContent =
+      `${presentation.querySelector("h1").textContent}: scene ${current + 1} of ${scenes.length}, ${scenes[current].getAttribute("aria-label")}.`;
+    if (updateUrl && !readAll) {
+      const url = new URL(location.href);
+      url.hash = scenes[current].id;
+      history.replaceState(null, "", url);
+    }
+    if (focus)
+      scenes[current]
+        .querySelector(".scene-title")
+        .focus({ preventScroll: true });
+    if (
+      !readAll &&
+      shell.getBoundingClientRect().top <
+        document.querySelector(".site-header").getBoundingClientRect().bottom
+    )
+      shell.scrollIntoView({ block: "start", behavior: "instant" });
+    updateScrollProgress();
+  }
+  function setReading(value) {
+    readAll = value;
+    presentation.classList.toggle("presentation-mode", !value);
+    presentation.classList.toggle("reading-mode", value);
+    reading.setAttribute("aria-pressed", String(value));
+    reading.textContent = value ? "Presentation view" : "Read all at once";
+    const url = new URL(location.href);
+    if (value) url.searchParams.set("view", "all");
+    else url.searchParams.delete("view");
+    history.replaceState(null, "", url);
+    showStage(stage);
+    showScene(current, { updateUrl: false });
+  }
+  previous.addEventListener("click", () => showScene(current - 1));
+  next.addEventListener("click", () => showScene(current + 1));
+  sceneButtons.forEach((button) =>
+    button.addEventListener("click", () =>
+      showScene(Number(button.dataset.scene)),
+    ),
+  );
+  stageButtons.forEach((button) =>
+    button.addEventListener("click", () =>
+      showStage(Number(button.dataset.stage)),
+    ),
+  );
+  reading.addEventListener("click", () => setReading(!readAll));
+  shell.addEventListener("keydown", (event) => {
+    if (
+      readAll ||
+      event.altKey ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.target.closest("input,textarea,select,[contenteditable]")
+    )
+      return;
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      event.preventDefault();
+      showScene(current + (event.key === "ArrowRight" ? 1 : -1), {
+        focus: true,
+      });
+    }
+  });
+  setReading(readAll);
 }

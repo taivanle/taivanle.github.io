@@ -1,3 +1,4 @@
+import { renderPresentation } from "./presentation.mjs";
 import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -62,7 +63,7 @@ function page(
         },
       };
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${escape(title)}${home ? "" : " — Owen Le"}</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${canonical}">`}<meta name="theme-color" content="#f7f8f2"><meta property="og:type" content="${home ? "website" : "article"}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — AI systems. Built for the real world."><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.ttf" as="font" type="font/ttf" crossorigin><link rel="stylesheet" href="assets/styles.css"><script src="assets/app.js" defer></script><script type="application/ld+json">${JSON.stringify(ld).replaceAll("<", "\\u003c")}</script></head><body>${navigation(home)}${content}${footer()}</body></html>\n`;
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${escape(title)}${home ? "" : " — Owen Le"}</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${canonical}">`}<meta name="theme-color" content="#f7f8f2"><meta property="og:type" content="${home ? "website" : "article"}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — AI systems. Built for the real world."><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css"><script src="assets/app.js" defer></script><script type="application/ld+json">${JSON.stringify(ld).replaceAll("<", "\\u003c")}</script></head><body><div class="scroll-progress" aria-hidden="true"></div>${navigation(home)}${content}${footer()}</body></html>\n`;
 }
 
 function visual(project, index) {
@@ -84,25 +85,6 @@ function visual(project, index) {
         '<div class="verification-window"><div class="window-top"><span>ACTIONPROOF / VERIFIER STATES</span><span>↗</span></div><div class="verification-row"><span>Approved action verified</span><span class="result-pill result-pass">PASS</span></div><div class="verification-row"><span>Wrong target changed</span><span class="result-pill result-fail">FAIL</span></div><div class="verification-row"><span>State evidence unavailable</span><span class="result-pill result-unknown">INCONCLUSIVE</span></div></div>';
       note = "SYNTHETIC REFERENCE SCENARIOS";
       break;
-    case "finance":
-      body =
-        '<div class="expression-window"><div class="window-top"><span>FINANCIAL QA / EXECUTION BOUNDARY</span><span>ƒ(x)</span></div><code><strong>model</strong> → structured expression<br><strong>validator</strong> → allowed operations<br><strong>interpreter</strong> → numerical answer</code><div class="expression-footer">Reasoning separated from calculation</div></div>';
-      break;
-    case "coffee":
-      body =
-        '<div class="loyalty-card"><div class="loyalty-title"><span>TampStamp</span><b aria-hidden="true">☕</b></div><div class="stamps">' +
-        Array.from(
-          { length: 8 },
-          (_, i) =>
-            `<span class="stamp ${i < 6 ? "collected" : ""}">${i < 6 ? "✳" : "·"}</span>`,
-        ).join("") +
-        '</div><div class="loyalty-bottom"><span>Your next coffee, a little closer.</span><span>6 / 8</span></div></div>';
-      note = "ILLUSTRATIVE LOYALTY CARD";
-      break;
-    case "governance":
-      body =
-        '<div class="governance-flow"><div class="governance-step"><span><b>01</b> Classify risk</span><b>INPUTS</b></div><div class="governance-step"><span><b>02</b> Require evidence & approval</span><b>GATE</b></div><div class="governance-step"><span><b>03</b> Progress with traceability</span><b>RECORD</b></div></div>';
-      break;
   }
   return `<div class="project-visual visual-${escape(project.theme)}" aria-hidden="true"><span class="visual-index">${String(index + 1).padStart(2, "0")} / ${escape(project.name.toUpperCase())}</span>${body}<span class="visual-note">${note}</span></div>`;
 }
@@ -110,7 +92,7 @@ function cards() {
   return projects
     .map(
       (p, i) =>
-        `<article class="project-card" data-category="${escape(p.category)}"><a href="${p.slug}.html" aria-label="Read case study: ${escape(p.name)}">${visual(p, i)}<div class="project-body"><div class="project-topline"><p class="eyebrow">${escape(p.eyebrow)}</p><span class="project-status">${escape(p.status)}</span></div><h3>${escape(p.name)}</h3><p>${escape(p.summary)}</p><div class="project-bottom"><div class="tags">${p.tags.map((t) => `<span>${escape(t)}</span>`).join("")}</div><span class="round-arrow">${arrow}</span></div></div></a></article>`,
+        `<article class="project-card ${p.slug === "themis" ? "featured" : ""}" data-category="${escape(p.category)}"><a href="${p.slug}.html" aria-label="Read case study: ${escape(p.name)}">${visual(p, i)}<div class="project-body"><div class="project-topline"><p class="eyebrow">${escape(p.eyebrow)}</p><span class="project-status">${escape(p.status)}</span></div><h3>${escape(p.name)}</h3><p>${escape(p.summary)}</p><div class="project-bottom"><div class="tags">${p.tags.map((t) => `<span>${escape(t)}</span>`).join("")}</div><span class="round-arrow">${arrow}</span></div></div></a></article>`,
     )
     .join("");
 }
@@ -119,8 +101,9 @@ function flow(p) {
 }
 function casePage(p, index) {
   const next = projects[(index + 1) % projects.length];
-  return `<main id="main"><header class="page-hero wrap"><a class="breadcrumb" href="index.html#work">${arrow} Back to selected work</a><p class="eyebrow">${escape(p.eyebrow)}</p><h1>${escape(p.title)}</h1><p class="page-lead">${escape(p.summary)}</p><dl class="case-meta"><div><dt>ROLE</dt><dd>${escape(p.role)}</dd></div><div><dt>PERIOD</dt><dd>${escape(p.period)}</dd></div><div><dt>STATUS</dt><dd>${escape(p.status)}</dd></div></dl></header><div class="case-layout wrap"><nav class="case-toc" aria-label="Case study sections"><span>IN THIS CASE STUDY</span><a href="#challenge">The challenge</a><a href="#architecture">System approach</a><a href="#implementation">What I built</a><a href="#results">Results & evidence</a><a href="#scope">Scope & reflection</a></nav><article class="case-content"><section id="challenge"><h2>The challenge</h2><p>${escape(p.challenge)}</p></section><section id="architecture"><h2>System approach</h2>${flow(p)}<div class="design-decision"><p class="eyebrow">THE DESIGN DECISION</p><p>${escape(p.decision)}</p></div></section><section id="implementation"><h2>What I built</h2><ol>${p.approach.map((a) => `<li>${escape(a)}</li>`).join("")}</ol><div class="tags">${p.tags.map((t) => `<span>${escape(t)}</span>`).join("")}</div></section><section id="results"><h2>Results & evidence</h2><div class="result-grid">${p.results.map((r) => `<div class="result-card"><strong>${escape(r[0])}</strong><span>${escape(r[1])}</span><small>${escape(r[2])}</small></div>`).join("")}</div></section><section id="scope" class="scope-box"><h2>Scope & reflection</h2><p>${escape(p.scope)}</p><h3>What I take forward</h3><p>${escape(p.reflection)}</p>${p.slug === "themis" ? `<a class="text-link" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener">Resume: role and reported results ${external}</a>` : ""}</section><a class="next-project" href="${next.slug}.html"><span><span class="eyebrow">NEXT CASE STUDY</span><strong>${escape(next.name)}</strong></span><span class="round-arrow">${arrow}</span></a></article></div></main>`;
+  return renderPresentation(p, next, { arrow, external, visual, index });
 }
+
 const noteLinks = `<a class="note-row" href="create_agent.html"><span class="mono">AGENTS / PRACTICAL GUIDE</span><h3>Building an agent with watsonx Orchestrate</h3><span class="round-arrow">${arrow}</span></a><a class="note-row" href="engineering-reliable-ai.html"><span class="mono">SYSTEMS / DESIGN NOTES</span><h3>Reason, verify, deliver: the system around the model</h3><span class="round-arrow">${arrow}</span></a>`;
 function article(title, lead, body, toc) {
   return `<main id="main"><header class="page-hero wrap"><a class="breadcrumb" href="blog_homepage.html">${arrow} Back to engineering notes</a><p class="eyebrow">ENGINEERING NOTES</p><h1>${title}</h1><p class="page-lead">${lead}</p><p class="article-meta">Owen Le · Updated 8 October 2026</p></header><div class="case-layout wrap"><nav class="case-toc" aria-label="Article sections"><span>IN THIS NOTE</span>${toc.map(([id, label]) => `<a href="#${id}">${label}</a>`).join("")}</nav><article class="case-content article-content">${body}</article></div></main>`;
@@ -211,8 +194,8 @@ await emit(
     'Reason. Verify.<br><span class="serif">Deliver.</span>',
     "The engineering around the model determines whether an AI capability becomes a reliable product.",
     `
-<section id="context"><h2>Give the model useful context</h2><p>Start with the information the task requires and the information the user may access. A context layer can select, rank, and assemble source material within a token budget. Preserve provenance so a later answer or failure can be traced back to the material actually supplied.</p><p>In the financial QA prototype, the records were small enough to send the cleaned document directly. That was a deliberate baseline: measure reasoning before adding a retrieval stage.</p></section>
-<section id="boundary"><h2>Separate judgement from computation</h2><p>A model can propose a structured interpretation without owning every downstream decision. In Billacord, proposed commercial terms go through source review and human approval before deterministic invoice checking. In financial QA, the model’s expression runs through a restricted interpreter.</p><p>The right boundary depends on the task. Make it visible so each stage can be checked independently.</p></section>
+<section id="context"><h2>Give the model useful context</h2><p>Start with the information the task requires and the information the user may access. A context layer can select, rank, and assemble source material within a token budget. Preserve provenance so a later answer or failure can be traced back to the material actually supplied.</p><p>A useful baseline starts with a small, well-understood source set. Measure whether the right information reaches the model before adding retrieval complexity.</p></section>
+<section id="boundary"><h2>Separate judgement from computation</h2><p>A model can propose a structured interpretation without owning every downstream decision. In Billacord, proposed commercial terms go through source review and human approval before deterministic invoice checking. In Themis, machine-checkable properties go through deterministic validation, while rubric-guided judgement handles other criteria.</p><p>The right boundary depends on the task. Make it visible so each stage can be checked independently.</p></section>
 <section id="effects"><h2>Observe what actually changed</h2><p>An action returning “allowed” is an observation about a decision. It does not prove that the correct record changed. ActionProof tests the resulting ticket state against the scoped approval. If that state cannot be read, the verifier reports an inconclusive result.</p><p>This principle applies beyond agents: define the effect you need, collect the evidence, and avoid converting missing observations into a pass.</p></section>
 <section id="measure"><h2>Make evaluation part of delivery</h2><p>Choose explicit criteria, representative cases, and a repeatable execution path. Disclose the sample size and test conditions with the score. Track cost and time alongside quality so improvements are useful in practice.</p><p>Themis brings these concerns together with deterministic validation, structured rubrics, and model judgement. The goal is an evaluation workflow that can be repeated and understood.</p><div class="design-decision"><p class="eyebrow">THE COMMON THREAD</p><p>Keep context, reasoning, approval, execution, and evidence as distinct responsibilities. Clear boundaries make both the product and its failures easier to understand.</p></div></section>`,
     [

@@ -29,7 +29,14 @@
     <div class="system-panel">
       <div class="panel-heading">
         <span class="mono">01 / SYSTEMS THINKING</span
-        ><span class="panel-mark" aria-hidden="true">✳</span>
+        ><button
+          class="motion-toggle"
+          type="button"
+          aria-pressed="false"
+          aria-label="Pause motion"
+        >
+          Pause motion <span aria-hidden="true">Ⅱ</span>
+        </button>
       </div>
       <svg
         class="system-art"
@@ -101,7 +108,7 @@
             stroke-width=".8"
           />
           <path d="M-21 0h42M0-21v42" stroke="#d7efc5" stroke-width="1.5" />
-          <circle r="11" fill="#b8dd9f" />
+          <circle class="core-pulse" r="11" fill="#b8dd9f" />
           <circle r="4" fill="#223b2e" />
         </g>
         <g class="diagram-node">
@@ -173,7 +180,7 @@
     </div>
     <div class="filters" role="group" aria-label="Filter projects">
       <button type="button" data-filter="all" aria-pressed="true">
-        All work <span>06</span></button
+        All work <span>03</span></button
       ><button type="button" data-filter="ai" aria-pressed="false">
         AI & evaluation</button
       ><button type="button" data-filter="product" aria-pressed="false">
@@ -289,9 +296,6 @@
           workflows with enterprise APIs and document services, and extended MCP
           interfaces to FileNet on OpenShift.
         </p>
-        <a class="text-link" href="nationwide-governance.html"
-          >Explore the governance pilot {{arrow}}</a
-        >
       </div>
     </div>
     <div class="experience-row">
