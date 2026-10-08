@@ -176,7 +176,11 @@ test("chapter settling releases immediately, works in both directions, and updat
   const normal = await hover.evaluate(
     (el) => getComputedStyle(el).backgroundColor,
   );
-  await hover.hover();
+  const hoverBounds = await hover.boundingBox();
+  await page.mouse.move(
+    hoverBounds.x + hoverBounds.width / 2,
+    hoverBounds.y + hoverBounds.height / 2,
+  );
   await expect
     .poll(() => hover.evaluate((el) => getComputedStyle(el).backgroundColor))
     .not.toBe(normal);
