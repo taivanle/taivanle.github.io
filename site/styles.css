@@ -3889,7 +3889,8 @@ html:not(.js) .stage-track {
 }
 
 /* One continuous canvas, with content placed directly on the page. */
-.ambient-page {
+.ambient-page,
+.content-page {
   --paper: #0c1c1a;
   --ink: #e9efe6;
   --muted: #afc1b3;
@@ -4466,16 +4467,16 @@ html:not(.js) .stage-track {
 }
 
 /* The case-study deck belongs to the same dark, luminous portfolio. */
-.ambient-page {
+.ambient-page,
+.content-page {
   color-scheme: dark;
 }
-.ambient-page .hero-field {
-  view-transition-name: signal-field;
-}
-.ambient-page :focus-visible {
+.ambient-page :focus-visible,
+.content-page :focus-visible {
   outline-color: #d5e7ae;
 }
-.ambient-page .contact-section {
+.ambient-page .contact-section,
+.content-page .contact-section {
   background: transparent;
   border-color: var(--line);
 }
@@ -4692,37 +4693,16 @@ html:not(.js) .stage-track {
   color: #163021;
 }
 
-/* Browser-native transitions preserve the header, background, and project frame. */
+/* Navigation uses real DOM frames and an opaque cover, never page snapshots. */
 @view-transition {
-  navigation: auto;
+  navigation: none;
 }
-::view-transition {
-  background: var(--page-background, #0c1c1a);
+#navigation-cover {
+  contain: strict;
 }
-::view-transition-group(*) {
-  animation-duration: var(--page-transition-duration, 420ms);
-  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
-}
-::view-transition-old(root) {
-  animation: none;
-  opacity: 1;
-  mix-blend-mode: normal;
-}
-::view-transition-new(root) {
-  animation: page-arrive calc(var(--page-transition-duration, 420ms) * 0.7)
-    ease-out both;
-  mix-blend-mode: normal;
-}
-@keyframes page-arrive {
-  from {
-    opacity: 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*),
-  ::view-transition-old(*),
-  ::view-transition-new(*) {
-    animation: none !important;
+@media print {
+  #navigation-cover {
+    display: none !important;
   }
 }
 @media print {
@@ -4731,7 +4711,9 @@ html:not(.js) .stage-track {
     background: white;
     color-scheme: light;
   }
-  .ambient-page {
+  .ambient-page,
+  .content-page {
+    --paper: white;
     --ink: #1d3028;
     --muted: #5c6962;
     --green: #286448;
@@ -5568,5 +5550,33 @@ html:not(.js) .stage-track {
     .perspective-scene.is-detail-selected
     .presentation-scope {
     display: block;
+  }
+}
+
+@media screen {
+  .content-page .design-decision {
+    background: #152e25;
+    border-color: var(--line);
+  }
+  .content-page .design-decision p {
+    color: var(--muted);
+  }
+  .content-page .design-decision .eyebrow {
+    color: var(--green);
+  }
+  .content-page .button.primary {
+    background: #d5e7ae;
+    color: #163021;
+  }
+  .content-page .skip-link,
+  .ambient-page .skip-link {
+    color: #163021;
+  }
+  .content-page .note-row:hover .round-arrow {
+    color: #163021;
+  }
+  .content-page ::selection,
+  .ambient-page ::selection {
+    color: #163021;
   }
 }
