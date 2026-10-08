@@ -162,6 +162,7 @@ if (home) {
   let settleTimer = 0;
   let settleFrame = 0;
   let inputPending = false;
+  let touching = false;
   let direction = 0;
   let lastY = scrollY;
   let lockedStop = null;
@@ -194,6 +195,7 @@ if (home) {
   function settleChapter() {
     if (
       !inputPending ||
+      touching ||
       reducedMotion.matches ||
       menuButton.getAttribute("aria-expanded") === "true"
     )
@@ -272,12 +274,18 @@ if (home) {
       if (
         event.ctrlKey ||
         Math.abs(event.deltaY) <= Math.abs(event.deltaX) ||
-        event.target.closest(
-          ".site-header, input, textarea, select, [contenteditable]",
-        )
+        event.target.closest("input, textarea, select, [contenteditable]")
       )
         return;
       scrollingInput(Math.sign(event.deltaY));
+    },
+    { passive: true },
+  );
+  window.addEventListener(
+    "touchstart",
+    () => {
+      cancelSettle();
+      touching = true;
     },
     { passive: true },
   );
@@ -288,7 +296,22 @@ if (home) {
     },
     { passive: true },
   );
-  window.addEventListener("touchend", scheduleSettle, { passive: true });
+  window.addEventListener(
+    "touchend",
+    () => {
+      touching = false;
+      scheduleSettle();
+    },
+    { passive: true },
+  );
+  window.addEventListener(
+    "touchcancel",
+    () => {
+      touching = false;
+      cancelSettle();
+    },
+    { passive: true },
+  );
   window.addEventListener("keydown", (event) => {
     if (
       event.altKey ||
