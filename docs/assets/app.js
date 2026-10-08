@@ -102,27 +102,154 @@ copyButton?.addEventListener("click", async () => {
   }
 });
 
-if ("IntersectionObserver" in window) {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        document.querySelectorAll('.nav-link[href^="#"]').forEach((link) => {
-          if (link.getAttribute("href") === `#${entry.target.id}`)
-            link.setAttribute("aria-current", "location");
-          else link.removeAttribute("aria-current");
-        });
-      });
-    },
-    { rootMargin: "-15% 0px -65% 0px" },
-  );
-  document
-    .querySelectorAll("main > section[id]")
-    .forEach((section) => observer.observe(section));
-}
-
 const portraitVideo = document.querySelector("[data-portrait-video]");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+const home = document.querySelector(".home-page");
+if (home) {
+  const links = [...navigation.querySelectorAll('.nav-link[href^="#"]')];
+  const sections = links.map((link) => document.querySelector(link.hash));
+  const stops = [
+    ...document.querySelectorAll(
+      ".hero-scene, .chapter-section, .contact-section",
+    ),
+  ];
+  let trackingFrame = 0;
+  let settleTimer = 0;
+  let settleFrame = 0;
+  let inputPending = false;
+  let settledStop = null;
+  const stopOffset = () =>
+    parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop) ||
+    0;
+  function trackSection() {
+    trackingFrame = 0;
+    if (!inputPending && !settleFrame) {
+      const aligned = stops.find(
+        (section) =>
+          Math.abs(section.getBoundingClientRect().top - stopOffset()) < 2,
+      );
+      if (aligned) settledStop = aligned;
+    }
+    const line = Math.max(stopOffset() + 24, innerHeight * 0.25);
+    const selected = sections.findLastIndex(
+      (section) => section.getBoundingClientRect().top <= line,
+    );
+    const inContact =
+      document.querySelector(".contact-section").getBoundingClientRect().top <=
+      line;
+    links.forEach((link, index) => {
+      if (index === selected && !inContact)
+        link.setAttribute("aria-current", "location");
+      else link.removeAttribute("aria-current");
+    });
+  }
+  function cancelSettle() {
+    clearTimeout(settleTimer);
+    cancelAnimationFrame(settleFrame);
+    settleFrame = 0;
+    inputPending = false;
+  }
+  function settleChapter() {
+    if (
+      !inputPending ||
+      reducedMotion.matches ||
+      menuButton.getAttribute("aria-expanded") === "true"
+    )
+      return;
+    inputPending = false;
+    const offset = stopOffset();
+    const radius = Math.min(140, innerHeight * 0.18);
+    const closest = stops
+      .map((element) => ({
+        element,
+        delta: element.getBoundingClientRect().top - offset,
+      }))
+      .sort((a, b) => Math.abs(a.delta) - Math.abs(b.delta))[0];
+    if (
+      !closest ||
+      Math.abs(closest.delta) > radius ||
+      closest.element === settledStop
+    )
+      return;
+    settledStop = closest.element;
+    const start = scrollY;
+    const end = Math.max(
+      0,
+      Math.min(
+        start + closest.delta,
+        document.documentElement.scrollHeight - innerHeight,
+      ),
+    );
+    if (Math.abs(end - start) < 2) return;
+    const began = performance.now();
+    function advance(now) {
+      const progress = Math.min(1, (now - began) / 380);
+      const eased = 1 - (1 - progress) ** 3;
+      window.scrollTo({
+        top: start + (end - start) * eased,
+        behavior: "instant",
+      });
+      settleFrame = progress < 1 ? requestAnimationFrame(advance) : 0;
+    }
+    settleFrame = requestAnimationFrame(advance);
+  }
+  function onScroll() {
+    if (!trackingFrame) trackingFrame = requestAnimationFrame(trackSection);
+    if (
+      settledStop &&
+      Math.abs(settledStop.getBoundingClientRect().top - stopOffset()) >
+        Math.min(140, innerHeight * 0.18) + 60
+    )
+      settledStop = null;
+    if (inputPending && !settleFrame) {
+      clearTimeout(settleTimer);
+      settleTimer = setTimeout(settleChapter, 240);
+    }
+  }
+  function scrollingInput() {
+    cancelSettle();
+    inputPending = true;
+    settleTimer = setTimeout(settleChapter, 240);
+  }
+  window.addEventListener("wheel", scrollingInput, { passive: true });
+  window.addEventListener(
+    "touchmove",
+    () => {
+      cancelSettle();
+      inputPending = true;
+    },
+    { passive: true },
+  );
+  window.addEventListener("touchend", onScroll, { passive: true });
+  window.addEventListener("keydown", (event) => {
+    if (
+      [
+        "ArrowDown",
+        "ArrowUp",
+        "PageDown",
+        "PageUp",
+        " ",
+        "Home",
+        "End",
+      ].includes(event.key) &&
+      !event.target.closest(
+        "input, textarea, select, button, [contenteditable]",
+      )
+    )
+      scrollingInput();
+  });
+  document.addEventListener("click", (event) => {
+    if (event.target.closest('a[href^="#"], .brand')) cancelSettle();
+  });
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", () => {
+    cancelSettle();
+    trackSection();
+  });
+  window.addEventListener("pageshow", trackSection);
+  reducedMotion.addEventListener("change", cancelSettle);
+  trackSection();
+}
 if ("IntersectionObserver" in window) {
   const visibleDividers = new Set();
   let dividerFrame = 0;
@@ -381,6 +508,12 @@ if (presentation) {
   }
 
   function showStage(index) {
+    presentation
+      .querySelector(".architecture-scene")
+      .classList.remove("is-design-selected");
+    presentation
+      .querySelector(".design-toggle")
+      .setAttribute("aria-pressed", "false");
     const previousStage = stage;
     stage = index;
     stageButtons.forEach((button, i) => {
@@ -471,6 +604,37 @@ if (presentation) {
     button.addEventListener("click", () =>
       showStage(Number(button.dataset.stage)),
     ),
+  );
+  const buildButtons = [...presentation.querySelectorAll("[data-build]")];
+  buildButtons.forEach((button) =>
+    button.addEventListener("click", () => {
+      buildButtons.forEach((item) =>
+        item.setAttribute("aria-pressed", String(item === button)),
+      );
+      presentation
+        .querySelectorAll(".build-item")
+        .forEach((item, index) =>
+          item.classList.toggle(
+            "is-build-selected",
+            index === Number(button.dataset.build),
+          ),
+        );
+    }),
+  );
+  const designToggle = presentation.querySelector(".design-toggle");
+  designToggle.addEventListener("click", () => {
+    const selected = designToggle.getAttribute("aria-pressed") !== "true";
+    designToggle.setAttribute("aria-pressed", String(selected));
+    presentation
+      .querySelector(".architecture-scene")
+      .classList.toggle("is-design-selected", selected);
+  });
+  presentation.querySelectorAll(".detail-toggle").forEach((button) =>
+    button.addEventListener("click", () => {
+      const selected = button.getAttribute("aria-pressed") !== "true";
+      button.setAttribute("aria-pressed", String(selected));
+      button.closest(".scene").classList.toggle("is-detail-selected", selected);
+    }),
   );
   reading.addEventListener("click", () => setReading(!readAll));
   document.addEventListener("keydown", (event) => {

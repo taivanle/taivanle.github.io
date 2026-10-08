@@ -116,44 +116,66 @@ test("all five chapter handoffs have moving currents and scroll-driven type in b
   await expect(page.locator("#notes h2")).toBeVisible();
 });
 
-test("landing chapters softly snap near their start while longer sections remain scrollable", async ({
+test("chapter settling releases immediately, works in both directions, and updates the active header pill", async ({
   page,
 }) => {
   await page.goto("/#experience");
-  const top = () =>
-    page
-      .locator("#experience")
-      .evaluate((el) => el.getBoundingClientRect().top);
+  const section = page.locator("#experience");
+  const top = () => section.evaluate((el) => el.getBoundingClientRect().top);
   const padding = await page.evaluate(() =>
     parseFloat(getComputedStyle(document.documentElement).scrollPaddingTop),
   );
   await expect
     .poll(async () => Math.abs((await top()) - padding))
     .toBeLessThan(2);
-  await page.mouse.wheel(0, -50);
-  await page.waitForTimeout(400);
+  await expect(page.locator(".nav-link[aria-current]")).toHaveText(
+    "Experience",
+  );
+  // Moving away from an aligned section must not pull the reader back.
+  await page.mouse.wheel(0, 60);
+  await page.waitForTimeout(700);
+  await expect.poll(top).toBeLessThan(padding - 40);
+  // Return from within the section: settle once after the gesture stops.
+  await page.mouse.wheel(0, 360);
+  await expect.poll(top).toBeLessThan(padding - 300);
+  await page.mouse.wheel(0, -350);
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.mouse.wheel(0, -60);
+  await page.waitForTimeout(700);
+  await expect.poll(top).toBeGreaterThan(padding + 40);
+  await page.mouse.wheel(0, -360);
+  await expect.poll(top).toBeGreaterThan(padding + 300);
+  await page.mouse.wheel(0, 350);
+  await expect
+    .poll(async () => Math.abs((await top()) - padding))
+    .toBeLessThan(2);
+  await page.getByRole("link", { name: "Owen Le home", exact: true }).click();
+  await expect.poll(() => page.evaluate(() => scrollY)).toBeLessThan(2);
+  await expect(page.locator(".nav-link[aria-current]")).toHaveCount(0);
+  const nav = page.getByRole("navigation", { name: "Main navigation" });
+  await nav.getByRole("link", { name: "About", exact: true }).click();
+  await expect(page.locator(".nav-link[aria-current]")).toHaveText("About");
+  const active = nav.getByRole("link", { name: "About", exact: true });
+  const hover = nav.getByRole("link", { name: "Experience", exact: true });
+  const normal = await hover.evaluate(
+    (el) => getComputedStyle(el).backgroundColor,
+  );
+  await hover.hover();
+  await expect
+    .poll(() => hover.evaluate((el) => getComputedStyle(el).backgroundColor))
+    .not.toBe(normal);
+  await expect(active).toHaveAttribute("aria-current", "location");
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await nav.getByRole("link", { name: "Experience", exact: true }).click();
   await expect
     .poll(async () => Math.abs((await top()) - padding))
     .toBeLessThan(2);
   await page.mouse.wheel(0, 420);
-  await expect.poll(top).toBeLessThan(padding - 250);
-  await page.mouse.wheel(0, -420);
-  await expect
-    .poll(async () => Math.abs((await top()) - padding))
-    .toBeLessThan(2);
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  expect(
-    await page.evaluate(
-      () => getComputedStyle(document.documentElement).scrollSnapType,
-    ),
-  ).toBe("none");
-  await page.goto("/themis.html");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
-  expect(
-    await page.evaluate(
-      () => getComputedStyle(document.documentElement).scrollSnapType,
-    ),
-  ).toBe("none");
+  await page.mouse.wheel(0, -350);
+  await page.waitForTimeout(700);
+  await expect.poll(top).toBeLessThan(padding - 40);
 });
 
 test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({
@@ -318,9 +340,11 @@ for (const project of ["themis", "dueform", "actifact"]) {
   test(`${project}: every presentation scene is accessible and fits small and wide screens`, async ({
     page,
   }) => {
-    test.setTimeout(60000);
+    test.setTimeout(120000);
+    const frames = new Map();
     await page.emulateMedia({ reducedMotion: "reduce" });
     await page.goto(`/${project}.html`);
+    await expect(page.locator(".contact-section")).toHaveCount(0);
     for (let scene = 0; scene < 6; scene++) {
       await page.locator(`[data-scene="${scene}"]`).click();
       await expect(page.locator(".scene:visible")).toHaveCount(1);
@@ -333,8 +357,59 @@ for (const project of ["themis", "dueform", "actifact"]) {
           nodes: violation.nodes.map((node) => node.target),
         })),
       ).toEqual([]);
-      for (const width of [1440, 320]) {
-        await page.setViewportSize({ width, height: 900 });
+      for (const [width, height] of [
+        [1440, 900],
+        [1280, 720],
+        [900, 600],
+        [390, 667],
+        [320, 900],
+        [320, 667],
+      ]) {
+        await page.setViewportSize({ width, height });
+        const fit = await page.evaluate(() => {
+          const scene = document.querySelector(".scene.is-active");
+          const frame = document.querySelector(".presentation-deck");
+          const controls = document.querySelector(".presentation-navigation");
+          return {
+            content: scene.scrollHeight,
+            height: scene.clientHeight,
+            frame: frame.getBoundingClientRect().height,
+            bottom: controls.getBoundingClientRect().bottom,
+            page: document.documentElement.scrollHeight,
+            viewport: innerHeight,
+          };
+        });
+        expect(
+          fit.content,
+          `${project} ${scene + 1}: unclipped at ${width}×${height}`,
+        ).toBeLessThanOrEqual(fit.height + 1);
+        expect(fit.bottom).toBeLessThanOrEqual(height);
+        expect(fit.page).toBeLessThanOrEqual(height);
+        const deck = await page.locator(".presentation-deck").boundingBox();
+        for (const selector of [
+          ".design-toggle",
+          ".detail-toggle",
+          "[data-build]",
+        ]) {
+          for (const control of await page
+            .locator(`.scene.is-active ${selector}:visible`)
+            .all()) {
+            await control.click();
+            const content = await page
+              .locator(".scene.is-active")
+              .evaluate((el) => ({
+                height: el.clientHeight,
+                content: el.scrollHeight,
+              }));
+            expect(
+              content.content,
+              `${project} detail at ${width}×${height}`,
+            ).toBeLessThanOrEqual(content.height + 1);
+            expect(
+              (await page.locator(".presentation-deck").boundingBox()).height,
+            ).toBeCloseTo(deck.height, 0);
+          }
+        }
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth,

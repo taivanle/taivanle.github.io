@@ -3375,32 +3375,30 @@ html:not(.js) .stage-track {
   }
 }
 
-/* One rounded glass surface carries the navigation over the continuous backdrop. */
+/* The frosted surface itself owns the blur, with no filtering ancestor. */
 .site-header {
   color: #e5eee4;
-  padding-block: 12px 8px;
-  background: transparent;
-  border: 0;
-  box-shadow: none;
-  pointer-events: none;
-}
-.site-header .header-inner {
   width: min(1200px, calc(100% - 32px));
-  min-height: 68px;
-  padding-inline: 16px;
+  margin: 12px auto 8px;
+  top: 12px;
+  padding: 0;
   border: 1px solid #d1ead437;
   border-radius: 34px;
   background: linear-gradient(125deg, #e4fbe510, #cdeeda03 48%, #d6edd60c)
-    #0c1c1a94;
-  -webkit-backdrop-filter: blur(18px) saturate(145%);
-  backdrop-filter: blur(18px) saturate(145%);
+    #13272285;
+  -webkit-backdrop-filter: blur(28px) saturate(145%);
+  backdrop-filter: blur(28px) saturate(145%);
   box-shadow:
     inset 0 1px 0 #ecffea30,
     inset 0 -1px 0 #99c4ad12,
     0 8px 28px #00000024;
-  pointer-events: auto;
 }
-.content-page .site-header .header-inner {
+.site-header .header-inner {
+  width: 100%;
+  min-height: 66px;
+  padding-inline: 16px;
+}
+.content-page .site-header {
   background-color: #0c1c1ac7;
 }
 .site-header .nav-resume,
@@ -3415,12 +3413,31 @@ html:not(.js) .stage-track {
 .brand-dot {
   color: #b6e6cb;
 }
-.site-header .nav-link:hover,
+.site-header .navigation {
+  gap: 6px;
+}
+.site-header .nav-link {
+  padding: 8px 12px;
+  border-radius: 22px;
+  line-height: 1.3;
+  white-space: nowrap;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+}
+.site-header .nav-link:hover {
+  color: #eff4e9;
+  background: #d5e7ae16;
+  box-shadow: inset 0 0 0 1px #d5e7ae18;
+}
 .site-header .nav-link[aria-current] {
-  color: #d5e7ae;
+  color: #183324;
+  background: #d5e7ae;
+  box-shadow: 0 3px 16px #d5e7ae18;
 }
 .site-header .nav-link[aria-current]::after {
-  background: #d5e7ae;
+  display: none;
 }
 .site-header .nav-resume {
   white-space: nowrap;
@@ -3442,11 +3459,13 @@ html:not(.js) .stage-track {
 }
 @media (max-width: 760px) {
   .site-header {
-    padding-block: 10px 6px;
+    width: calc(100% - 24px);
+    margin-block: 10px 6px;
+    top: 10px;
+    border-radius: 22px;
   }
   .site-header .header-inner {
-    width: calc(100% - 24px);
-    min-height: 57px;
+    min-height: 55px;
     padding-inline: 12px;
     border-radius: 22px;
     gap: 16px;
@@ -3454,16 +3473,19 @@ html:not(.js) .stage-track {
   .site-header .navigation {
     padding-bottom: 12px;
   }
+  .site-header .nav-link {
+    padding: 8px 9px;
+  }
 }
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
-  .site-header .header-inner {
+  .site-header {
     background-color: #142a24;
   }
 }
 @media (prefers-reduced-transparency: reduce) {
-  .site-header .header-inner {
+  .site-header {
     background: #142a24;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -4632,9 +4654,6 @@ html:not(.js) .stage-track {
 @view-transition {
   navigation: auto;
 }
-.site-header {
-  view-transition-name: site-header;
-}
 ::view-transition-group(*) {
   animation-duration: var(--page-transition-duration, 420ms);
   animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
@@ -4704,15 +4723,7 @@ html:not(.js) .stage-track {
 }
 
 /* Angled seams and space define the chapters on one continuous ground. */
-html:has(> .home-page) {
-  scroll-snap-type: y proximity;
-}
-.home-page .hero-scene,
-.home-page .chapter-section,
-.home-page .contact-section {
-  scroll-snap-align: start;
-  scroll-snap-stop: normal;
-}
+/* Landing chapter settling is handled after input stops, never during a gesture. */
 .home-page .hero-other-roles {
   color: #b6d7c7;
   font-size: 14px;
@@ -4919,5 +4930,534 @@ html:has(> .home-page) {
   .presentation-page .results-scene,
   .presentation-page .perspective-scene {
     background: white;
+  }
+}
+
+/* The presentation frame uses the available viewport, with no scrolling deck. */
+@media screen {
+  .js .presentation-page:has(.presentation-mode) {
+    height: 100dvh;
+    overflow: hidden;
+  }
+  .js .presentation-page:has(.presentation-mode) .site-header {
+    height: 68px;
+  }
+  .js .presentation-mode {
+    height: calc(100dvh - 88px);
+    padding: 0 0 10px;
+    display: grid;
+    grid-template-rows: 54px minmax(0, 1fr);
+  }
+  .js .presentation-mode .presentation-topbar {
+    padding-block: 8px;
+  }
+  .js .presentation-mode .presentation-shell {
+    min-height: 0;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) 58px 24px;
+    gap: 8px;
+    scroll-margin-top: 0;
+  }
+  .js .presentation-mode .presentation-deck {
+    min-height: 0;
+    container: project-frame / size;
+  }
+  .js .presentation-mode .scene {
+    height: 100%;
+    min-height: 0;
+    padding: clamp(20px, 4cqh, 36px) clamp(24px, 3vw, 44px);
+  }
+  .js .presentation-mode .scene-heading .eyebrow {
+    margin-bottom: clamp(10px, 2.5cqh, 18px);
+  }
+  .js .presentation-mode .scene-title {
+    font-size: clamp(28px, 7cqh, 46px);
+    line-height: 1.12;
+    letter-spacing: -1.5px;
+  }
+  .js .presentation-mode .scene-lead {
+    font-size: clamp(13px, 2.8cqh, 15px);
+    line-height: 1.7;
+    margin-top: clamp(14px, 3cqh, 24px);
+  }
+  .js .presentation-mode .scene-intro-grid {
+    height: 100%;
+    min-height: 0;
+    gap: clamp(22px, 3vw, 42px);
+  }
+  .js .presentation-mode .scene-tags {
+    margin-top: 16px;
+  }
+  .js .presentation-mode .presentation-meta {
+    margin-top: 18px;
+    padding-top: 14px;
+    gap: 10px 20px;
+  }
+  .js .presentation-mode .intro-visual .project-visual {
+    min-height: 0;
+    height: clamp(240px, 70cqh, 400px);
+    padding: 20px;
+  }
+  .js .presentation-mode .problem-grid {
+    margin-top: 20px;
+    gap: 36px;
+  }
+  .js .presentation-mode .problem-grid .scene-lead {
+    margin-top: 0;
+  }
+  .js .presentation-mode .focus-stack > div {
+    padding-block: clamp(13px, 3cqh, 23px);
+  }
+  .js .presentation-mode .scene-footnote {
+    display: none;
+  }
+  .js .presentation-mode .scene-subtitle {
+    margin-top: 10px;
+  }
+  .js .presentation-mode .stage-explorer {
+    margin-top: 16px;
+  }
+  .js .presentation-mode .stage-button {
+    min-height: clamp(70px, 17cqh, 110px);
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .js .presentation-mode .stage-panels {
+    margin-top: 14px;
+    padding: 14px 20px;
+  }
+  .js .presentation-mode .stage-panel h3 {
+    font-size: 17px;
+    margin-block: 4px 7px;
+  }
+  .js .presentation-mode .stage-panel p,
+  .js .presentation-mode .build-item p {
+    line-height: 1.65;
+  }
+  .js .presentation-mode .presentation-decision {
+    margin-top: 14px;
+    gap: 16px;
+  }
+  .js .presentation-mode .presentation-decision p {
+    line-height: 1.65;
+  }
+  .js .presentation-mode .build-grid {
+    margin-top: 22px;
+    gap: 14px;
+  }
+  .js .presentation-mode .build-item {
+    padding: clamp(14px, 3cqh, 22px);
+  }
+  .js .presentation-mode .build-number {
+    margin-bottom: 8px;
+  }
+  .js .presentation-mode .build-item h3 {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+  .js .presentation-mode .presentation-results {
+    margin-top: clamp(24px, 7cqh, 48px);
+  }
+  .js .presentation-mode .presentation-result > strong {
+    font-size: clamp(36px, 9cqh, 60px);
+  }
+  .js .presentation-mode .presentation-result.result-label > strong {
+    font-size: clamp(25px, 6cqh, 38px);
+  }
+  .js .presentation-mode .results-context {
+    margin-top: 22px;
+    padding: 16px 20px;
+  }
+  .js .presentation-mode .perspective-scene blockquote {
+    font-size: clamp(23px, 5.5cqh, 34px);
+    margin-block: 22px;
+  }
+  .js .presentation-mode .presentation-scope {
+    padding-top: 16px;
+  }
+  .js .presentation-mode .presentation-end {
+    margin-top: 20px;
+  }
+  .js .presentation-mode .presentation-navigation {
+    position: static;
+    margin: 0;
+    padding: 10px 14px;
+  }
+  .js .presentation-mode .presentation-hint {
+    margin: 0;
+    align-items: center;
+  }
+  .build-tabs {
+    display: none;
+  }
+  .build-tabs button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-align: left;
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    background: transparent;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .build-tabs button span {
+    font: 9px var(--mono);
+    color: #b9cfa8;
+  }
+  .build-tabs button[aria-pressed="true"] {
+    border-color: #b8d59a;
+    background: #28432a;
+  }
+  @container project-frame (max-height: 440px) {
+    .js .presentation-mode .build-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .js .presentation-mode .build-item:not(.is-build-selected) {
+      display: none;
+    }
+    .js .presentation-mode .build-grid {
+      grid-template-columns: 1fr;
+      margin-top: 14px;
+    }
+  }
+}
+@media screen and (max-width: 760px) {
+  .js .presentation-page:has(.presentation-mode) .site-header {
+    height: 57px;
+  }
+  .js .presentation-mode {
+    height: calc(100dvh - 73px);
+    grid-template-rows: 49px minmax(0, 1fr);
+  }
+  .js .presentation-mode .presentation-topbar {
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .js .presentation-mode .presentation-topbar h1 {
+    padding-left: 10px;
+  }
+  .js .presentation-mode .reading-toggle {
+    font-size: 8px;
+    padding: 7px 8px;
+    white-space: nowrap;
+  }
+  .js .presentation-mode .presentation-shell {
+    width: calc(100% - 24px);
+    grid-template-rows: minmax(0, 1fr) 52px 16px;
+    gap: 6px;
+  }
+  .js .presentation-mode .scene {
+    padding: clamp(16px, 3.5cqh, 24px) 20px;
+  }
+  .js .presentation-mode .scene-heading .eyebrow {
+    font-size: 8px;
+  }
+  .js .presentation-mode .scene-title {
+    font-size: clamp(26px, 5.6cqh, 34px);
+    letter-spacing: -1px;
+  }
+  .js .presentation-mode .scene-intro-grid {
+    display: flex;
+    align-items: center;
+  }
+  .js .presentation-mode .intro-visual {
+    display: none;
+  }
+  .js .presentation-mode .presentation-meta {
+    grid-template-columns: 1fr 1fr;
+  }
+  .js .presentation-mode .scene-lead {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .js .presentation-mode .scene-tags span {
+    font-size: 8px;
+  }
+  .js .presentation-mode .problem-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .js .presentation-mode .focus-stack > div {
+    padding-block: 12px;
+  }
+  .js .presentation-mode .scene-subtitle {
+    font-size: 11px;
+  }
+  .js .presentation-mode .stage-track {
+    gap: 10px 16px;
+  }
+  .js .presentation-mode .stage-button {
+    min-height: clamp(58px, 12cqh, 80px);
+    padding: 10px 12px;
+    gap: 5px;
+  }
+  .js .presentation-mode .stage-button strong {
+    font-size: 10px;
+    line-height: 1.35;
+    padding-right: 8px;
+  }
+  .js .presentation-mode .stage-dot {
+    top: 14px;
+    right: 10px;
+  }
+  .js .presentation-mode .stage-number {
+    font-size: 8px;
+  }
+  .js .presentation-mode .stage-panels {
+    padding: 12px 14px;
+  }
+  .js .presentation-mode .stage-panel h3 {
+    display: none;
+  }
+  .js .presentation-mode .stage-panel p {
+    margin-top: 7px;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .js .presentation-mode .presentation-decision {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .js .presentation-mode .presentation-decision p {
+    font-size: 11px;
+    line-height: 1.65;
+  }
+  .js .presentation-mode .build-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .js .presentation-mode .build-item:not(.is-build-selected) {
+    display: none;
+  }
+  .js .presentation-mode .build-grid {
+    grid-template-columns: 1fr;
+    margin-top: 14px;
+  }
+  .js .presentation-mode .build-item p {
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .js .presentation-mode .presentation-results {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    margin-top: 24px;
+  }
+  .js .presentation-mode .presentation-result {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    column-gap: 16px;
+    padding-bottom: 14px;
+  }
+  .js .presentation-mode .presentation-result .mono {
+    grid-column: 1 / -1;
+    font-size: 8px;
+    min-height: 0;
+  }
+  .js .presentation-mode .presentation-result > strong {
+    font-size: 30px;
+    margin-top: 7px;
+    letter-spacing: -1px;
+  }
+  .js .presentation-mode .presentation-result.result-label > strong {
+    font-size: 22px;
+  }
+  .js .presentation-mode .presentation-result > p {
+    margin-top: 7px;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+  .js .presentation-mode .results-context {
+    margin-top: 18px;
+    padding: 12px 14px;
+  }
+  .js .presentation-mode .results-context p,
+  .js .presentation-mode .presentation-scope p {
+    font-size: 11px;
+    line-height: 1.65;
+  }
+  .js .presentation-mode .perspective-scene blockquote {
+    font-size: clamp(21px, 4.3cqh, 27px);
+    line-height: 1.4;
+    margin-block: 18px;
+  }
+  .js .presentation-mode .presentation-navigation {
+    gap: 6px;
+    padding-inline: 10px;
+  }
+  .js .presentation-mode .scene-menu {
+    gap: 7px;
+  }
+  .js .presentation-mode .presentation-hint {
+    font-size: 7px;
+  }
+}
+
+.design-toggle {
+  display: none;
+}
+@media screen {
+  .design-toggle {
+    align-items: center;
+    gap: 8px;
+    margin: 14px 0 0 auto;
+    padding: 5px 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: transparent;
+    color: #c0d9a7;
+    font-size: 11px;
+  }
+  .design-toggle .icon {
+    width: 13px;
+    height: 13px;
+  }
+  .design-toggle[aria-pressed="true"] {
+    color: #e9efe6;
+    border-color: #b8d59a;
+  }
+  @container project-frame (max-height: 530px) {
+    .js .presentation-mode .design-toggle {
+      display: flex;
+    }
+    .js .presentation-mode .presentation-decision {
+      display: none;
+    }
+    .js .presentation-mode .is-design-selected .stage-panels {
+      display: none;
+    }
+    .js .presentation-mode .is-design-selected .presentation-decision {
+      display: grid;
+      padding: 14px 20px;
+      border-left: 2px solid #b8d59a;
+      background: #9cbc7310;
+    }
+  }
+}
+@media screen and (max-width: 980px) {
+  .js .presentation-mode .scene-intro-grid {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .js .presentation-mode .scene-intro-grid > div:first-child {
+    max-width: 650px;
+  }
+  .js .presentation-mode .intro-visual {
+    display: none;
+  }
+}
+@media screen and (max-width: 760px) {
+  .js .presentation-mode .design-toggle {
+    display: flex;
+  }
+  .js .presentation-mode .presentation-decision {
+    display: none;
+  }
+  .js .presentation-mode .is-design-selected .stage-panels {
+    display: none;
+  }
+  .js .presentation-mode .is-design-selected .presentation-decision {
+    display: grid;
+    padding: 14px;
+    border-left: 2px solid #b8d59a;
+    background: #9cbc7310;
+  }
+  @container project-frame (max-height: 530px) {
+    .js .presentation-mode .stage-track {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .js .presentation-mode .stage-button {
+      min-height: 46px;
+      justify-content: center;
+      align-items: center;
+    }
+    .js .presentation-mode .stage-button strong,
+    .js .presentation-mode .stage-dot {
+      display: none;
+    }
+    .js .presentation-mode .stage-number {
+      font-size: 11px;
+    }
+    .js .presentation-mode .stage-panel h3 {
+      display: block;
+      font-size: 15px;
+    }
+  }
+}
+
+.detail-toggle {
+  display: none;
+}
+@media screen {
+  .detail-toggle {
+    align-items: center;
+    gap: 8px;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 6px 12px;
+    background: transparent;
+    color: #c0d9a7;
+    margin-top: 16px;
+    font-size: 11px;
+  }
+  .detail-toggle .icon {
+    width: 13px;
+    height: 13px;
+  }
+  .detail-toggle[aria-pressed="true"] {
+    color: #e9efe6;
+    border-color: #b8d59a;
+    background: #28432a;
+  }
+  @container project-frame (max-height: 530px) {
+    .js .presentation-mode .detail-toggle {
+      display: flex;
+    }
+    .js .presentation-mode .results-context,
+    .js .presentation-mode .presentation-scope {
+      display: none;
+    }
+    .js .presentation-mode .is-detail-selected .results-context,
+    .js .presentation-mode .is-detail-selected .presentation-scope {
+      display: block;
+    }
+    .js .presentation-mode .is-detail-selected .presentation-results,
+    .js .presentation-mode .is-detail-selected blockquote {
+      display: none;
+    }
+    .js .presentation-mode .presentation-results {
+      margin-top: 18px;
+    }
+    .js .presentation-mode .problem-grid {
+      margin-top: 14px;
+      gap: 12px;
+    }
+  }
+}
+
+@media screen {
+  @container project-frame (max-height: 400px) {
+    .js .presentation-mode .architecture-scene {
+      padding-block: 16px;
+    }
+    .js .presentation-mode .scene-subtitle {
+      display: none;
+    }
+    .js .presentation-mode .stage-button {
+      min-height: 52px;
+      padding: 8px 12px;
+      gap: 4px;
+    }
+    .js .presentation-mode .stage-panels {
+      padding: 12px 16px;
+      margin-top: 10px;
+    }
   }
 }
