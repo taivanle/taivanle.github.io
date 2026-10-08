@@ -37,8 +37,8 @@ export function renderPresentation(
         <section class="scene architecture-scene" id="architecture" aria-label="Architecture">
           ${heading("03", "THE ARCHITECTURE", "Follow the system, stage by stage.")}
           <p class="scene-subtitle presentation-control">Select a stage to explore the design.</p>
-          <div class="stage-explorer" style="--stage-progress:0">
-            <div class="stage-track" role="group" aria-label="System stages">${p.flow.map((stage, i) => `<button type="button" class="stage-button ${i === 0 ? "is-selected" : ""}" data-stage="${i}" aria-pressed="${i === 0}" aria-controls="stage-panel-${i}"><span class="stage-number">0${i + 1}</span><strong>${escape(stage)}</strong><span class="stage-dot" aria-hidden="true"></span></button>`).join("")}</div>
+          <div class="stage-explorer">
+            <div class="stage-track" role="group" aria-label="System stages"><svg class="stage-wires" aria-hidden="true" focusable="false"></svg>${p.flow.map((stage, i) => `<button type="button" class="stage-button ${i === 0 ? "is-selected" : ""}" data-stage="${i}" aria-pressed="${i === 0}" aria-controls="stage-panel-${i}"><svg class="stage-outline" aria-hidden="true" focusable="false"><rect class="stage-charge" pathLength="100"/><rect class="stage-arrival" pathLength="100"/></svg><span class="stage-number">0${i + 1}</span><strong>${escape(stage)}</strong><span class="stage-dot" aria-hidden="true"></span></button>`).join("")}</div>
             <div class="stage-panels">${p.stages.map((detail, i) => `<div class="stage-panel" id="stage-panel-${i}" data-stage-panel="${i}"><span class="mono">STAGE 0${i + 1}</span><h3>${escape(p.flow[i])}</h3><p>${escape(detail)}</p></div>`).join("")}</div>
           </div>
           <div class="presentation-decision"><span class="mono">KEY DESIGN DECISION</span><p>${escape(p.decision)}</p></div>

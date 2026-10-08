@@ -657,3 +657,143 @@ test("direct project links have a safe return and old links retain their scene",
   await expect(page.locator(".scene:visible")).toHaveCount(6);
   await context.close();
 });
+
+for (const slug of ["themis", "dueform", "actifact"]) {
+  test(`${slug}: electrical stages travel in both directions and stay connected on mobile`, async ({
+    page,
+  }) => {
+    await page.goto(`/${slug}.html#architecture`);
+    const track = page.locator(".stage-track");
+    await expect(page.locator(".stage-wire")).toHaveCount(3);
+    const signals = () =>
+      page.locator(".stage-current").evaluateAll((paths) =>
+        paths.flatMap((path) =>
+          path.getAnimations().map((animation) => {
+            const frames = animation.effect.getKeyframes();
+            return {
+              from: parseFloat(frames[0].strokeDashoffset),
+              to: parseFloat(frames.at(-1).strokeDashoffset),
+              delay: animation.effect.getTiming().delay,
+            };
+          }),
+        ),
+      );
+    await page.locator('[data-stage="3"]').click();
+    expect(await signals()).toEqual([
+      { from: 28, to: -100, delay: 0 },
+      { from: 28, to: -100, delay: 520 },
+      { from: 28, to: -100, delay: 1040 },
+    ]);
+    await expect(page.locator("#stage-panel-3")).toBeVisible();
+    await page.locator('[data-stage="0"]').click();
+    expect(await signals()).toEqual([
+      { from: -100, to: 28, delay: 1040 },
+      { from: -100, to: 28, delay: 520 },
+      { from: -100, to: 28, delay: 0 },
+    ]);
+    await expect(track).toHaveAttribute("data-direction", "reverse");
+    expect(
+      await page
+        .locator('[data-stage="0"] .stage-charge')
+        .evaluate((rect) => getComputedStyle(rect).animationDirection),
+    ).toBe("reverse");
+    for (const width of [1440, 760, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect
+        .poll(
+          () =>
+            track.evaluate((track) => {
+              const box = track.getBoundingClientRect();
+              const svg = track.querySelector(".stage-wires");
+              if (Math.abs(svg.viewBox.baseVal.width - box.width) > 1)
+                return false;
+              const buttons = [...track.querySelectorAll(".stage-button")].map(
+                (button) => button.getBoundingClientRect(),
+              );
+              return [...svg.querySelectorAll(".stage-wire")].every(
+                (wire, i) => {
+                  const length = wire.getTotalLength();
+                  const start = wire.getPointAtLength(0);
+                  const end = wire.getPointAtLength(length);
+                  const from = buttons[i],
+                    to = buttons[i + 1];
+                  const sameRow = Math.abs(from.top - to.top) < 2;
+                  const expectedStart = sameRow
+                    ? [from.right, (from.top + from.bottom) / 2]
+                    : [(from.left + from.right) / 2, from.bottom];
+                  const expectedEnd = sameRow
+                    ? [to.left, (to.top + to.bottom) / 2]
+                    : [(to.left + to.right) / 2, to.top];
+                  if (
+                    Math.hypot(
+                      start.x + box.left - expectedStart[0],
+                      start.y + box.top - expectedStart[1],
+                    ) > 1 ||
+                    Math.hypot(
+                      end.x + box.left - expectedEnd[0],
+                      end.y + box.top - expectedEnd[1],
+                    ) > 1
+                  )
+                    return false;
+                  for (let n = 1; n < 20; n++) {
+                    const point = wire.getPointAtLength((length * n) / 20);
+                    const x = point.x + box.left,
+                      y = point.y + box.top;
+                    if (
+                      buttons.some(
+                        (button) =>
+                          x > button.left + 1 &&
+                          x < button.right - 1 &&
+                          y > button.top + 1 &&
+                          y < button.bottom - 1,
+                      )
+                    )
+                      return false;
+                  }
+                  return true;
+                },
+              );
+            }),
+          `Connected wires at ${width}px`,
+        )
+        .toBe(true);
+    }
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await page.locator('[data-stage="2"]').click();
+    await expect(page.locator("#stage-panel-2")).toBeVisible();
+    expect(await signals()).toEqual([]);
+    expect(
+      await page
+        .locator(".stage-charge")
+        .evaluateAll((rects) =>
+          rects.every(
+            (rect) =>
+              getComputedStyle(rect).animationName === "none" &&
+              getComputedStyle(rect).opacity === "0",
+          ),
+        ),
+    ).toBeTruthy();
+  });
+}
+
+test("the reflective sweep covers the full overview visual at every breakpoint", async ({
+  page,
+}) => {
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/themis.html");
+    expect(
+      await page.locator(".intro-visual").evaluate((visual) => {
+        const sheen = getComputedStyle(visual, "::after");
+        const bounds = visual.getBoundingClientRect();
+        return (
+          Math.abs(parseFloat(sheen.width) - (bounds.width - 2)) < 1 &&
+          Math.abs(parseFloat(sheen.height) - (bounds.height - 2)) < 1 &&
+          sheen.inset === "0px" &&
+          sheen.transform === "none"
+        );
+      }),
+      `Full reflective surface at ${width}px`,
+    ).toBeTruthy();
+  }
+});
