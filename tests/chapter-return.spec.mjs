@@ -186,20 +186,19 @@ async function assertStableReturn(
   await expect
     .poll(
       () => {
-        const last = returned()
-          .filter((record) => record.kind === "sample")
-          .at(-1);
-        return last ? last.time - settled.time : 0;
+        const samples = returned().filter(
+          (record) => record.kind === "sample" && record.time >= settled.time,
+        );
+        return (
+          samples.length >= 20 && samples.at(-1).time - settled.time >= 2000
+        );
       },
       { timeout: 5000 },
     )
-    .toBeGreaterThanOrEqual(2000);
+    .toBe(true);
   const timeline = returned();
   const samples = timeline.filter(
-    (record) =>
-      record.kind === "sample" &&
-      record.time >= settled.time &&
-      record.time <= settled.time + 2100,
+    (record) => record.kind === "sample" && record.time >= settled.time,
   );
   const restored = samples[0]?.documentId === departedDocumentId;
   // A cold reload may reveal its new heading once. A restored heading was
@@ -271,16 +270,14 @@ async function assertStableReturn(
       ),
       contentType: "application/json",
     });
-    await test
-      .info()
-      .attach(`${label}-heading.png`, {
-        body: await page.screenshot(),
-        contentType: "image/png",
-      });
+    await test.info().attach(`${label}-heading.png`, {
+      body: await page.screenshot(),
+      contentType: "image/png",
+    });
   }
   expect(
     samples.length,
-    "sample the restored heading throughout two seconds",
+    "sample at least twenty rendered frames across at least two seconds",
   ).toBeGreaterThanOrEqual(20);
   expect(
     starts.length,

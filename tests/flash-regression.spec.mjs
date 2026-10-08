@@ -461,13 +461,17 @@ async function assertPersistedHeading(page, records, firstRecord, documentId) {
   );
   await expect
     .poll(
-      () =>
-        timeline()
-          .filter((record) => record.kind === "lifecycle-heading")
-          .at(-1)?.time - settled.time,
+      () => {
+        const samples = timeline().filter(
+          (record) => record.kind === "lifecycle-heading",
+        );
+        return (
+          samples.length >= 20 && samples.at(-1).time - settled.time >= 2000
+        );
+      },
       { timeout: 5000 },
     )
-    .toBeGreaterThanOrEqual(2000);
+    .toBe(true);
   const headings = timeline().filter(
     (record) => record.kind === "lifecycle-heading",
   );
