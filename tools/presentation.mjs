@@ -62,7 +62,7 @@ export function renderPresentation(
       </div>
       <div class="presentation-navigation presentation-control"><button type="button" class="scene-prev" aria-label="Previous scene">${arrow}</button><nav class="scene-menu" aria-label="Presentation scenes">${scenes.map(([id, label], i) => `<button type="button" data-scene="${i}" aria-label="Scene ${i + 1}: ${label}" ${i === 0 ? 'aria-current="step"' : ""}><span>0${i + 1}</span><span class="scene-label">${label}</span></button>`).join("")}</nav><div class="scene-counter" aria-hidden="true">01 <span>/ 06</span></div><button type="button" class="scene-next" aria-label="Next scene">${arrow}</button></div>
       <p class="sr-only" id="presentation-status" role="status"></p>
-      <p class="presentation-hint presentation-control">Your pace. No autoplay. <span>← → to navigate when the presentation is focused.</span></p>
+      <p class="presentation-hint presentation-control">Your pace. No autoplay. <span>← → to navigate · Esc to return.</span></p>
     </div>
   </main>`;
 }
