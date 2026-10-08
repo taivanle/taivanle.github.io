@@ -123,6 +123,62 @@ if ("IntersectionObserver" in window) {
 
 const portraitVideo = document.querySelector("[data-portrait-video]");
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+if ("IntersectionObserver" in window) {
+  const visibleDividers = new Set();
+  let dividerFrame = 0;
+  function moveDividers() {
+    dividerFrame = 0;
+    for (const divider of visibleDividers) {
+      const bounds = divider.getBoundingClientRect();
+      const progress = Math.max(
+        0,
+        Math.min(1, (innerHeight - bounds.top) / (innerHeight + bounds.height)),
+      );
+      divider.style.setProperty(
+        "--chapter-shift",
+        `${reducedMotion.matches ? 0 : (0.5 - progress) * Math.min(100, innerWidth * 0.18)}px`,
+      );
+    }
+  }
+  function scheduleDividers() {
+    if (!dividerFrame) dividerFrame = requestAnimationFrame(moveDividers);
+  }
+  const dividers = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        entry.target.classList.toggle(
+          "is-divider-active",
+          entry.isIntersecting,
+        );
+        if (entry.isIntersecting) visibleDividers.add(entry.target);
+        else visibleDividers.delete(entry.target);
+      }
+      scheduleDividers();
+    },
+    { rootMargin: "-80px 0px 0px" },
+  );
+  window.addEventListener("scroll", scheduleDividers, { passive: true });
+  window.addEventListener("resize", scheduleDividers);
+  reducedMotion.addEventListener("change", scheduleDividers);
+  const chapters = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries)
+        entry.target
+          .closest(".chapter-section")
+          .classList.toggle("is-chapter-active", entry.isIntersecting);
+    },
+    { rootMargin: "-12% 0px -18% 0px" },
+  );
+  document.querySelectorAll(".chapter-section").forEach((section) => {
+    const divider = section.querySelector(".chapter-rule");
+    if (divider) dividers.observe(divider);
+    const title = section.querySelector("h2");
+    if (title) {
+      title.classList.add("chapter-title");
+      chapters.observe(title);
+    }
+  });
+}
 if (portraitVideo) {
   let inView = false;
   const syncVideo = () => {
@@ -153,45 +209,6 @@ if (portraitVideo) {
 const responsiveMotion = window.matchMedia(
   "(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
 );
-document
-  .querySelectorAll("[data-spotlight], .project-card, .presentation-deck")
-  .forEach((surface) => {
-    let frame;
-    surface.addEventListener(
-      "pointermove",
-      (event) => {
-        if (!responsiveMotion.matches) return;
-        cancelAnimationFrame(frame);
-        frame = requestAnimationFrame(() => {
-          const bounds = surface.getBoundingClientRect();
-          const x = event.clientX - bounds.left;
-          const y = event.clientY - bounds.top;
-          surface.style.setProperty("--light-x", `${x}px`);
-          surface.style.setProperty("--light-y", `${y}px`);
-          if (
-            surface.classList.contains("portrait-panel") ||
-            surface.classList.contains("project-card")
-          ) {
-            surface.style.setProperty(
-              "--tilt-x",
-              `${(0.5 - y / bounds.height) * 4}deg`,
-            );
-            surface.style.setProperty(
-              "--tilt-y",
-              `${(x / bounds.width - 0.5) * 4}deg`,
-            );
-          }
-        });
-      },
-      { passive: true },
-    );
-    surface.addEventListener("pointerleave", () => {
-      cancelAnimationFrame(frame);
-      surface.style.setProperty("--tilt-x", "0deg");
-      surface.style.setProperty("--tilt-y", "0deg");
-    });
-  });
-
 const animatedElements = document.querySelectorAll(
   ".project-card, .principles > div, .experience-row, .note-row, .speaking-feature, .summit-feature, .mentorship-panel",
 );
@@ -356,6 +373,12 @@ if (presentation) {
   );
   let stage = 0;
   let readAll = new URL(location.href).searchParams.get("view") === "all";
+  let sceneAnimations = [];
+
+  function stopSceneMotion() {
+    sceneAnimations.forEach((animation) => animation.cancel());
+    sceneAnimations = [];
+  }
 
   function showStage(index) {
     const previousStage = stage;
@@ -373,7 +396,7 @@ if (presentation) {
     );
     sendStageCurrent(previousStage, index);
   }
-  function showScene(index, { focus = false, updateUrl = true } = {}) {
+  function commitScene(index, { focus = false, updateUrl = true } = {}) {
     current = Math.max(0, Math.min(scenes.length - 1, index));
     scenes.forEach((scene, i) => {
       scene.hidden = !readAll && i !== current;
@@ -407,6 +430,23 @@ if (presentation) {
       shell.scrollIntoView({ block: "start", behavior: "instant" });
     updateScrollProgress();
   }
+  function showScene(index, options = {}) {
+    const destination = Math.max(0, Math.min(scenes.length - 1, index));
+    const departed = current;
+    stopSceneMotion();
+    commitScene(destination, options);
+    if (destination === departed || readAll || reducedMotion.matches) return;
+    const direction = destination > departed ? 1 : -1;
+    const animation = scenes[current].animate(
+      [
+        { opacity: 0.15, transform: `translateX(${direction * 24}px)` },
+        { opacity: 1, transform: "translateX(0)" },
+      ],
+      { duration: 560, easing: "cubic-bezier(0.22, 1, 0.36, 1)" },
+    );
+    sceneAnimations.push(animation);
+  }
+  reducedMotion.addEventListener("change", stopSceneMotion);
   function setReading(value) {
     readAll = value;
     presentation.classList.toggle("presentation-mode", !value);
@@ -433,12 +473,13 @@ if (presentation) {
     ),
   );
   reading.addEventListener("click", () => setReading(!readAll));
-  shell.addEventListener("keydown", (event) => {
+  document.addEventListener("keydown", (event) => {
     if (
       readAll ||
       event.altKey ||
       event.metaKey ||
       event.ctrlKey ||
+      menuButton?.getAttribute("aria-expanded") === "true" ||
       event.target.closest("input,textarea,select,[contenteditable]")
     )
       return;
@@ -472,13 +513,12 @@ if (presentation) {
     if (
       event.button !== 0 ||
       event.defaultPrevented ||
-      !event.detail ||
       window.getSelection()?.toString()
     )
       return;
     if (
       event.target.closest(
-        ".presentation-shell, .presentation-topbar, .site-header, .contact-section, a, button",
+        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, .contact-section, a, button",
       )
     )
       return;

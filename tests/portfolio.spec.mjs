@@ -14,6 +14,145 @@ const pages = [
   "404.html",
 ];
 
+test("project scenes accept immediate arrow keys, animate both ways, and handle rapid changes", async ({
+  page,
+}) => {
+  await page.goto("/projects.html");
+  await page
+    .getByRole("link", { name: "Read case study: ActiFact", exact: true })
+    .click();
+  await expect(page).toHaveURL(/actifact.html$/);
+  const frame = await page.locator(".presentation-deck").boundingBox();
+  const arrivalTravel = () =>
+    page.evaluate(() => {
+      const scene = document.querySelector(".scene.is-active");
+      const animation = scene
+        .getAnimations()
+        .find((item) => item.effect.target === scene);
+      const transform = animation?.effect.getKeyframes()[0].transform;
+      return transform ? new DOMMatrix(transform).m41 : null;
+    });
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#problem")).toBeVisible();
+  await expect.poll(arrivalTravel).toBeGreaterThan(0);
+  await page.keyboard.press("ArrowRight");
+  await expect(page.locator("#architecture")).toBeVisible();
+  await page.keyboard.press("ArrowLeft");
+  await expect(page.locator("#problem")).toBeVisible();
+  await expect.poll(arrivalTravel).toBeLessThan(0);
+  await expect(page.locator(".scene:visible")).toHaveCount(1);
+  const during = await page.locator(".presentation-deck").boundingBox();
+  expect(during.x).toBeCloseTo(frame.x, 0);
+  expect(during.width).toBeCloseTo(frame.width, 0);
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowRight");
+  await expect(page).toHaveURL(/#results$/);
+  await expect(page.locator("#results")).toBeVisible();
+  await expect(page.locator(".scene:visible")).toHaveCount(1);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page
+    .getByRole("button", { name: "Scene 6: Perspective", exact: true })
+    .click();
+  await expect(page.locator("#scope")).toBeVisible();
+  await expect.poll(arrivalTravel).toBeNull();
+});
+
+test("all five chapter handoffs have moving currents and scroll-driven type in both directions", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page.locator(".chapter-rule")).toHaveCount(5);
+  for (const section of ["work", "about", "experience", "community", "notes"]) {
+    const divider = page.locator(`#${section} .chapter-rule`);
+    await divider.scrollIntoViewIfNeeded();
+    await expect(divider).toHaveClass(/is-divider-active/);
+    const current = divider.locator(".chapter-current-core");
+    const offset = () =>
+      current.evaluate((el) =>
+        parseFloat(getComputedStyle(el).strokeDashoffset),
+      );
+    const firstOffset = await offset();
+    await expect
+      .poll(async () => Math.abs((await offset()) - firstOffset))
+      .toBeGreaterThan(2);
+    const word = divider.locator(".chapter-word");
+    const travel = () =>
+      word.evaluate((el) => new DOMMatrix(getComputedStyle(el).transform).m41);
+    const start = await travel();
+    await page.mouse.wheel(0, 120);
+    await expect.poll(travel).toBeLessThan(start - 5);
+    const forward = await travel();
+    await page.mouse.wheel(0, -120);
+    await expect.poll(travel).toBeGreaterThan(forward + 5);
+    await expect(page.locator(`#${section} h2`).first()).toBeVisible();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await expect(page.locator("#work .chapter-rule")).not.toHaveClass(
+    /is-divider-active/,
+  );
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  expect(
+    await page
+      .locator("#notes .chapter-word")
+      .evaluate((el) => getComputedStyle(el).transform),
+  ).toBe("none");
+  expect(
+    await page
+      .locator("#notes .chapter-word")
+      .evaluate((el) => el.getAnimations().length),
+  ).toBe(0);
+  await expect(page.locator("#notes .chapter-current-core")).not.toBeVisible();
+  await expect(page.locator("#notes h2")).toBeVisible();
+});
+
+test("the detailed Orchestrate guide supports both paths, screenshots, and its original FAQ download", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/create_agent.html");
+  const toc = page.getByRole("navigation", { name: "Article sections" });
+  await toc.getByRole("link", { name: "Python FAQ tool", exact: true }).click();
+  await expect(page).toHaveURL(/#adk-tool$/);
+  await expect(
+    page.getByRole("heading", {
+      name: "Create the Python FAQ tool",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await toc.getByRole("link", { name: "Visual builder", exact: true }).click();
+  await expect(page).toHaveURL(/#visual-builder$/);
+  const firstScreenshot = page.locator("#visual-builder img").first();
+  await firstScreenshot.scrollIntoViewIfNeeded();
+  await expect
+    .poll(() =>
+      firstScreenshot.evaluate(
+        (image) => image.complete && image.naturalWidth > 0,
+      ),
+    )
+    .toBe(true);
+  const download = page.getByRole("link", {
+    name: "Download the original sample FAQ document",
+    exact: true,
+  });
+  const response = await request.get(await download.getAttribute("href"));
+  expect(response.ok()).toBeTruthy();
+  expect(response.headers()["content-type"]).toBe("application/pdf");
+  expect((await response.body()).subarray(0, 5).toString()).toBe("%PDF-");
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBeTruthy();
+  }
+});
+
 test("project filters update visible cards and announce the result", async ({
   page,
 }) => {
@@ -626,7 +765,11 @@ for (const [slug, name] of [
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.locator(".scene.is-active .scene-title").click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
-    await page.mouse.click(8, 200);
+    const backdrop = await page.locator(".presentation-topbar").boundingBox();
+    await page.mouse.click(
+      backdrop.x + backdrop.width * 0.55,
+      backdrop.y + backdrop.height / 2,
+    );
     await expect(page).toHaveURL(/projects.html$/);
     await expect(card).toBeVisible();
     await expect
@@ -795,5 +938,61 @@ test("the reflective sweep covers the full overview visual at every breakpoint",
       }),
       `Full reflective surface at ${width}px`,
     ).toBeTruthy();
+  }
+});
+
+test("the background glow stays smooth across the space below the video frame", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.goto("/");
+  const frame = await page.locator(".portrait-panel").boundingBox();
+  const y = frame.y + frame.height + 40;
+  for (const edge of [frame.x, frame.x + frame.width]) {
+    await page.mouse.move(edge === frame.x ? edge + 90 : edge - 90, y);
+    await expect
+      .poll(() =>
+        page.locator(".hero-field").evaluate(
+          (canvas, point) => {
+            const ratio = canvas.width / innerWidth;
+            const pixels = canvas
+              .getContext("2d")
+              .getImageData(point.x * ratio, point.y * ratio, 1, 1).data;
+            return (pixels[1] * pixels[3]) / 255;
+          },
+          { x: edge, y },
+        ),
+      )
+      .toBeGreaterThan(10);
+    const screenshot = await page.screenshot();
+    const jump = await page.evaluate(
+      async ({ bytes, edge, y }) => {
+        const image = await createImageBitmap(
+          new Blob([Uint8Array.from(bytes)], { type: "image/png" }),
+        );
+        const canvas = new OffscreenCanvas(image.width, image.height);
+        const context = canvas.getContext("2d");
+        context.drawImage(image, 0, 0);
+        const green = (x) => {
+          const pixels = context.getImageData(
+            Math.floor(x),
+            Math.floor(y - 6),
+            8,
+            12,
+          ).data;
+          let total = 0;
+          for (let i = 1; i < pixels.length; i += 4) total += pixels[i];
+          return total / (pixels.length / 4);
+        };
+        const difference = Math.abs(green(edge - 12) - green(edge + 4));
+        image.close();
+        return difference;
+      },
+      { bytes: [...screenshot], edge, y },
+    );
+    expect(
+      jump,
+      `No rectangular light boundary below the frame at x=${edge}`,
+    ).toBeLessThan(8);
   }
 });

@@ -108,6 +108,18 @@
       context.stroke();
       context.shadowBlur = 0;
     }
+    // Bake the fade into this canvas, avoiding masked compositing layers beside video.
+    const fade = context.createLinearGradient(0, 0, width, 0);
+    fade.addColorStop(
+      0,
+      mobile ? "rgba(0, 0, 0, .267)" : "rgba(0, 0, 0, .533)",
+    );
+    if (!mobile) fade.addColorStop(0.5, "rgba(0, 0, 0, .8)");
+    fade.addColorStop(1, "#000");
+    context.globalCompositeOperation = "destination-in";
+    context.fillStyle = fade;
+    context.fillRect(0, 0, width, height);
+    context.globalCompositeOperation = "source-over";
   }
   function animate(time) {
     if (time - last >= 32) {
