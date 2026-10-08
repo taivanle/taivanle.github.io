@@ -4,21 +4,20 @@
   if (!canvas) return;
   const context = canvas.getContext("2d");
   if (!context) return;
-  const host = canvas.parentElement;
+  const host = document.documentElement;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   let width = 0,
     height = 0,
     frame = 0,
-    last = 0,
-    visible = true;
-  let phase = 0;
-  let pointer = { x: 0, y: 0 };
-  let target = { x: 0, y: 0 };
+    last = 0;
+  let phase = (Date.now() / 1000) % 86400;
+  let pointer = { x: 0, y: 0, strength: 0 };
+  let target = { x: 0, y: 0, strength: 0 };
   const tau = Math.PI * 2;
 
   function resize() {
     width = host.clientWidth;
-    height = host.clientHeight;
+    height = window.innerHeight;
     const ratio = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
@@ -28,16 +27,32 @@
   function draw() {
     context.clearRect(0, 0, width, height);
     const mobile = width <= 760;
-    const cx = width * (mobile ? 0.65 : 0.73) + pointer.x;
-    const cy = height * (mobile ? 0.68 : 0.5) + pointer.y;
+    if (pointer.strength > 0.01) {
+      const lightX = ((pointer.x + 1) / 2) * width;
+      const lightY = ((pointer.y + 1) / 2) * height;
+      const light = context.createRadialGradient(
+        lightX,
+        lightY,
+        0,
+        lightX,
+        lightY,
+        460,
+      );
+      light.addColorStop(0, `rgba(127, 218, 185, ${pointer.strength * 0.13})`);
+      light.addColorStop(1, "rgba(127, 218, 185, 0)");
+      context.fillStyle = light;
+      context.fillRect(0, 0, width, height);
+    }
     const radius = Math.min(
       mobile ? width * 0.8 : width * 0.34,
       height * 0.61,
       490,
     );
+    const cx = width * (mobile ? 0.65 : 0.73) + pointer.x * radius * 0.13;
+    const cy = height * (mobile ? 0.68 : 0.5) + pointer.y * radius * 0.09;
     const minor = radius * 0.24;
-    const tilt = 0.62 + Math.sin(phase * 0.18) * 0.16;
-    const yaw = 0.35 + phase * 0.07;
+    const tilt = 0.62 + Math.sin(phase * 0.18) * 0.16 + pointer.y * 0.35;
+    const yaw = 0.35 + phase * 0.07 + pointer.x * 0.48;
     const project = (u, v) => {
       const x = (radius + minor * Math.cos(v)) * Math.cos(u);
       const y = (radius + minor * Math.cos(v)) * Math.sin(u);
@@ -92,10 +107,10 @@
   }
   function animate(time) {
     if (time - last >= 32) {
-      const elapsed = last ? Math.min((time - last) / 1000, 0.1) : 0;
-      phase += elapsed;
+      phase = ((performance.timeOrigin + time) / 1000) % 86400;
       pointer.x += (target.x - pointer.x) * 0.07;
       pointer.y += (target.y - pointer.y) * 0.07;
+      pointer.strength += (target.strength - pointer.strength) * 0.07;
       last = time;
       draw();
     }
@@ -104,7 +119,11 @@
   function sync() {
     cancelAnimationFrame(frame);
     last = 0;
-    if (!reduced.matches && visible && !document.hidden)
+    if (reduced.matches) {
+      pointer = { x: 0, y: 0, strength: 0 };
+      target = { x: 0, y: 0, strength: 0 };
+    }
+    if (!reduced.matches && !document.hidden)
       frame = requestAnimationFrame(animate);
     else draw();
   }
@@ -112,23 +131,19 @@
     "pointermove",
     (event) => {
       if (reduced.matches || event.pointerType !== "mouse") return;
-      const bounds = host.getBoundingClientRect();
       target = {
-        x: (event.clientX / width - 0.5) * 18,
-        y: ((event.clientY - bounds.top) / height - 0.5) * 14,
+        x: Math.max(-1, Math.min(1, (event.clientX / width - 0.5) * 2)),
+        y: Math.max(-1, Math.min(1, (event.clientY / height - 0.5) * 2)),
+        strength: 1,
       };
     },
     { passive: true },
   );
   host.addEventListener("pointerleave", () => {
-    target = { x: 0, y: 0 };
+    target = { x: 0, y: 0, strength: 0 };
   });
   new ResizeObserver(resize).observe(host);
-  if ("IntersectionObserver" in window)
-    new IntersectionObserver(([entry]) => {
-      visible = entry.isIntersecting;
-      sync();
-    }).observe(host);
+  window.addEventListener("resize", resize);
   reduced.addEventListener("change", sync);
   document.addEventListener("visibilitychange", sync);
   resize();

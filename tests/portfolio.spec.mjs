@@ -226,6 +226,10 @@ test("the visual field moves and reduced motion stops the field and video", asyn
     });
   const initial = await pixels();
   await expect.poll(pixels).not.toBe(initial);
+  await page.locator("#community").scrollIntoViewIfNeeded();
+  await expect(field).toBeInViewport();
+  const afterScroll = await pixels();
+  await expect.poll(pixels).not.toBe(afterScroll);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect
     .poll(() => page.locator("video").evaluate((v) => v.paused))
@@ -241,13 +245,31 @@ test("event photos, showcasing, and both mentoring projects are available", asyn
   await page.goto("/#community");
   const photos = page.locator(".event-gallery img");
   await expect(photos).toHaveCount(3);
-  await expect
-    .poll(() =>
-      photos.evaluateAll((images) =>
-        images.every((image) => image.complete && image.naturalWidth > 0),
-      ),
-    )
-    .toBeTruthy();
+  const buttons = page.locator("[data-event-select]");
+  for (let index = 0; index < 3; index++) {
+    await buttons.nth(index).click();
+    await expect(buttons.nth(index)).toHaveAttribute("aria-pressed", "true");
+    await expect(photos.nth(index)).toBeVisible();
+    await expect
+      .poll(() =>
+        photos
+          .nth(index)
+          .evaluate((image) => image.complete && image.naturalWidth > 0),
+      )
+      .toBeTruthy();
+    await expect(page.locator("[data-event-photo]:visible")).toHaveCount(1);
+    const background = await buttons
+      .nth(index)
+      .evaluate((button) => getComputedStyle(button).backgroundImage);
+    expect(background).not.toContain("assets/assets");
+  }
+  await expect(page.locator(".event-gallery figcaption")).toHaveCount(0);
+  await buttons.nth(0).click();
+  await buttons.nth(1).press("Enter");
+  await expect(photos.nth(1)).toBeVisible();
+  await expect(page.locator("[data-event-status]")).toContainText(
+    "Photo 2 of 3",
+  );
   await expect(page.locator("#community")).toContainText(
     "watsonx Orchestrate to clients",
   );
@@ -299,12 +321,108 @@ test("result labels stay inside their own columns at every breakpoint", async ({
   }
 });
 
-test("project illustrations and labels stay separate at wide sizes and enlarged zoom", async ({
+test("the cursor follower responds to project hover without blocking navigation", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const project = page.getByRole("link", {
+    name: "Read case study: Themis",
+    exact: true,
+  });
+  await project.scrollIntoViewIfNeeded();
+  await project.hover();
+  await expect(page.locator(".cursor-tracker")).toHaveClass(/is-visible/);
+  await expect(page.locator(".cursor-tracker")).toHaveClass(/is-link/);
+  await project.click();
+  await expect(page).toHaveURL(/themis.html$/);
+  await expect(
+    page.getByRole("heading", { name: "Themis", exact: true }),
+  ).toBeVisible();
+});
+
+test("the cursor follower stays hidden for reduced motion and touch", async ({
+  page,
+  browser,
+}) => {
+  await page.goto("/");
+  await page.mouse.move(160, 200);
+  await expect(page.locator(".cursor-tracker")).toHaveClass(/is-visible/);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator(".cursor-tracker")).toBeHidden();
+  await expect(page.locator("html")).not.toHaveClass(/cursor-active/);
+  const context = await browser.newContext({
+    hasTouch: true,
+    isMobile: true,
+    viewport: { width: 390, height: 844 },
+  });
+  const touchPage = await context.newPage();
+  await touchPage.goto("http://127.0.0.1:4178/");
+  await touchPage.mouse.move(160, 200);
+  await expect(touchPage.locator(".cursor-tracker")).toBeHidden();
+  await context.close();
+});
+
+test("project card text stays within its frame at narrow, wide, and enlarged sizes", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await page.evaluate(() => document.fonts.ready);
+  for (const width of [2560, 1920, 1440, 1024, 768, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    const issues = await page.locator(".card-frame").evaluateAll((frames) =>
+      frames.flatMap((frame) => {
+        const bounds = frame.getBoundingClientRect();
+        const caption = frame
+          .querySelector(".card-caption")
+          .getBoundingClientRect();
+        const issues = [];
+        for (const element of frame.querySelectorAll(
+          ".card-meta, .card-copy, .card-skills",
+        )) {
+          const box = element.getBoundingClientRect();
+          if (
+            box.right > bounds.right + 1 ||
+            box.left < bounds.left - 1 ||
+            box.bottom > caption.top - 6
+          )
+            issues.push(
+              frame.querySelector("h3").textContent +
+                ": content escapes the frame",
+            );
+          const range = document.createRange();
+          range.selectNodeContents(element);
+          if (
+            [...range.getClientRects()].some(
+              (r) => r.right > bounds.right + 1 || r.left < bounds.left - 1,
+            )
+          )
+            issues.push(
+              frame.querySelector("h3").textContent +
+                ": text escapes the frame",
+            );
+        }
+        return issues;
+      }),
+    );
+    expect(issues, `Cards at ${width}px`).toEqual([]);
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.addStyleTag({ content: "html { zoom: 1.5; }" });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
+});
+
+test("project illustrations and labels stay separate at wide sizes and enlarged zoom", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/billacord.html");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page.locator(".project-visual")).toHaveCount(1);
   for (const width of [2560, 1920, 1440, 1024, 768, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     const issues = await page
@@ -381,3 +499,46 @@ for (const file of pages) {
     expect(problems).toEqual([]);
   });
 }
+
+test("project cards continue into a matching dark presentation with native page transitions", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.addEventListener("pagereveal", (event) => {
+      window.projectPageTransition = Boolean(event.viewTransition);
+    });
+  });
+  await page.goto("/");
+  const card = page.locator('.project-card[data-category="ai"] .card-frame');
+  const frameName = await card.evaluate(
+    (frame) => getComputedStyle(frame).viewTransitionName,
+  );
+  await page
+    .getByRole("link", { name: "Read case study: Themis", exact: true })
+    .click();
+  await expect(page).toHaveURL(/themis.html$/);
+  await expect(page.locator(".presentation-deck")).toBeVisible();
+  expect(
+    await page
+      .locator(".presentation-deck")
+      .evaluate((deck) => getComputedStyle(deck).viewTransitionName),
+  ).toBe(frameName);
+  await expect
+    .poll(() => page.evaluate(() => window.projectPageTransition))
+    .toBe(true);
+  expect(
+    await page
+      .locator("body")
+      .evaluate((body) => getComputedStyle(body).backgroundColor),
+  ).toBe("rgb(12, 28, 26)");
+  await expect(page.locator(".hero-field")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Scene 3: Architecture", exact: true })
+    .click();
+  await expect(page.locator("#architecture")).toBeVisible();
+  await page.getByRole("link", { name: "Selected work", exact: true }).click();
+  await expect(page).toHaveURL(/index.html#work$/);
+  await expect(
+    page.getByRole("link", { name: "Read case study: Themis", exact: true }),
+  ).toBeVisible();
+});

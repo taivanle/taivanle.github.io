@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { renderPresentation } from "./presentation.mjs";
 import { readFile, writeFile, mkdir, copyFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
@@ -7,6 +8,17 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const docs = path.join(root, "docs");
 const { projects } = JSON.parse(
   await readFile(path.join(root, "site/content.json"), "utf8"),
+);
+const assetVersions = Object.fromEntries(
+  await Promise.all(
+    ["styles.css", "app.js", "field.js"].map(async (name) => [
+      name,
+      createHash("sha256")
+        .update(await readFile(path.join(root, "site", name)))
+        .digest("hex")
+        .slice(0, 12),
+    ]),
+  ),
 );
 const escape = (value) =>
   String(value)
@@ -24,7 +36,7 @@ const copy =
 
 function navigation(home = false) {
   const prefix = home ? "" : "index.html";
-  return `<a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le<span style="color:#6b7c63">.</span></span></a><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><a class="nav-link" href="${prefix}#work">Work</a><a class="nav-link" href="${prefix}#about">About</a><a class="nav-link" href="${prefix}#experience">Experience</a><a class="nav-link" href="${prefix}#community">Speaking</a><a class="nav-link" href="blog_homepage.html">Notes</a><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume ${external}</a></nav></div></header>`;
+  return `<a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le<span class="brand-dot">.</span></span></a><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><a class="nav-link" href="${prefix}#work">Work</a><a class="nav-link" href="${prefix}#about">About</a><a class="nav-link" href="${prefix}#experience">Experience</a><a class="nav-link" href="${prefix}#community">Speaking</a><a class="nav-link" href="blog_homepage.html">Notes</a><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume ${external}</a></nav></div></header>`;
 }
 function footer() {
   return `<footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">HAVE SOMETHING IN MIND?</p><h2>Let’s build<br><span class="serif">something useful.</span></h2></div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address">${copy}</button></div><p class="copy-status" id="copy-status" role="status"></p></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom</span><div class="footer-links"><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn ${external}</a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub ${external}</a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume ${arrow}</a></div></div></div></footer>`;
@@ -36,6 +48,11 @@ function page(
   content,
   { home = false, noindex = false } = {},
 ) {
+  const isPresentation = projects.some(
+    (project) => file === `${project.slug}.html`,
+  );
+  const ambient = home || isPresentation || file === "projects.html";
+  const bodyClass = `${home ? "home-page" : isPresentation ? "presentation-page" : file === "projects.html" ? "projects-page" : "content-page"}${ambient ? " ambient-page" : ""}`;
   const canonical = `https://taivanle.github.io/${file === "index.html" ? "" : file}`;
   const ld = home
     ? {
@@ -63,7 +80,7 @@ function page(
         },
       };
   return `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${escape(title)}${home ? "" : " — Owen Le"}</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${canonical}">`}<meta name="theme-color" content="#f7f8f2"><meta property="og:type" content="${home ? "website" : "article"}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — AI systems. Built for the real world."><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css"><script src="assets/app.js" defer></script>${home ? '<script src="assets/field.js" defer></script>' : ""}<script type="application/ld+json">${JSON.stringify(ld).replaceAll("<", "\\u003c")}</script></head><body><div class="scroll-progress" aria-hidden="true"></div>${navigation(home)}${content}${footer()}</body></html>\n`;
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="${ambient ? "dark" : "light"}"><title>${escape(title)}${home ? "" : " — Owen Le"}</title><meta name="description" content="${escape(description)}">${noindex ? '<meta name="robots" content="noindex">' : `<link rel="canonical" href="${canonical}">`}<meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="${home ? "website" : "article"}"><meta property="og:title" content="${escape(title)}"><meta property="og:description" content="${escape(description)}"><meta property="og:url" content="${canonical}"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied AI engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=${assetVersions["styles.css"]}"><script src="assets/app.js?v=${assetVersions["app.js"]}" defer></script>${ambient ? `<script src="assets/field.js?v=${assetVersions["field.js"]}" defer></script>` : ""}<script type="application/ld+json">${JSON.stringify(ld).replaceAll("<", "\\u003c")}</script></head><body class="${bodyClass}">${ambient ? '<canvas class="hero-field" aria-hidden="true"></canvas>' : ""}<div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div>${navigation(home)}${content}${footer()}</body></html>\n`;
 }
 
 function visual(project, index) {
@@ -73,7 +90,7 @@ function visual(project, index) {
     case "themis":
       body =
         '<div class="benchmark-window"><div class="window-top"><span>THEMIS / COST PER RUN</span><span class="window-dots"><i></i><i></i><i></i></span></div><div class="cost-row"><span>Before</span><span class="bar"></span><b>~$25</b></div><div class="cost-row is-themis"><span>Themis</span><span class="bar"></span><b>$0.33</b></div><div class="cost-result"><span>Reported benchmark improvement</span><strong>↓ 98.7%</strong></div></div>';
-      note = "APTURA / RESUME-REPORTED RESULTS";
+      note = "REPORTED EVALUATION BENCHMARK";
       break;
     case "billing":
       body =
@@ -92,7 +109,7 @@ function cards() {
   return projects
     .map(
       (p, i) =>
-        `<article class="project-card ${p.slug === "themis" ? "featured" : ""}" data-category="${escape(p.category)}"><a href="${p.slug}.html" aria-label="Read case study: ${escape(p.name)}">${visual(p, i)}<div class="project-body"><div class="project-topline"><p class="eyebrow">${escape(p.eyebrow)}</p><span class="project-status">${escape(p.status)}</span></div><h3>${escape(p.name)}</h3><p>${escape(p.summary)}</p><div class="project-bottom"><div class="tags">${p.tags.map((t) => `<span>${escape(t)}</span>`).join("")}</div><span class="round-arrow">${arrow}</span></div></div></a></article>`,
+        `<article class="project-card" data-category="${escape(p.category)}"><a href="${p.slug}.html" aria-label="Read case study: ${escape(p.name)}"><div class="card-frame" style="view-transition-name: project-${p.slug}"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="mono">${String(i + 1).padStart(2, "0")}</span><span class="card-status">${escape(p.status)}</span></div><div class="card-copy"><p class="eyebrow">${escape(p.eyebrow)}</p><h3>${escape(p.name)}</h3><p class="card-description">${escape(p.summary)}</p></div><div class="card-skills">${p.tags.map((t) => `<span>${escape(t)}</span>`).join("")}</div></div><div class="card-caption"><span>Explore project</span>${arrow}</div></div></a></article>`,
     )
     .join("");
 }

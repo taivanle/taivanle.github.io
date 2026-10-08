@@ -26,7 +26,8 @@ for (const [file, html] of pages) {
     errors.push(`${file}: unexpanded template token`);
   for (const [, target] of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
     if (/^(?:https?:|mailto:|data:)/.test(target)) continue;
-    const [filename, fragment] = target.split("#");
+    const [resource, fragment] = target.split("#");
+    const filename = resource.split("?")[0];
     const destination = filename || file;
     try {
       if (!(await stat(path.join(docs, destination))).isFile())
