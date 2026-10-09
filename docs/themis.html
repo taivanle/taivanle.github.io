@@ -2,6 +2,7 @@
 <html lang="en" data-project-routes="themis.html dueform.html actifact.html"><head><meta charset="utf-8"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}html[data-page-transition="entering"]:not([data-cover-ready])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}</style><script>// Install navigation before external styles/scripts can delay first paint.
 (() => {
   const root = document.documentElement;
+  root.style.viewTransitionName = "none";
   // The shared build supplies these routes from the project content file.
   const projectRoutes = new Map(
     (root.dataset.projectRoutes || "")
@@ -15,6 +16,8 @@
   const isProject = projectRoutes.has(location.pathname);
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const transitionKey = "portfolio-navigation-transition";
+  const openingDuration = 1100;
+  const closingDuration = 1100;
   let departing = false;
   let pendingUrl = null;
   let departureTimer = 0;
@@ -24,6 +27,8 @@
   let coverAnimation = null;
   let arrivalSource = null;
   let entrySource = null;
+  let returnFrame = null;
+  let returnCardAnimation = null;
 
   function read(key) {
     try {
@@ -35,7 +40,10 @@
   function write(key, value) {
     try {
       sessionStorage.setItem(key, JSON.stringify(value));
-    } catch {}
+      return true;
+    } catch {
+      return false;
+    }
   }
   function previousPortfolioUrl() {
     let previousEntry = null;
@@ -147,6 +155,90 @@
         .querySelector(".presentation-shell")
         ?.focus({ preventScroll: true });
   }
+  function captureExitFrame(frame) {
+    if (!frame) return null;
+    // Carry only the painted DOM. Freezing its styles preserves the active
+    // slide on the landing page without browser page or canvas snapshots.
+    function paintedClone(node) {
+      if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode();
+      if (/^(SCRIPT|IFRAME|OBJECT|EMBED|STYLE|LINK)$/.test(node.tagName))
+        return null;
+      const style = getComputedStyle(node);
+      if (style.display === "none" || node.hidden) return null;
+      const copy = node.cloneNode(false);
+      for (const attribute of [...copy.attributes])
+        if (
+          attribute.name === "id" ||
+          attribute.name.startsWith("on") ||
+          attribute.name.startsWith("data-")
+        )
+          copy.removeAttribute(attribute.name);
+      copy.style.cssText = [...style]
+        .map((property) => `${property}:${style.getPropertyValue(property)};`)
+        .join("");
+      copy.style.animation = "none";
+      copy.style.transition = "none";
+      for (const child of node.childNodes) {
+        const cloned = paintedClone(child);
+        if (cloned) copy.append(cloned);
+      }
+      return copy;
+    }
+    const copy = paintedClone(frame);
+    const style = getComputedStyle(frame);
+    return copy
+      ? {
+          html: copy.outerHTML,
+          rect: originRect(frame),
+          width: parseFloat(style.width),
+          height: parseFloat(style.height),
+        }
+      : null;
+  }
+  function restoreExitFrame(marker, card) {
+    const saved = marker?.exitFrame;
+    if (
+      !card ||
+      !saved?.html ||
+      !saved.rect ||
+      Math.abs(saved.rect.viewportWidth - innerWidth) > 2 ||
+      Math.abs(saved.rect.viewportHeight - innerHeight) > 2
+    )
+      return null;
+    const template = document.createElement("template");
+    template.innerHTML = saved.html;
+    const frame = template.content.firstElementChild;
+    if (!frame) return null;
+    frame.className = "navigation-return-frame presentation-page";
+    frame.setAttribute("aria-hidden", "true");
+    frame.setAttribute("inert", "");
+    Object.assign(frame.style, {
+      position: "fixed",
+      left: `${saved.rect.x}px`,
+      top: `${saved.rect.y}px`,
+      width: `${saved.width}px`,
+      height: `${saved.height}px`,
+      minWidth: "0",
+      maxWidth: "none",
+      minHeight: "0",
+      maxHeight: "none",
+      margin: "0",
+      transform: "none",
+      transformOrigin: "top left",
+      opacity: "1",
+      pointerEvents: "none",
+      overflow: "hidden",
+      zIndex: "2147483500",
+    });
+    document.body.append(frame);
+    return frame;
+  }
+  function clearReturnFrame() {
+    returnFrame?.remove();
+    returnFrame = null;
+    returnCardAnimation?.cancel();
+    returnCardAnimation = null;
+  }
   function settled(direction) {
     root.removeAttribute("data-page-transition");
     root.removeAttribute("data-cover-ready");
@@ -159,6 +251,7 @@
     clearTimeout(revealTimer);
     arrivalAnimation?.cancel();
     coverAnimation?.cancel();
+    clearReturnFrame();
     root.classList.remove("project-return");
     focusPresentation();
     const previous = previousPortfolioUrl();
@@ -186,19 +279,50 @@
       : slug
         ? document.querySelector(`.card-frame[data-project="${slug}"]`)
         : null;
-    const duration = isProject ? 420 : 320;
+    if (!isProject && direction === "close") {
+      const section = frame?.closest(".chapter-section");
+      section?.classList.add("is-chapter-active");
+      const title = section?.querySelector(".chapter-title");
+      // A fresh document return must be as steady as a cached history return.
+      if (title) title.style.animation = "none";
+    }
+    returnFrame = !isProject ? restoreExitFrame(marker, frame) : null;
+    const duration = returnFrame
+      ? closingDuration
+      : isProject
+        ? openingDuration
+        : 320;
     signal("entering", duration, direction);
     if (element) {
       element.style.opacity = "1";
       // A DOM cover takes over before the head's first-paint cover is removed.
       root.dataset.coverReady = "true";
       coverAnimation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
-        duration: isProject && marker?.rect ? 80 : 220,
+        duration: returnFrame || (isProject && marker?.rect) ? 80 : 220,
         fill: "forwards",
         easing: "ease-out",
       });
     }
-    if (
+    if (returnFrame) {
+      const target = originRect(frame);
+      arrivalAnimation = returnFrame.animate(
+        [
+          {
+            transform: rectTransform(returnFrame, marker.exitFrame.rect, true),
+            opacity: 1,
+            easing: "cubic-bezier(.22,1,.36,1)",
+          },
+          { opacity: 1, offset: 0.7, easing: "linear" },
+          { transform: rectTransform(returnFrame, target, true), opacity: 0 },
+        ],
+        { duration, fill: "forwards", easing: "linear" },
+      );
+      returnCardAnimation = frame.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: duration * 0.3,
+        delay: duration * 0.7,
+        fill: "backwards",
+      });
+    } else if (
       frame &&
       frame.getBoundingClientRect().bottom > 0 &&
       frame.getBoundingClientRect().top < innerHeight
@@ -221,6 +345,7 @@
       if (departing) return;
       if (element) element.style.opacity = "0";
       coverAnimation?.cancel();
+      clearReturnFrame();
       settled(direction);
     }, duration);
   }
@@ -231,16 +356,22 @@
     incoming = null;
     clearTimeout(revealTimer);
     const direction = isProject ? "close" : "open";
-    const duration = motion.matches || document.hidden || !isProject ? 0 : 900;
+    const duration =
+      motion.matches || document.hidden || !isProject ? 0 : closingDuration;
     const marker = { from: location.href, to, direction, rect, at: Date.now() };
-    write(transitionKey, marker);
+    const frame = document.querySelector(".presentation-deck");
+    if (duration && !projectRoutes.has(new URL(to).pathname))
+      marker.exitFrame = captureExitFrame(frame);
+    const stored = write(transitionKey, marker);
+    // The destination displays the landing page behind the contracting card.
+    // If storage is unavailable, retain the dark-backed in-page fallback.
+    const destinationClose = stored && Boolean(marker.exitFrame);
     if (projectRoutes.has(new URL(to).pathname) && rect)
       write(`portfolio-project-origin:${new URL(to).pathname}`, {
         from: location.href,
         rect,
       });
     const element = cover();
-    const frame = document.querySelector(".presentation-deck");
     const first = frame
       ? {
           transform: getComputedStyle(frame).transform,
@@ -249,22 +380,23 @@
       : null;
     arrivalAnimation?.cancel();
     coverAnimation?.cancel();
+    clearReturnFrame();
     root.dataset.pageTransition = "leaving";
     root.dataset.coverReady = "true";
     signal("leaving", duration, direction);
     if (element) {
       element.style.pointerEvents = "auto";
-      if (duration) {
+      if (duration && !destinationClose) {
         element.style.opacity = "0";
         coverAnimation = element.animate([{ opacity: 0 }, { opacity: 1 }], {
-          duration: 300,
-          delay: duration - 300,
+          duration: 80,
+          delay: duration - 80,
           fill: "forwards",
           easing: "ease-in-out",
         });
       } else element.style.opacity = "1";
     }
-    if (frame && duration) {
+    if (frame && duration && !destinationClose) {
       const origin = read(`portfolio-project-origin:${location.pathname}`);
       const target =
         origin && destinationMatchesOrigin(origin.from, to)
@@ -272,8 +404,8 @@
           : null;
       frame.style.transformOrigin = "top left";
       arrivalAnimation = frame.animate(
-        [first, { transform: rectTransform(frame, target), opacity: 0.15 }],
-        { duration, fill: "forwards", easing: "cubic-bezier(.65,0,.35,1)" },
+        [first, { transform: rectTransform(frame, target, true), opacity: 1 }],
+        { duration, fill: "forwards", easing: "cubic-bezier(.22,1,.36,1)" },
       );
     }
     const commit = () => {
@@ -281,7 +413,8 @@
       if (back) history.back();
       else location.assign(to);
     };
-    if (duration) departureTimer = setTimeout(commit, duration);
+    if (duration && !destinationClose)
+      departureTimer = setTimeout(commit, duration);
     else commit();
   }
   function destinationMatchesOrigin(from, to) {
