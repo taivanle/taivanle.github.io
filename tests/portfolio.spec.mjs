@@ -933,6 +933,37 @@ test("project cards expand into a dark presentation and return through the real 
               .getKeyframes()
               .map(({ transform, opacity }) => ({ transform, opacity })),
           }));
+          const returning = document.querySelector(".navigation-return-frame");
+          if (!returning || event.detail.direction !== "close") return;
+          const target = document.querySelector(
+            '.card-frame[data-project="themis"]',
+          );
+          const style = getComputedStyle(returning);
+          sessionStorage.setItem(
+            "tested-project-return-frame",
+            JSON.stringify({
+              inert: returning.inert,
+              hidden: returning.getAttribute("aria-hidden"),
+              source: {
+                x: parseFloat(style.left),
+                y: parseFloat(style.top),
+                width: parseFloat(style.width),
+                height: parseFloat(style.height),
+              },
+              target: target?.getBoundingClientRect().toJSON(),
+              animations: returning.getAnimations().map((animation) => ({
+                duration: animation.effect.getTiming().duration,
+                easing: animation.effect.getTiming().easing,
+                frames: animation.effect
+                  .getKeyframes()
+                  .map(({ transform, opacity, easing }) => ({
+                    transform,
+                    opacity,
+                    easing,
+                  })),
+              })),
+            }),
+          );
         });
       }
     });
@@ -950,8 +981,8 @@ test("project cards expand into a dark presentation and return through the real 
       page.evaluate(() =>
         window.projectArrival?.some(
           (animation) =>
-            animation.duration >= 400 &&
-            animation.duration <= 500 &&
+            animation.duration >= 600 &&
+            animation.duration <= 750 &&
             animation.frames[0].transform !== "none" &&
             animation.frames.at(-1).transform === "none",
         ),
@@ -999,6 +1030,79 @@ test("project cards expand into a dark presentation and return through the real 
   await expect(
     page.getByRole("link", { name: "Read case study: Themis", exact: true }),
   ).toBeVisible();
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Boolean(sessionStorage.getItem("tested-project-return-frame")),
+      ),
+    )
+    .toBe(true);
+  const closing = await page.evaluate(() => {
+    const evidence = JSON.parse(
+      sessionStorage.getItem("tested-project-return-frame"),
+    );
+    const travel = evidence.animations.find(
+      (animation) =>
+        animation.frames.at(-1).transform &&
+        animation.frames.at(-1).transform !== "none",
+    );
+    const transform = new DOMMatrix(travel.frames.at(-1).transform);
+    return {
+      ...evidence,
+      travel,
+      final: {
+        x: evidence.source.x + transform.e,
+        y: evidence.source.y + transform.f,
+        width: evidence.source.width * transform.a,
+        height: evidence.source.height * transform.d,
+      },
+      nativeNames: [
+        getComputedStyle(document.documentElement).viewTransitionName,
+        getComputedStyle(
+          document.querySelector('.card-frame[data-project="themis"]'),
+        ).viewTransitionName,
+      ],
+    };
+  });
+  expect(closing.inert).toBe(true);
+  expect(closing.hidden).toBe("true");
+  expect(closing.travel.duration).toBeGreaterThanOrEqual(1000);
+  expect(closing.travel.duration).toBeLessThanOrEqual(1200);
+  expect(closing.travel.frames[0].easing.replaceAll(" ", "")).toBe(
+    "cubic-bezier(0.22,1,0.36,1)",
+  );
+  expect(Number(closing.travel.frames[0].opacity)).toBe(1);
+  for (const key of ["x", "y", "width", "height"])
+    expect(closing.final[key]).toBeCloseTo(closing.target[key], 1);
+  expect(closing.nativeNames).toEqual(["none", "none"]);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /entering|leaving/,
+  );
+  await expect(page.locator(".navigation-return-frame")).toHaveCount(0);
+  const title = page.locator("#work-title");
+  await expect(title).toBeVisible();
+  const stableTitle = await title.evaluate(async (element) => {
+    const samples = [];
+    const until = performance.now() + 1000;
+    do {
+      await new Promise(requestAnimationFrame);
+      const style = getComputedStyle(element);
+      samples.push({
+        opacity: Number(style.opacity),
+        clip: style.clipPath,
+        transform: style.transform,
+        visibility: style.visibility,
+      });
+    } while (performance.now() < until || samples.length < 20);
+    return samples;
+  });
+  expect(stableTitle.every((sample) => sample.opacity >= 0.98)).toBe(true);
+  expect(stableTitle.every((sample) => sample.visibility === "visible")).toBe(
+    true,
+  );
+  expect(new Set(stableTitle.map((sample) => sample.clip)).size).toBe(1);
+  expect(new Set(stableTitle.map((sample) => sample.transform)).size).toBe(1);
 });
 
 test("the light changes the illumination of the background as the pointer moves", async ({
