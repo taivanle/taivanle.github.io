@@ -2,7 +2,7 @@
   if (window.PortfolioCardMotion) return;
 
   const green = "#d7f4af";
-  const easing = "cubic-bezier(.4,0,.2,1)";
+  const easing = "cubic-bezier(.65,0,.25,1)";
   function bounds(value, fallback = {}) {
     const number = (key, otherwise) => {
       const result = Number(value?.[key] ?? fallback[key]);
@@ -22,6 +22,8 @@
     rect,
     target,
     name = "",
+    summary = "",
+    index = "",
     direction = "open",
     arrival = false,
     duration = 0,
@@ -34,7 +36,6 @@
     let cancelled = false;
     let revealing = null;
     let scan = null;
-    let waiting = null;
 
     const element = document.createElement("div");
     element.className = "navigation-flip-stage";
@@ -61,17 +62,18 @@
       node.style.cssText =
         "position:absolute;inset:0;box-sizing:border-box;" +
         "backface-visibility:hidden;-webkit-backface-visibility:hidden;" +
-        "pointer-events:none;overflow:hidden;border-radius:9px";
+        "pointer-events:none;overflow:hidden;border-radius:12px";
       return node;
     }
     const front = face("navigation-card-front");
     const back = face("navigation-card-back");
     back.style.cssText +=
-      ";transform:rotateX(180deg);background:#10241c;" +
-      "border:1px solid #78916b88;color:#e9efe6;" +
-      "display:flex;flex-direction:column;justify-content:center;" +
-      "padding:clamp(24px,4vw,48px);container-type:size;" +
-      "box-shadow:0 24px 65px -25px #0006";
+      ";transform:rotateX(180deg);" +
+      "background:radial-gradient(120% 90% at 0% 0%,#1b3a2d 0%,#10241c 58%);" +
+      "border:1px solid #78916b8c;color:#eaf0e7;" +
+      "display:flex;flex-direction:column;justify-content:center;gap:14px;" +
+      "padding:clamp(24px,4vw,56px);container-type:size;" +
+      "box-shadow:inset 0 1px 0 #d2edd810,0 30px 70px -28px #000a";
 
     const paintedFrames = [];
     function mountFrame(payload, faceNode) {
@@ -114,42 +116,97 @@
       front.style.border = "1px solid #78916b88";
     }
 
+    const counting = direction === "open";
+    const caption = document.createElement("div");
+    caption.className = "navigation-card-caption";
+    caption.textContent =
+      direction === "close" ? "Closing" : "Opening case study";
+    caption.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:11px;font-weight:600;" +
+      "letter-spacing:.14em;text-transform:uppercase;color:#c0d9a7;margin:0";
     const title = document.createElement("div");
     title.className = "navigation-card-name";
-    title.textContent = name;
     title.style.cssText =
-      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(44, Math.max(26, destination.width * 0.05))}px;` +
-      "font-weight:500;line-height:1.15;letter-spacing:-1.2px;margin:0";
-    back.append(title);
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(72, Math.max(30, destination.width * 0.065))}px;` +
+      "font-weight:500;line-height:1.08;letter-spacing:-.04em;margin:0;" +
+      "overflow:hidden;padding-bottom:.08em";
+    const titleText = document.createElement("span");
+    titleText.textContent = name;
+    titleText.style.cssText = "display:block";
+    title.append(titleText);
+    back.append(caption, title);
+    const details = document.createElement("p");
+    details.className = "navigation-card-summary";
+    details.textContent = summary;
+    details.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:15px;line-height:1.6;" +
+      "color:#a3b5a9;max-width:36ch;margin:4px 0 0";
+    if (counting && summary) back.append(details);
+    const numeral = document.createElement("div");
+    numeral.className = "navigation-card-index";
+    numeral.textContent = index;
+    numeral.style.cssText =
+      "position:absolute;right:clamp(24px,4vw,56px);top:50%;" +
+      `margin-top:-${Math.min(240, destination.height * 0.4) * 0.55}px;` +
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(240, destination.height * 0.4)}px;` +
+      "font-weight:300;line-height:1.1;letter-spacing:-.06em;color:transparent;" +
+      "-webkit-text-stroke:1px #d7f4af4d;font-variant-numeric:tabular-nums";
+    if (counting && index && destination.width >= 720) back.append(numeral);
 
-    const progress = document.createElement("div");
-    progress.className = "navigation-card-progress";
-    progress.style.cssText =
-      "position:absolute;left:clamp(24px,4vw,48px);" +
-      "right:clamp(24px,4vw,48px);bottom:clamp(24px,4vw,48px);" +
-      "height:2px;background:#d7f4af24;overflow:hidden;border-radius:2px";
-    const fill = document.createElement("div");
-    fill.className = "navigation-card-progress-fill";
-    fill.style.cssText =
-      `height:100%;width:100%;background:${green};` +
-      "transform-origin:left center;transform:scaleX(.15)";
-    progress.append(fill);
-    back.append(progress);
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const outline = document.createElementNS(svgNamespace, "svg");
+    outline.setAttribute("class", "navigation-card-progress");
+    outline.setAttribute(
+      "viewBox",
+      `0 0 ${destination.width} ${destination.height}`,
+    );
+    outline.style.cssText =
+      "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none";
+    const inset = 0.75;
+    const radius = 11.25;
+    const right = destination.width - inset;
+    const bottom = destination.height - inset;
+    const edge =
+      `M${inset + radius} ${inset}H${right - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right} ${inset + radius}V${bottom - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right - radius} ${bottom}H${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset} ${bottom - radius}V${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset + radius} ${inset}Z`;
+    const traces = [
+      ["navigation-card-progress-halo", "6", "#d7f4af2e"],
+      ["navigation-card-progress-fill", "1.5", green],
+    ].map(([className, width, colour]) => {
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("class", className);
+      path.setAttribute("d", edge);
+      path.setAttribute("pathLength", "100");
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", colour);
+      path.setAttribute("stroke-width", width);
+      path.style.strokeDasharray = "100 100";
+      outline.append(path);
+      return path;
+    });
+    const fill = traces[1];
+    back.append(outline);
 
-    for (const [vertical, horizontal] of [
-      ["top", "left"],
-      ["top", "right"],
-      ["bottom", "left"],
-      ["bottom", "right"],
-    ]) {
-      const corner = document.createElement("span");
-      corner.style.cssText =
-        "position:absolute;width:9px;height:9px;" +
-        `${vertical}:12px;${horizontal}:12px;` +
-        `border-${vertical}:1px solid #d7f4af66;` +
-        `border-${horizontal}:1px solid #d7f4af66`;
-      back.append(corner);
-    }
+    const status = document.createElement("div");
+    status.className = "navigation-card-status";
+    status.style.cssText =
+      "position:absolute;left:clamp(24px,4vw,56px);right:clamp(24px,4vw,56px);" +
+      "bottom:clamp(20px,3.4vw,44px);display:flex;justify-content:space-between;" +
+      "align-items:baseline;font-family:Manrope,Arial,sans-serif;font-size:11px;" +
+      "font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a9d91";
+    const statusLabel = document.createElement("span");
+    statusLabel.textContent = "Loading";
+    const counter = document.createElement("span");
+    counter.className = "navigation-card-counter";
+    counter.style.cssText =
+      "font-size:13px;letter-spacing:.04em;color:#d5e7ae;" +
+      "font-variant-numeric:tabular-nums";
+    status.append(statusLabel, counter);
+    if (counting) back.append(status);
+
     if (backFrame?.html) {
       back.replaceChildren();
       back.style.padding = "0";
@@ -165,7 +222,6 @@
     function animate(node, frames, options) {
       const animation = node.animate(frames, options);
       animations.add(animation);
-      // Cancellation is part of normal navigation, including an early Escape.
       animation.finished.catch(() => {});
       return animation;
     }
@@ -196,22 +252,45 @@
     );
     const progressStart = arrival
       ? Math.max(0.86, Math.min(0.96, Number(carriedProgress) || 0.86))
-      : 0.15;
+      : 0;
     const progressEnd = arrival ? progressStart : 0.86;
-    fill.style.transform = `scaleX(${progressStart})`;
+    const dash = (value) => `${100 - value * 100}`;
+    let progressRun = [];
+    function setProgress(value) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = [];
+      for (const path of traces) path.style.strokeDashoffset = dash(value);
+    }
+    function runProgress(frames, options) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = traces.map((path) =>
+        animate(
+          path,
+          frames.map(({ value, ...frame }) => ({
+            ...frame,
+            strokeDashoffset: dash(value),
+          })),
+          options,
+        ),
+      );
+      return progressRun[1];
+    }
+    setProgress(counting || arrival ? progressStart : 1);
     const loading =
       !backFrame?.html && (arrival || direction === "open")
-        ? animate(
-            fill,
-            [
-              { transform: `scaleX(${progressStart})` },
-              { transform: `scaleX(${progressEnd})` },
-            ],
-            {
-              duration: milliseconds,
-              easing: "ease-out",
-              fill: "forwards",
-            },
+        ? runProgress(
+            arrival
+              ? [{ value: progressStart }, { value: progressEnd }]
+              : [
+                  { value: 0 },
+                  {
+                    value: 0.04,
+                    offset: 0.42,
+                    easing: "cubic-bezier(.45,0,.25,1)",
+                  },
+                  { value: progressEnd },
+                ],
+            { duration: milliseconds, fill: "forwards" },
           )
         : null;
     const finished = Promise.allSettled(
@@ -220,26 +299,67 @@
         .map((animation) => animation.finished),
     ).then(() => {
       if (cancelled || direction !== "open" || backFrame?.html) return;
-      waiting = animate(
-        fill,
-        [{ transform: `scaleX(${progressEnd})` }, { transform: "scaleX(.96)" }],
-        { duration: 2600, easing: "ease-out", fill: "forwards" },
-      );
+      runProgress([{ value: progressEnd }, { value: 0.96 }], {
+        duration: 2600,
+        easing: "ease-out",
+        fill: "forwards",
+      });
     });
+    if (!arrival && counting && !backFrame?.html) {
+      const rise = {
+        duration: milliseconds * 0.62,
+        easing: "cubic-bezier(.22,1,.36,1)",
+        fill: "backwards",
+      };
+      animate(
+        titleText,
+        [{ transform: "translateY(110%)" }, { transform: "none" }],
+        { ...rise, delay: milliseconds * 0.38 },
+      );
+      animate(
+        caption,
+        [
+          { opacity: 0, transform: "translateY(8px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.32 },
+      );
+      animate(
+        details,
+        [
+          { opacity: 0, transform: "translateY(12px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.46 },
+      );
+      animate(
+        numeral,
+        [
+          { opacity: 0, transform: "translateX(24px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.4 },
+      );
+    }
 
     function progressValue(hold = false) {
-      const value = new DOMMatrix(getComputedStyle(fill).transform).a;
-      if (hold) {
-        waiting?.cancel();
-        loading?.cancel();
-        fill.style.transform = `scaleX(${value})`;
-      }
-      return value;
+      const value =
+        1 - parseFloat(getComputedStyle(fill).strokeDashoffset) / 100;
+      const settled = Number.isFinite(value) ? value : 1;
+      if (hold) setProgress(settled);
+      return settled;
     }
+    let counterFrame = 0;
+    function count() {
+      counter.textContent = `${Math.round(progressValue() * 100)}%`;
+      counterFrame = requestAnimationFrame(count);
+    }
+    if (counting && !backFrame?.html) count();
 
     function cancel() {
       if (cancelled) return;
       cancelled = true;
+      cancelAnimationFrame(counterFrame);
       for (const animation of animations) animation.cancel();
       animations.clear();
       scan?.remove();
@@ -266,18 +386,11 @@
         });
         for (const painted of paintedFrames)
           painted.node.style.transform = `scale(${actual.width / painted.width}, ${actual.height / painted.height})`;
-        const loadedProgress = progressValue();
-        waiting?.cancel();
-        loading?.cancel();
-        fill.style.transform = `scaleX(${loadedProgress})`;
-        const completed = animate(
-          fill,
-          [
-            { transform: `scaleX(${loadedProgress})` },
-            { transform: "scaleX(1)" },
-          ],
+        const loadedProgress = progressValue(true);
+        const completed = runProgress(
+          [{ value: loadedProgress }, { value: 1 }],
           {
-            duration: 70,
+            duration: 160,
             fill: "forwards",
             easing: "ease-out",
           },

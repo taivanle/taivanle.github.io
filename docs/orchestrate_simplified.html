@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-project-routes="themis.html dueform.html actifact.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;transition:opacity 180ms ease}body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:opacity 100ms ease}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress{filter:blur(8px);opacity:0;pointer-events:none}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){.hero-field,body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:none}}</style><script>(() => {
+<html lang="en" data-project-routes="themis.html dueform.html actifact.html financial-qa.html vodafone-tobi.html nationwide-governance.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;transition:opacity 400ms ease}body>main,body>.site-header,body>.contact-section,body>.scroll-progress,body>.chapter-rail{transition:filter 420ms cubic-bezier(.33,1,.68,1)}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress,html[data-card-transition] body>.chapter-rail{filter:blur(12px) brightness(.42);pointer-events:none;transition:filter 520ms cubic-bezier(.22,1,.36,1)}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){.hero-field,body>main,body>.site-header,body>.contact-section,body>.scroll-progress,body>.chapter-rail{transition:none!important}}</style><script>(() => {
   if (window.PortfolioCardMotion) return;
 
   const green = "#d7f4af";
-  const easing = "cubic-bezier(.4,0,.2,1)";
+  const easing = "cubic-bezier(.65,0,.25,1)";
   function bounds(value, fallback = {}) {
     const number = (key, otherwise) => {
       const result = Number(value?.[key] ?? fallback[key]);
@@ -23,6 +23,8 @@
     rect,
     target,
     name = "",
+    summary = "",
+    index = "",
     direction = "open",
     arrival = false,
     duration = 0,
@@ -35,7 +37,6 @@
     let cancelled = false;
     let revealing = null;
     let scan = null;
-    let waiting = null;
 
     const element = document.createElement("div");
     element.className = "navigation-flip-stage";
@@ -62,17 +63,18 @@
       node.style.cssText =
         "position:absolute;inset:0;box-sizing:border-box;" +
         "backface-visibility:hidden;-webkit-backface-visibility:hidden;" +
-        "pointer-events:none;overflow:hidden;border-radius:9px";
+        "pointer-events:none;overflow:hidden;border-radius:12px";
       return node;
     }
     const front = face("navigation-card-front");
     const back = face("navigation-card-back");
     back.style.cssText +=
-      ";transform:rotateX(180deg);background:#10241c;" +
-      "border:1px solid #78916b88;color:#e9efe6;" +
-      "display:flex;flex-direction:column;justify-content:center;" +
-      "padding:clamp(24px,4vw,48px);container-type:size;" +
-      "box-shadow:0 24px 65px -25px #0006";
+      ";transform:rotateX(180deg);" +
+      "background:radial-gradient(120% 90% at 0% 0%,#1b3a2d 0%,#10241c 58%);" +
+      "border:1px solid #78916b8c;color:#eaf0e7;" +
+      "display:flex;flex-direction:column;justify-content:center;gap:14px;" +
+      "padding:clamp(24px,4vw,56px);container-type:size;" +
+      "box-shadow:inset 0 1px 0 #d2edd810,0 30px 70px -28px #000a";
 
     const paintedFrames = [];
     function mountFrame(payload, faceNode) {
@@ -115,42 +117,97 @@
       front.style.border = "1px solid #78916b88";
     }
 
+    const counting = direction === "open";
+    const caption = document.createElement("div");
+    caption.className = "navigation-card-caption";
+    caption.textContent =
+      direction === "close" ? "Closing" : "Opening case study";
+    caption.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:11px;font-weight:600;" +
+      "letter-spacing:.14em;text-transform:uppercase;color:#c0d9a7;margin:0";
     const title = document.createElement("div");
     title.className = "navigation-card-name";
-    title.textContent = name;
     title.style.cssText =
-      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(44, Math.max(26, destination.width * 0.05))}px;` +
-      "font-weight:500;line-height:1.15;letter-spacing:-1.2px;margin:0";
-    back.append(title);
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(72, Math.max(30, destination.width * 0.065))}px;` +
+      "font-weight:500;line-height:1.08;letter-spacing:-.04em;margin:0;" +
+      "overflow:hidden;padding-bottom:.08em";
+    const titleText = document.createElement("span");
+    titleText.textContent = name;
+    titleText.style.cssText = "display:block";
+    title.append(titleText);
+    back.append(caption, title);
+    const details = document.createElement("p");
+    details.className = "navigation-card-summary";
+    details.textContent = summary;
+    details.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:15px;line-height:1.6;" +
+      "color:#a3b5a9;max-width:36ch;margin:4px 0 0";
+    if (counting && summary) back.append(details);
+    const numeral = document.createElement("div");
+    numeral.className = "navigation-card-index";
+    numeral.textContent = index;
+    numeral.style.cssText =
+      "position:absolute;right:clamp(24px,4vw,56px);top:50%;" +
+      `margin-top:-${Math.min(240, destination.height * 0.4) * 0.55}px;` +
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(240, destination.height * 0.4)}px;` +
+      "font-weight:300;line-height:1.1;letter-spacing:-.06em;color:transparent;" +
+      "-webkit-text-stroke:1px #d7f4af4d;font-variant-numeric:tabular-nums";
+    if (counting && index && destination.width >= 720) back.append(numeral);
 
-    const progress = document.createElement("div");
-    progress.className = "navigation-card-progress";
-    progress.style.cssText =
-      "position:absolute;left:clamp(24px,4vw,48px);" +
-      "right:clamp(24px,4vw,48px);bottom:clamp(24px,4vw,48px);" +
-      "height:2px;background:#d7f4af24;overflow:hidden;border-radius:2px";
-    const fill = document.createElement("div");
-    fill.className = "navigation-card-progress-fill";
-    fill.style.cssText =
-      `height:100%;width:100%;background:${green};` +
-      "transform-origin:left center;transform:scaleX(.15)";
-    progress.append(fill);
-    back.append(progress);
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const outline = document.createElementNS(svgNamespace, "svg");
+    outline.setAttribute("class", "navigation-card-progress");
+    outline.setAttribute(
+      "viewBox",
+      `0 0 ${destination.width} ${destination.height}`,
+    );
+    outline.style.cssText =
+      "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none";
+    const inset = 0.75;
+    const radius = 11.25;
+    const right = destination.width - inset;
+    const bottom = destination.height - inset;
+    const edge =
+      `M${inset + radius} ${inset}H${right - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right} ${inset + radius}V${bottom - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right - radius} ${bottom}H${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset} ${bottom - radius}V${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset + radius} ${inset}Z`;
+    const traces = [
+      ["navigation-card-progress-halo", "6", "#d7f4af2e"],
+      ["navigation-card-progress-fill", "1.5", green],
+    ].map(([className, width, colour]) => {
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("class", className);
+      path.setAttribute("d", edge);
+      path.setAttribute("pathLength", "100");
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", colour);
+      path.setAttribute("stroke-width", width);
+      path.style.strokeDasharray = "100 100";
+      outline.append(path);
+      return path;
+    });
+    const fill = traces[1];
+    back.append(outline);
 
-    for (const [vertical, horizontal] of [
-      ["top", "left"],
-      ["top", "right"],
-      ["bottom", "left"],
-      ["bottom", "right"],
-    ]) {
-      const corner = document.createElement("span");
-      corner.style.cssText =
-        "position:absolute;width:9px;height:9px;" +
-        `${vertical}:12px;${horizontal}:12px;` +
-        `border-${vertical}:1px solid #d7f4af66;` +
-        `border-${horizontal}:1px solid #d7f4af66`;
-      back.append(corner);
-    }
+    const status = document.createElement("div");
+    status.className = "navigation-card-status";
+    status.style.cssText =
+      "position:absolute;left:clamp(24px,4vw,56px);right:clamp(24px,4vw,56px);" +
+      "bottom:clamp(20px,3.4vw,44px);display:flex;justify-content:space-between;" +
+      "align-items:baseline;font-family:Manrope,Arial,sans-serif;font-size:11px;" +
+      "font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a9d91";
+    const statusLabel = document.createElement("span");
+    statusLabel.textContent = "Loading";
+    const counter = document.createElement("span");
+    counter.className = "navigation-card-counter";
+    counter.style.cssText =
+      "font-size:13px;letter-spacing:.04em;color:#d5e7ae;" +
+      "font-variant-numeric:tabular-nums";
+    status.append(statusLabel, counter);
+    if (counting) back.append(status);
+
     if (backFrame?.html) {
       back.replaceChildren();
       back.style.padding = "0";
@@ -166,7 +223,6 @@
     function animate(node, frames, options) {
       const animation = node.animate(frames, options);
       animations.add(animation);
-      // Cancellation is part of normal navigation, including an early Escape.
       animation.finished.catch(() => {});
       return animation;
     }
@@ -197,22 +253,45 @@
     );
     const progressStart = arrival
       ? Math.max(0.86, Math.min(0.96, Number(carriedProgress) || 0.86))
-      : 0.15;
+      : 0;
     const progressEnd = arrival ? progressStart : 0.86;
-    fill.style.transform = `scaleX(${progressStart})`;
+    const dash = (value) => `${100 - value * 100}`;
+    let progressRun = [];
+    function setProgress(value) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = [];
+      for (const path of traces) path.style.strokeDashoffset = dash(value);
+    }
+    function runProgress(frames, options) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = traces.map((path) =>
+        animate(
+          path,
+          frames.map(({ value, ...frame }) => ({
+            ...frame,
+            strokeDashoffset: dash(value),
+          })),
+          options,
+        ),
+      );
+      return progressRun[1];
+    }
+    setProgress(counting || arrival ? progressStart : 1);
     const loading =
       !backFrame?.html && (arrival || direction === "open")
-        ? animate(
-            fill,
-            [
-              { transform: `scaleX(${progressStart})` },
-              { transform: `scaleX(${progressEnd})` },
-            ],
-            {
-              duration: milliseconds,
-              easing: "ease-out",
-              fill: "forwards",
-            },
+        ? runProgress(
+            arrival
+              ? [{ value: progressStart }, { value: progressEnd }]
+              : [
+                  { value: 0 },
+                  {
+                    value: 0.04,
+                    offset: 0.42,
+                    easing: "cubic-bezier(.45,0,.25,1)",
+                  },
+                  { value: progressEnd },
+                ],
+            { duration: milliseconds, fill: "forwards" },
           )
         : null;
     const finished = Promise.allSettled(
@@ -221,26 +300,67 @@
         .map((animation) => animation.finished),
     ).then(() => {
       if (cancelled || direction !== "open" || backFrame?.html) return;
-      waiting = animate(
-        fill,
-        [{ transform: `scaleX(${progressEnd})` }, { transform: "scaleX(.96)" }],
-        { duration: 2600, easing: "ease-out", fill: "forwards" },
-      );
+      runProgress([{ value: progressEnd }, { value: 0.96 }], {
+        duration: 2600,
+        easing: "ease-out",
+        fill: "forwards",
+      });
     });
+    if (!arrival && counting && !backFrame?.html) {
+      const rise = {
+        duration: milliseconds * 0.62,
+        easing: "cubic-bezier(.22,1,.36,1)",
+        fill: "backwards",
+      };
+      animate(
+        titleText,
+        [{ transform: "translateY(110%)" }, { transform: "none" }],
+        { ...rise, delay: milliseconds * 0.38 },
+      );
+      animate(
+        caption,
+        [
+          { opacity: 0, transform: "translateY(8px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.32 },
+      );
+      animate(
+        details,
+        [
+          { opacity: 0, transform: "translateY(12px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.46 },
+      );
+      animate(
+        numeral,
+        [
+          { opacity: 0, transform: "translateX(24px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.4 },
+      );
+    }
 
     function progressValue(hold = false) {
-      const value = new DOMMatrix(getComputedStyle(fill).transform).a;
-      if (hold) {
-        waiting?.cancel();
-        loading?.cancel();
-        fill.style.transform = `scaleX(${value})`;
-      }
-      return value;
+      const value =
+        1 - parseFloat(getComputedStyle(fill).strokeDashoffset) / 100;
+      const settled = Number.isFinite(value) ? value : 1;
+      if (hold) setProgress(settled);
+      return settled;
     }
+    let counterFrame = 0;
+    function count() {
+      counter.textContent = `${Math.round(progressValue() * 100)}%`;
+      counterFrame = requestAnimationFrame(count);
+    }
+    if (counting && !backFrame?.html) count();
 
     function cancel() {
       if (cancelled) return;
       cancelled = true;
+      cancelAnimationFrame(counterFrame);
       for (const animation of animations) animation.cancel();
       animations.clear();
       scan?.remove();
@@ -267,18 +387,11 @@
         });
         for (const painted of paintedFrames)
           painted.node.style.transform = `scale(${actual.width / painted.width}, ${actual.height / painted.height})`;
-        const loadedProgress = progressValue();
-        waiting?.cancel();
-        loading?.cancel();
-        fill.style.transform = `scaleX(${loadedProgress})`;
-        const completed = animate(
-          fill,
-          [
-            { transform: `scaleX(${loadedProgress})` },
-            { transform: "scaleX(1)" },
-          ],
+        const loadedProgress = progressValue(true);
+        const completed = runProgress(
+          [{ value: loadedProgress }, { value: 1 }],
           {
-            duration: 70,
+            duration: 160,
             fill: "forwards",
             easing: "ease-out",
           },
@@ -360,11 +473,9 @@
 
   window.PortfolioCardMotion = { create };
 })();
-</script><script>// Install navigation before external styles/scripts can delay first paint.
-(() => {
+</script><script>(() => {
   const root = document.documentElement;
   root.style.viewTransitionName = "none";
-  // The shared build supplies these routes from the project content file.
   const projectRoutes = new Map(
     (root.dataset.projectRoutes || "")
       .split(" ")
@@ -379,6 +490,8 @@
   const transitionKey = "portfolio-navigation-transition";
   const openingDuration = 650;
   const closingDuration = 550;
+  const softLeaveDuration = 240;
+  const titleHold = 500;
   const cardMotion = window.PortfolioCardMotion;
   let departing = false;
   let pendingUrl = null;
@@ -427,7 +540,6 @@
     for (const value of [previousEntry, entrySource, document.referrer]) {
       try {
         const url = value ? new URL(value) : null;
-        // A reload's activation can point back to the very same project.
         if (
           url?.origin === location.origin &&
           url.pathname !== location.pathname
@@ -462,10 +574,8 @@
   }
   let incoming = consumeTransition();
   arrivalSource = incoming?.from || null;
-  // Preserve this history entry's source when a later cached return arrives.
   entrySource = incoming?.from || document.referrer || null;
   const knownSource = Boolean(incoming);
-  // This state paints a solid dark cover before the external stylesheet arrives.
   if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
   if (incoming?.flip && !motion.matches) startCardArrival(incoming);
 
@@ -587,10 +697,8 @@
       return "translateY(18px) scale(0.96)";
     const box = element.getBoundingClientRect();
     if (!box.width || !box.height) return "scale(0.96)";
-    // On entry, expand the entire selected card, as the earlier opening did.
     if (fullCard)
       return `translate(${rect.x - box.x}px, ${rect.y - box.y}px) scale(${rect.width / box.width}, ${rect.height / box.height})`;
-    // Keep type and diagrams proportional while the frame travels to its card.
     const scale = Math.min(rect.width / box.width, rect.height / box.height);
     const x = rect.x + (rect.width - box.width * scale) / 2 - box.x;
     const y = rect.y + (rect.height - box.height * scale) / 2 - box.y;
@@ -600,12 +708,10 @@
     if (isProject && [document.body, root].includes(document.activeElement))
       document
         .querySelector(".presentation-shell")
-        ?.focus({ preventScroll: true });
+        ?.focus({ preventScroll: true, focusVisible: false });
   }
   function captureExitFrame(frame) {
     if (!frame) return null;
-    // Carry only the painted DOM. Freezing its styles preserves the active
-    // slide on the landing page without browser page or canvas snapshots.
     function paintedClone(node) {
       if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode();
       if (/^(SCRIPT|IFRAME|OBJECT|EMBED|STYLE|LINK)$/.test(node.tagName))
@@ -755,7 +861,6 @@
       return;
     }
     root.dataset.pageTransition = "entering";
-    // The real DOM animates; no browser-generated page or canvas snapshots exist.
     const slug = marker?.from
       ? projectRoutes.get(new URL(marker.from).pathname)
       : null;
@@ -768,7 +873,6 @@
       const section = frame?.closest(".chapter-section");
       section?.classList.add("is-chapter-active");
       const title = section?.querySelector(".chapter-title");
-      // A fresh document return must be as steady as a cached history return.
       if (title) title.style.animation = "none";
     }
     returnFrame = !isProject ? restoreExitFrame(marker, frame) : null;
@@ -780,7 +884,6 @@
     signal("entering", duration, direction);
     if (element) {
       element.style.opacity = "1";
-      // A DOM cover takes over before the head's first-paint cover is removed.
       root.dataset.coverReady = "true";
       coverAnimation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: returnFrame || (isProject && marker?.rect) ? 80 : 220,
@@ -841,8 +944,15 @@
     incoming = null;
     clearTimeout(revealTimer);
     const direction = isProject ? "close" : "open";
+    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
     const duration =
-      motion.matches || document.hidden || !isProject ? 0 : closingDuration;
+      motion.matches || document.hidden
+        ? 0
+        : isProject
+          ? closingDuration
+          : destinationIsProject
+            ? 0
+            : softLeaveDuration;
     const marker = { from: location.href, to, direction, rect, at: Date.now() };
     const frame =
       !initialized && incomingCard
@@ -852,7 +962,6 @@
       ? read(`portfolio-project-origin:${location.pathname}`)
       : null;
     const snapshot = captureExitFrame(isProject ? frame : card);
-    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
     const canFlip =
       !motion.matches &&
       !document.hidden &&
@@ -875,12 +984,12 @@
           card?.querySelector("h3")?.textContent ||
           document.querySelector("h1")?.textContent ||
           "",
+        summary: card?.querySelector(".card-description")?.textContent || "",
+        index: card?.querySelector(".card-meta .label")?.textContent || "",
       };
     if (duration && !projectRoutes.has(new URL(to).pathname))
       marker.exitFrame = snapshot;
     const stored = write(transitionKey, marker);
-    // The destination displays the landing page behind the contracting card.
-    // If storage is unavailable, retain the dark-backed in-page fallback.
     const destinationClose = stored && Boolean(marker.exitFrame);
     if (projectRoutes.has(new URL(to).pathname) && rect)
       write(`portfolio-project-origin:${new URL(to).pathname}`, {
@@ -916,6 +1025,8 @@
         rect: source,
         target: marker.flip.rect,
         name: marker.flip.name,
+        summary: marker.flip.summary,
+        index: marker.flip.index,
         direction,
         arrival: false,
         duration: travel,
@@ -923,7 +1034,13 @@
       preparation = back ? null : preparePage(to);
       signal("leaving", travel, direction);
       const departureCard = outgoingCard;
-      Promise.all([departureCard.finished, preparation?.ready]).then(() => {
+      const shown = departureCard.finished.then(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(resolve, direction === "open" ? titleHold : 0),
+          ),
+      );
+      Promise.all([shown, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
         marker.flip.progress = departureCard.progress(true);
@@ -985,8 +1102,6 @@
       (projectRoutes.has(previous.pathname) ||
         /\/(?:index\.html|projects\.html)?$/.test(previous.pathname)) &&
       history.length > 1;
-    // An older, already-open portfolio cannot supply our transition marker.
-    // Reload its URL instead of restoring its stale scripts from page cache.
     leave(
       allowed ? previous.href : new URL("index.html#work", location.href).href,
       { back: Boolean(allowed && knownSource) },
@@ -997,7 +1112,6 @@
     "DOMContentLoaded",
     () => {
       initialized = true;
-      // Deferred scripts completing must not cancel an exit already requested.
       if (!departing) reveal();
     },
     { once: true },
@@ -1073,7 +1187,7 @@
       isProject &&
       !window.getSelection()?.toString() &&
       !event.target.closest?.(
-        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button",
+        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button, dialog",
       )
     )
       returnToPreviousPage();
@@ -1093,4 +1207,4 @@
       { passive: true },
     );
 })();
-</script><meta name="color-scheme" content="dark"><title>watsonx Orchestrate — Simplified — Owen Le</title><meta name="description" content="A practical guide to building an agent with watsonx Orchestrate."><link rel="canonical" href="https://taivanle.github.io/orchestrate_simplified.html"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="article"><meta property="og:title" content="watsonx Orchestrate — Simplified"><meta property="og:description" content="A practical guide to building an agent with watsonx Orchestrate."><meta property="og:url" content="https://taivanle.github.io/orchestrate_simplified.html"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied AI Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=39cf9208cb97"><script src="assets/app.js?v=40917259a492" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"CreativeWork","name":"watsonx Orchestrate — Simplified","description":"A practical guide to building an agent with watsonx Orchestrate.","url":"https://taivanle.github.io/orchestrate_simplified.html","author":{"@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/"}}</script></head><body class="content-page"><div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le</span></a><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><span class="nav-indicator" aria-hidden="true"></span><a class="nav-link" href="index.html#work">Work</a><a class="nav-link" href="index.html#about">About</a><a class="nav-link" href="index.html#experience">Experience</a><a class="nav-link" href="index.html#community">Speaking</a><a class="nav-link" href="index.html#notes">Notes</a><div class="header-actions"><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a class="nav-social" href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in a new tab)" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><a class="nav-social" href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in a new tab)" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.071 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.334-5.466-5.93 0-1.312.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.771.841 1.235 1.912 1.235 3.221 0 4.609-2.804 5.625-5.475 5.922.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .322.216.694.825.576C20.565 22.093 24 17.593 24 12.297c0-6.627-5.373-12-12-12z"/></svg></a></div></nav></div></header><main id="main" class="wrap listing-page"><header class="page-hero"><a class="breadcrumb" href="blog_homepage.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg> Back to engineering notes</a><p class="eyebrow">PRACTICAL GUIDE</p><h1>watsonx Orchestrate.<br><span class="serif">Simplified.</span></h1><p class="page-lead">An engineering-first introduction to building an agent, connecting tools, and checking its behaviour.</p></header><a class="note-row" href="create_agent.html"><span class="mono">AGENTS / PRACTICAL GUIDE</span><h3>Building an agent with watsonx Orchestrate</h3><span class="round-arrow"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></a></main><footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">HAVE SOMETHING IN MIND?</p><h2>Let’s build<br><span class="serif">something useful.</span></h2></div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></div><p class="copy-status" id="copy-status" role="status"></p></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom</span><div class="footer-links"><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a></div></div></div></footer></body></html>
+</script><meta name="color-scheme" content="dark"><title>watsonx Orchestrate — Simplified — Owen Le</title><meta name="description" content="A practical guide to building an agent with watsonx Orchestrate."><link rel="canonical" href="https://taivanle.github.io/orchestrate_simplified.html"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="article"><meta property="og:title" content="watsonx Orchestrate — Simplified"><meta property="og:description" content="A practical guide to building an agent with watsonx Orchestrate."><meta property="og:url" content="https://taivanle.github.io/orchestrate_simplified.html"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied AI Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=0d30ceed3f67"><script src="assets/app.js?v=3c30d81aef86" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"CreativeWork","name":"watsonx Orchestrate — Simplified","description":"A practical guide to building an agent with watsonx Orchestrate.","url":"https://taivanle.github.io/orchestrate_simplified.html","author":{"@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/"}}</script></head><body class="content-page"><div class="cursor-tracker" aria-hidden="true"><span class="cursor-label">View</span></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le</span></a><span class="header-time" hidden><span class="header-time-label">Your time</span> <span data-local-time></span></span><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><span class="nav-indicator" aria-hidden="true"></span><a class="nav-link" href="index.html#work">Work</a><a class="nav-link" href="index.html#about">About</a><a class="nav-link" href="index.html#experience">Experience</a><a class="nav-link" href="index.html#community">Speaking</a><a class="nav-link" href="index.html#notes">Notes</a><div class="header-actions"><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a class="nav-social" href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in a new tab)" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><a class="nav-social" href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in a new tab)" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.071 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.334-5.466-5.93 0-1.312.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.771.841 1.235 1.912 1.235 3.221 0 4.609-2.804 5.625-5.475 5.922.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .322.216.694.825.576C20.565 22.093 24 17.593 24 12.297c0-6.627-5.373-12-12-12z"/></svg></a></div></nav></div></header><main id="main" class="wrap listing-page"><header class="page-hero"><a class="breadcrumb" href="blog_homepage.html"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg> Back to engineering notes</a><p class="eyebrow">Practical guide</p><h1>watsonx Orchestrate.<br><span class="soft">Simplified.</span></h1><svg class="light-rail title-rail" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="rail-line" pathLength="1" d="M0 32H92L120 4H1200"/><path class="rail-current rail-halo" pathLength="100" d="M0 32H92L120 4H1200"/><path class="rail-current rail-core" pathLength="100" d="M0 32H92L120 4H1200"/></svg><p class="page-lead">An engineering-first introduction to building an agent, connecting tools, and checking its behaviour.</p></header><a class="note-row" href="create_agent.html" data-preview="A complete walkthrough of the developer and visual builder routes: installation, environment setup, a Python FAQ tool, agent configuration, knowledge, and testing." data-preview-meta="7 sections · 9 min read"><span class="label">Agents / Practical guide</span><h3>Building an agent with watsonx Orchestrate</h3><span class="round-arrow"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></a></main><footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">Have something in mind?</p><h2>Let’s build<br><span class="soft">something useful.</span></h2><svg class="light-rail contact-rail" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="rail-line" pathLength="1" d="M0 32H92L120 4H1200"/><path class="rail-current rail-halo" pathLength="100" d="M0 32H92L120 4H1200"/><path class="rail-current rail-core" pathLength="100" d="M0 32H92L120 4H1200"/></svg></div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></div><p class="copy-status" id="copy-status" role="status"></p></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom<span class="footer-time" data-london-time hidden></span></span><button type="button" class="shortcut-hint" data-shortcuts>Press <kbd>?</kbd> for shortcuts</button><div class="footer-links"><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a></div></div></div></footer><dialog class="shortcuts" aria-labelledby="shortcuts-title"><div class="shortcuts-head"><h2 id="shortcuts-title">Keyboard shortcuts</h2><button type="button" class="shortcuts-close" aria-label="Close shortcuts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><dl><div><dt><kbd>G</kbd><kbd>W</kbd></dt><dd>Work</dd></div><div><dt><kbd>G</kbd><kbd>A</kbd></dt><dd>About</dd></div><div><dt><kbd>G</kbd><kbd>E</kbd></dt><dd>Experience</dd></div><div><dt><kbd>G</kbd><kbd>S</kbd></dt><dd>Speaking</dd></div><div><dt><kbd>G</kbd><kbd>N</kbd></dt><dd>Notes</dd></div><div><dt><kbd>G</kbd><kbd>P</kbd></dt><dd>All projects</dd></div><div><dt><kbd>G</kbd><kbd>H</kbd></dt><dd>Home</dd></div><div><dt><kbd>?</kbd></dt><dd>Show or hide this panel</dd></div></dl></dialog></body></html>

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-project-routes="themis.html dueform.html actifact.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;transition:opacity 180ms ease}body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:opacity 100ms ease}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress{filter:blur(8px);opacity:0;pointer-events:none}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){.hero-field,body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:none}}</style><script>(() => {
+<html lang="en" data-project-routes="themis.html dueform.html actifact.html financial-qa.html vodafone-tobi.html nationwide-governance.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;transition:opacity 400ms ease}body>main,body>.site-header,body>.contact-section,body>.scroll-progress,body>.chapter-rail{transition:filter 420ms cubic-bezier(.33,1,.68,1)}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress,html[data-card-transition] body>.chapter-rail{filter:blur(12px) brightness(.42);pointer-events:none;transition:filter 520ms cubic-bezier(.22,1,.36,1)}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){.hero-field,body>main,body>.site-header,body>.contact-section,body>.scroll-progress,body>.chapter-rail{transition:none!important}}</style><script>(() => {
   if (window.PortfolioCardMotion) return;
 
   const green = "#d7f4af";
-  const easing = "cubic-bezier(.4,0,.2,1)";
+  const easing = "cubic-bezier(.65,0,.25,1)";
   function bounds(value, fallback = {}) {
     const number = (key, otherwise) => {
       const result = Number(value?.[key] ?? fallback[key]);
@@ -23,6 +23,8 @@
     rect,
     target,
     name = "",
+    summary = "",
+    index = "",
     direction = "open",
     arrival = false,
     duration = 0,
@@ -35,7 +37,6 @@
     let cancelled = false;
     let revealing = null;
     let scan = null;
-    let waiting = null;
 
     const element = document.createElement("div");
     element.className = "navigation-flip-stage";
@@ -62,17 +63,18 @@
       node.style.cssText =
         "position:absolute;inset:0;box-sizing:border-box;" +
         "backface-visibility:hidden;-webkit-backface-visibility:hidden;" +
-        "pointer-events:none;overflow:hidden;border-radius:9px";
+        "pointer-events:none;overflow:hidden;border-radius:12px";
       return node;
     }
     const front = face("navigation-card-front");
     const back = face("navigation-card-back");
     back.style.cssText +=
-      ";transform:rotateX(180deg);background:#10241c;" +
-      "border:1px solid #78916b88;color:#e9efe6;" +
-      "display:flex;flex-direction:column;justify-content:center;" +
-      "padding:clamp(24px,4vw,48px);container-type:size;" +
-      "box-shadow:0 24px 65px -25px #0006";
+      ";transform:rotateX(180deg);" +
+      "background:radial-gradient(120% 90% at 0% 0%,#1b3a2d 0%,#10241c 58%);" +
+      "border:1px solid #78916b8c;color:#eaf0e7;" +
+      "display:flex;flex-direction:column;justify-content:center;gap:14px;" +
+      "padding:clamp(24px,4vw,56px);container-type:size;" +
+      "box-shadow:inset 0 1px 0 #d2edd810,0 30px 70px -28px #000a";
 
     const paintedFrames = [];
     function mountFrame(payload, faceNode) {
@@ -115,42 +117,97 @@
       front.style.border = "1px solid #78916b88";
     }
 
+    const counting = direction === "open";
+    const caption = document.createElement("div");
+    caption.className = "navigation-card-caption";
+    caption.textContent =
+      direction === "close" ? "Closing" : "Opening case study";
+    caption.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:11px;font-weight:600;" +
+      "letter-spacing:.14em;text-transform:uppercase;color:#c0d9a7;margin:0";
     const title = document.createElement("div");
     title.className = "navigation-card-name";
-    title.textContent = name;
     title.style.cssText =
-      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(44, Math.max(26, destination.width * 0.05))}px;` +
-      "font-weight:500;line-height:1.15;letter-spacing:-1.2px;margin:0";
-    back.append(title);
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(72, Math.max(30, destination.width * 0.065))}px;` +
+      "font-weight:500;line-height:1.08;letter-spacing:-.04em;margin:0;" +
+      "overflow:hidden;padding-bottom:.08em";
+    const titleText = document.createElement("span");
+    titleText.textContent = name;
+    titleText.style.cssText = "display:block";
+    title.append(titleText);
+    back.append(caption, title);
+    const details = document.createElement("p");
+    details.className = "navigation-card-summary";
+    details.textContent = summary;
+    details.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:15px;line-height:1.6;" +
+      "color:#a3b5a9;max-width:36ch;margin:4px 0 0";
+    if (counting && summary) back.append(details);
+    const numeral = document.createElement("div");
+    numeral.className = "navigation-card-index";
+    numeral.textContent = index;
+    numeral.style.cssText =
+      "position:absolute;right:clamp(24px,4vw,56px);top:50%;" +
+      `margin-top:-${Math.min(240, destination.height * 0.4) * 0.55}px;` +
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(240, destination.height * 0.4)}px;` +
+      "font-weight:300;line-height:1.1;letter-spacing:-.06em;color:transparent;" +
+      "-webkit-text-stroke:1px #d7f4af4d;font-variant-numeric:tabular-nums";
+    if (counting && index && destination.width >= 720) back.append(numeral);
 
-    const progress = document.createElement("div");
-    progress.className = "navigation-card-progress";
-    progress.style.cssText =
-      "position:absolute;left:clamp(24px,4vw,48px);" +
-      "right:clamp(24px,4vw,48px);bottom:clamp(24px,4vw,48px);" +
-      "height:2px;background:#d7f4af24;overflow:hidden;border-radius:2px";
-    const fill = document.createElement("div");
-    fill.className = "navigation-card-progress-fill";
-    fill.style.cssText =
-      `height:100%;width:100%;background:${green};` +
-      "transform-origin:left center;transform:scaleX(.15)";
-    progress.append(fill);
-    back.append(progress);
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const outline = document.createElementNS(svgNamespace, "svg");
+    outline.setAttribute("class", "navigation-card-progress");
+    outline.setAttribute(
+      "viewBox",
+      `0 0 ${destination.width} ${destination.height}`,
+    );
+    outline.style.cssText =
+      "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none";
+    const inset = 0.75;
+    const radius = 11.25;
+    const right = destination.width - inset;
+    const bottom = destination.height - inset;
+    const edge =
+      `M${inset + radius} ${inset}H${right - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right} ${inset + radius}V${bottom - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right - radius} ${bottom}H${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset} ${bottom - radius}V${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset + radius} ${inset}Z`;
+    const traces = [
+      ["navigation-card-progress-halo", "6", "#d7f4af2e"],
+      ["navigation-card-progress-fill", "1.5", green],
+    ].map(([className, width, colour]) => {
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("class", className);
+      path.setAttribute("d", edge);
+      path.setAttribute("pathLength", "100");
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", colour);
+      path.setAttribute("stroke-width", width);
+      path.style.strokeDasharray = "100 100";
+      outline.append(path);
+      return path;
+    });
+    const fill = traces[1];
+    back.append(outline);
 
-    for (const [vertical, horizontal] of [
-      ["top", "left"],
-      ["top", "right"],
-      ["bottom", "left"],
-      ["bottom", "right"],
-    ]) {
-      const corner = document.createElement("span");
-      corner.style.cssText =
-        "position:absolute;width:9px;height:9px;" +
-        `${vertical}:12px;${horizontal}:12px;` +
-        `border-${vertical}:1px solid #d7f4af66;` +
-        `border-${horizontal}:1px solid #d7f4af66`;
-      back.append(corner);
-    }
+    const status = document.createElement("div");
+    status.className = "navigation-card-status";
+    status.style.cssText =
+      "position:absolute;left:clamp(24px,4vw,56px);right:clamp(24px,4vw,56px);" +
+      "bottom:clamp(20px,3.4vw,44px);display:flex;justify-content:space-between;" +
+      "align-items:baseline;font-family:Manrope,Arial,sans-serif;font-size:11px;" +
+      "font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a9d91";
+    const statusLabel = document.createElement("span");
+    statusLabel.textContent = "Loading";
+    const counter = document.createElement("span");
+    counter.className = "navigation-card-counter";
+    counter.style.cssText =
+      "font-size:13px;letter-spacing:.04em;color:#d5e7ae;" +
+      "font-variant-numeric:tabular-nums";
+    status.append(statusLabel, counter);
+    if (counting) back.append(status);
+
     if (backFrame?.html) {
       back.replaceChildren();
       back.style.padding = "0";
@@ -166,7 +223,6 @@
     function animate(node, frames, options) {
       const animation = node.animate(frames, options);
       animations.add(animation);
-      // Cancellation is part of normal navigation, including an early Escape.
       animation.finished.catch(() => {});
       return animation;
     }
@@ -197,22 +253,45 @@
     );
     const progressStart = arrival
       ? Math.max(0.86, Math.min(0.96, Number(carriedProgress) || 0.86))
-      : 0.15;
+      : 0;
     const progressEnd = arrival ? progressStart : 0.86;
-    fill.style.transform = `scaleX(${progressStart})`;
+    const dash = (value) => `${100 - value * 100}`;
+    let progressRun = [];
+    function setProgress(value) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = [];
+      for (const path of traces) path.style.strokeDashoffset = dash(value);
+    }
+    function runProgress(frames, options) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = traces.map((path) =>
+        animate(
+          path,
+          frames.map(({ value, ...frame }) => ({
+            ...frame,
+            strokeDashoffset: dash(value),
+          })),
+          options,
+        ),
+      );
+      return progressRun[1];
+    }
+    setProgress(counting || arrival ? progressStart : 1);
     const loading =
       !backFrame?.html && (arrival || direction === "open")
-        ? animate(
-            fill,
-            [
-              { transform: `scaleX(${progressStart})` },
-              { transform: `scaleX(${progressEnd})` },
-            ],
-            {
-              duration: milliseconds,
-              easing: "ease-out",
-              fill: "forwards",
-            },
+        ? runProgress(
+            arrival
+              ? [{ value: progressStart }, { value: progressEnd }]
+              : [
+                  { value: 0 },
+                  {
+                    value: 0.04,
+                    offset: 0.42,
+                    easing: "cubic-bezier(.45,0,.25,1)",
+                  },
+                  { value: progressEnd },
+                ],
+            { duration: milliseconds, fill: "forwards" },
           )
         : null;
     const finished = Promise.allSettled(
@@ -221,26 +300,67 @@
         .map((animation) => animation.finished),
     ).then(() => {
       if (cancelled || direction !== "open" || backFrame?.html) return;
-      waiting = animate(
-        fill,
-        [{ transform: `scaleX(${progressEnd})` }, { transform: "scaleX(.96)" }],
-        { duration: 2600, easing: "ease-out", fill: "forwards" },
-      );
+      runProgress([{ value: progressEnd }, { value: 0.96 }], {
+        duration: 2600,
+        easing: "ease-out",
+        fill: "forwards",
+      });
     });
+    if (!arrival && counting && !backFrame?.html) {
+      const rise = {
+        duration: milliseconds * 0.62,
+        easing: "cubic-bezier(.22,1,.36,1)",
+        fill: "backwards",
+      };
+      animate(
+        titleText,
+        [{ transform: "translateY(110%)" }, { transform: "none" }],
+        { ...rise, delay: milliseconds * 0.38 },
+      );
+      animate(
+        caption,
+        [
+          { opacity: 0, transform: "translateY(8px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.32 },
+      );
+      animate(
+        details,
+        [
+          { opacity: 0, transform: "translateY(12px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.46 },
+      );
+      animate(
+        numeral,
+        [
+          { opacity: 0, transform: "translateX(24px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.4 },
+      );
+    }
 
     function progressValue(hold = false) {
-      const value = new DOMMatrix(getComputedStyle(fill).transform).a;
-      if (hold) {
-        waiting?.cancel();
-        loading?.cancel();
-        fill.style.transform = `scaleX(${value})`;
-      }
-      return value;
+      const value =
+        1 - parseFloat(getComputedStyle(fill).strokeDashoffset) / 100;
+      const settled = Number.isFinite(value) ? value : 1;
+      if (hold) setProgress(settled);
+      return settled;
     }
+    let counterFrame = 0;
+    function count() {
+      counter.textContent = `${Math.round(progressValue() * 100)}%`;
+      counterFrame = requestAnimationFrame(count);
+    }
+    if (counting && !backFrame?.html) count();
 
     function cancel() {
       if (cancelled) return;
       cancelled = true;
+      cancelAnimationFrame(counterFrame);
       for (const animation of animations) animation.cancel();
       animations.clear();
       scan?.remove();
@@ -267,18 +387,11 @@
         });
         for (const painted of paintedFrames)
           painted.node.style.transform = `scale(${actual.width / painted.width}, ${actual.height / painted.height})`;
-        const loadedProgress = progressValue();
-        waiting?.cancel();
-        loading?.cancel();
-        fill.style.transform = `scaleX(${loadedProgress})`;
-        const completed = animate(
-          fill,
-          [
-            { transform: `scaleX(${loadedProgress})` },
-            { transform: "scaleX(1)" },
-          ],
+        const loadedProgress = progressValue(true);
+        const completed = runProgress(
+          [{ value: loadedProgress }, { value: 1 }],
           {
-            duration: 70,
+            duration: 160,
             fill: "forwards",
             easing: "ease-out",
           },
@@ -360,11 +473,9 @@
 
   window.PortfolioCardMotion = { create };
 })();
-</script><script>// Install navigation before external styles/scripts can delay first paint.
-(() => {
+</script><script>(() => {
   const root = document.documentElement;
   root.style.viewTransitionName = "none";
-  // The shared build supplies these routes from the project content file.
   const projectRoutes = new Map(
     (root.dataset.projectRoutes || "")
       .split(" ")
@@ -379,6 +490,8 @@
   const transitionKey = "portfolio-navigation-transition";
   const openingDuration = 650;
   const closingDuration = 550;
+  const softLeaveDuration = 240;
+  const titleHold = 500;
   const cardMotion = window.PortfolioCardMotion;
   let departing = false;
   let pendingUrl = null;
@@ -427,7 +540,6 @@
     for (const value of [previousEntry, entrySource, document.referrer]) {
       try {
         const url = value ? new URL(value) : null;
-        // A reload's activation can point back to the very same project.
         if (
           url?.origin === location.origin &&
           url.pathname !== location.pathname
@@ -462,10 +574,8 @@
   }
   let incoming = consumeTransition();
   arrivalSource = incoming?.from || null;
-  // Preserve this history entry's source when a later cached return arrives.
   entrySource = incoming?.from || document.referrer || null;
   const knownSource = Boolean(incoming);
-  // This state paints a solid dark cover before the external stylesheet arrives.
   if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
   if (incoming?.flip && !motion.matches) startCardArrival(incoming);
 
@@ -587,10 +697,8 @@
       return "translateY(18px) scale(0.96)";
     const box = element.getBoundingClientRect();
     if (!box.width || !box.height) return "scale(0.96)";
-    // On entry, expand the entire selected card, as the earlier opening did.
     if (fullCard)
       return `translate(${rect.x - box.x}px, ${rect.y - box.y}px) scale(${rect.width / box.width}, ${rect.height / box.height})`;
-    // Keep type and diagrams proportional while the frame travels to its card.
     const scale = Math.min(rect.width / box.width, rect.height / box.height);
     const x = rect.x + (rect.width - box.width * scale) / 2 - box.x;
     const y = rect.y + (rect.height - box.height * scale) / 2 - box.y;
@@ -600,12 +708,10 @@
     if (isProject && [document.body, root].includes(document.activeElement))
       document
         .querySelector(".presentation-shell")
-        ?.focus({ preventScroll: true });
+        ?.focus({ preventScroll: true, focusVisible: false });
   }
   function captureExitFrame(frame) {
     if (!frame) return null;
-    // Carry only the painted DOM. Freezing its styles preserves the active
-    // slide on the landing page without browser page or canvas snapshots.
     function paintedClone(node) {
       if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode();
       if (/^(SCRIPT|IFRAME|OBJECT|EMBED|STYLE|LINK)$/.test(node.tagName))
@@ -755,7 +861,6 @@
       return;
     }
     root.dataset.pageTransition = "entering";
-    // The real DOM animates; no browser-generated page or canvas snapshots exist.
     const slug = marker?.from
       ? projectRoutes.get(new URL(marker.from).pathname)
       : null;
@@ -768,7 +873,6 @@
       const section = frame?.closest(".chapter-section");
       section?.classList.add("is-chapter-active");
       const title = section?.querySelector(".chapter-title");
-      // A fresh document return must be as steady as a cached history return.
       if (title) title.style.animation = "none";
     }
     returnFrame = !isProject ? restoreExitFrame(marker, frame) : null;
@@ -780,7 +884,6 @@
     signal("entering", duration, direction);
     if (element) {
       element.style.opacity = "1";
-      // A DOM cover takes over before the head's first-paint cover is removed.
       root.dataset.coverReady = "true";
       coverAnimation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: returnFrame || (isProject && marker?.rect) ? 80 : 220,
@@ -841,8 +944,15 @@
     incoming = null;
     clearTimeout(revealTimer);
     const direction = isProject ? "close" : "open";
+    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
     const duration =
-      motion.matches || document.hidden || !isProject ? 0 : closingDuration;
+      motion.matches || document.hidden
+        ? 0
+        : isProject
+          ? closingDuration
+          : destinationIsProject
+            ? 0
+            : softLeaveDuration;
     const marker = { from: location.href, to, direction, rect, at: Date.now() };
     const frame =
       !initialized && incomingCard
@@ -852,7 +962,6 @@
       ? read(`portfolio-project-origin:${location.pathname}`)
       : null;
     const snapshot = captureExitFrame(isProject ? frame : card);
-    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
     const canFlip =
       !motion.matches &&
       !document.hidden &&
@@ -875,12 +984,12 @@
           card?.querySelector("h3")?.textContent ||
           document.querySelector("h1")?.textContent ||
           "",
+        summary: card?.querySelector(".card-description")?.textContent || "",
+        index: card?.querySelector(".card-meta .label")?.textContent || "",
       };
     if (duration && !projectRoutes.has(new URL(to).pathname))
       marker.exitFrame = snapshot;
     const stored = write(transitionKey, marker);
-    // The destination displays the landing page behind the contracting card.
-    // If storage is unavailable, retain the dark-backed in-page fallback.
     const destinationClose = stored && Boolean(marker.exitFrame);
     if (projectRoutes.has(new URL(to).pathname) && rect)
       write(`portfolio-project-origin:${new URL(to).pathname}`, {
@@ -916,6 +1025,8 @@
         rect: source,
         target: marker.flip.rect,
         name: marker.flip.name,
+        summary: marker.flip.summary,
+        index: marker.flip.index,
         direction,
         arrival: false,
         duration: travel,
@@ -923,7 +1034,13 @@
       preparation = back ? null : preparePage(to);
       signal("leaving", travel, direction);
       const departureCard = outgoingCard;
-      Promise.all([departureCard.finished, preparation?.ready]).then(() => {
+      const shown = departureCard.finished.then(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(resolve, direction === "open" ? titleHold : 0),
+          ),
+      );
+      Promise.all([shown, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
         marker.flip.progress = departureCard.progress(true);
@@ -985,8 +1102,6 @@
       (projectRoutes.has(previous.pathname) ||
         /\/(?:index\.html|projects\.html)?$/.test(previous.pathname)) &&
       history.length > 1;
-    // An older, already-open portfolio cannot supply our transition marker.
-    // Reload its URL instead of restoring its stale scripts from page cache.
     leave(
       allowed ? previous.href : new URL("index.html#work", location.href).href,
       { back: Boolean(allowed && knownSource) },
@@ -997,7 +1112,6 @@
     "DOMContentLoaded",
     () => {
       initialized = true;
-      // Deferred scripts completing must not cancel an exit already requested.
       if (!departing) reveal();
     },
     { once: true },
@@ -1073,7 +1187,7 @@
       isProject &&
       !window.getSelection()?.toString() &&
       !event.target.closest?.(
-        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button",
+        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button, dialog",
       )
     )
       returnToPreviousPage();
@@ -1093,14 +1207,14 @@
       { passive: true },
     );
 })();
-</script><meta name="color-scheme" content="dark"><title>Owen Le — Forward Deployed Engineer / Applied AI Engineer / Member of Technical Staff</title><meta name="description" content="Applied AI, evaluation, and enterprise engineering. Selected work by London-based engineer Owen Le, previously Aptura and IBM."><link rel="canonical" href="https://taivanle.github.io/"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="website"><meta property="og:title" content="Owen Le — Forward Deployed Engineer / Applied AI Engineer / Member of Technical Staff"><meta property="og:description" content="Applied AI, evaluation, and enterprise engineering. Selected work by London-based engineer Owen Le, previously Aptura and IBM."><meta property="og:url" content="https://taivanle.github.io/"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied AI Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=39cf9208cb97"><script src="assets/app.js?v=40917259a492" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/","jobTitle":["Forward Deployed Engineer","Applied AI Engineer","Member of Technical Staff"],"sameAs":["https://github.com/taivanle","https://www.linkedin.com/in/owen-le/"],"email":"mailto:taivan@hotmail.co.uk"}</script></head><body class="home-page ambient-page"><canvas class="hero-field" aria-hidden="true"></canvas><script>/* A slowly rotating signal field, drawn locally without a rendering library. */
-(() => {
+</script><script>(()=>{try{const root=document.documentElement;if(root.dataset.pageTransition||location.hash||matchMedia("(prefers-reduced-motion: reduce)").matches||sessionStorage.getItem("portfolio-intro"))return;sessionStorage.setItem("portfolio-intro","1");root.dataset.intro=""}catch{}})()</script><meta name="color-scheme" content="dark"><title>Owen Le — Forward Deployed Engineer / Applied AI Engineer / Member of Technical Staff</title><meta name="description" content="Applied AI, evaluation, and enterprise engineering. Selected work by London-based engineer Owen Le, previously Aptura and IBM."><link rel="canonical" href="https://taivanle.github.io/"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="website"><meta property="og:title" content="Owen Le — Forward Deployed Engineer / Applied AI Engineer / Member of Technical Staff"><meta property="og:description" content="Applied AI, evaluation, and enterprise engineering. Selected work by London-based engineer Owen Le, previously Aptura and IBM."><meta property="og:url" content="https://taivanle.github.io/"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied AI Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=0d30ceed3f67"><script src="assets/app.js?v=3c30d81aef86" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/","jobTitle":["Forward Deployed Engineer","Applied AI Engineer","Member of Technical Staff"],"sameAs":["https://github.com/taivanle","https://www.linkedin.com/in/owen-le/"],"email":"mailto:taivan@hotmail.co.uk"}</script></head><body class="home-page ambient-page"><div class="intro-veil" aria-hidden="true"><div class="intro-mark"><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="31" pathLength="100"/><text x="32" y="40" text-anchor="middle">OL</text></svg><span class="intro-progress"></span><span class="intro-name">Owen Le</span></div></div><canvas class="hero-field" aria-hidden="true"></canvas><script>(() => {
   const canvas = document.querySelector(".hero-field");
   if (!canvas) return;
   const context = canvas.getContext("2d");
   if (!context) return;
   const host = document.documentElement;
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const follow = "follow" in canvas.dataset;
   let width = 0,
     height = 0,
     frame = 0,
@@ -1110,6 +1224,36 @@
   let target = { x: 0, y: 0, strength: 0 };
   const tau = Math.PI * 2;
   const pointerKey = "portfolio-field-pointer";
+  let seed = 7;
+  const random = () => {
+    seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const dust = Array.from({ length: 260 }, () => ({
+    x: random(),
+    y: random(),
+    depth: 0.25 + random() * 0.75,
+    size: 0.6 + random() * 1.1,
+    twinkle: random() * tau,
+    speed: 0.25 + random() * 0.8,
+    offsetX: 0,
+    offsetY: 0,
+    velocityX: 0,
+    velocityY: 0,
+  }));
+  const cursor = { x: 0, y: 0, at: -Infinity, inside: false };
+  const ripples = [];
+  let spin = 0;
+  let spinVelocity = 0;
+  let lastScroll = window.scrollY;
+  let step = 1;
+  const beads = Array.from({ length: 8 }, (_, index) => ({
+    u: random() * tau,
+    v: random() * tau,
+    speed: (0.035 + random() * 0.05) * (index % 3 ? 1 : -1),
+  }));
 
   function restorePointer() {
     try {
@@ -1179,20 +1323,112 @@
       context.fillStyle = light;
       context.fillRect(0, 0, width, height);
     }
-    const radius = Math.min(
-      mobile ? width * 0.8 : width * 0.34,
-      height * 0.61,
-      490,
+    const count = Math.round(
+      Math.max(70, Math.min(dust.length, (width * height) / 5200)),
     );
-    const cx = width * (mobile ? 0.65 : 0.73) + pointer.x * radius * 0.13;
-    const cy = height * (mobile ? 0.68 : 0.5) + pointer.y * radius * 0.09;
+    const reach = 190;
+    const live = cursor.inside && !reduced.matches;
+    const now = performance.now();
+    const near = [];
+    context.fillStyle = "#b9ecd6";
+    for (let index = 0; index < count; index++) {
+      const mote = dust[index];
+      const drift = (((mote.y - phase * 0.004 * mote.depth) % 1) + 1) % 1;
+      const baseX = mote.x * width + pointer.x * mote.depth * 22;
+      const baseY = drift * (height + 40) - 20 + pointer.y * mote.depth * 14;
+      let x = baseX + mote.offsetX;
+      let y = baseY + mote.offsetY;
+      let lift = 0;
+      if (live) {
+        const dx = x - cursor.x;
+        const dy = y - cursor.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        if (distance < reach) {
+          const force = (1 - distance / reach) ** 2 * 1.4 * step;
+          mote.velocityX += (dx / distance) * force;
+          mote.velocityY += (dy / distance) * force;
+          lift = Math.sqrt(1 - distance / reach);
+          near.push({ x, y, lift });
+        }
+      }
+      for (const ripple of ripples) {
+        const age = (now - ripple.at) / 1400;
+        const dx = x - ripple.x;
+        const dy = y - ripple.y;
+        const distance = Math.hypot(dx, dy) || 1;
+        const band = 1 - Math.abs(distance - age * ripple.reach) / 36;
+        if (band > 0) {
+          const force = band * (1 - age) * 2.4 * step;
+          mote.velocityX += (dx / distance) * force;
+          mote.velocityY += (dy / distance) * force;
+          lift = Math.max(lift, band * (1 - age));
+        }
+      }
+      mote.velocityX =
+        (mote.velocityX - mote.offsetX * 0.03 * step) * 0.9 ** step;
+      mote.velocityY =
+        (mote.velocityY - mote.offsetY * 0.03 * step) * 0.9 ** step;
+      mote.offsetX += mote.velocityX * step;
+      mote.offsetY += mote.velocityY * step;
+      x = baseX + mote.offsetX;
+      y = baseY + mote.offsetY;
+      const glow = 0.5 + 0.5 * Math.sin(phase * mote.speed + mote.twinkle);
+      context.globalAlpha = Math.min(
+        1,
+        mote.depth * (0.2 + glow * 0.5) + lift * 0.7,
+      );
+      const size = mote.size + lift * 1.4;
+      context.fillRect(x - size / 2, y - size / 2, size, size);
+    }
+    context.globalAlpha = 1;
+    if (near.length > 1) {
+      context.lineWidth = 0.7;
+      for (let a = 0; a < near.length; a++)
+        for (let b = a + 1; b < near.length; b++) {
+          const gap = Math.hypot(near[a].x - near[b].x, near[a].y - near[b].y);
+          if (gap > 130) continue;
+          context.strokeStyle = `rgba(185, 236, 214, ${(1 - gap / 130) * Math.min(near[a].lift, near[b].lift) * 0.85})`;
+          context.beginPath();
+          context.moveTo(near[a].x, near[a].y);
+          context.lineTo(near[b].x, near[b].y);
+          context.stroke();
+        }
+    }
+    for (let index = ripples.length - 1; index >= 0; index--) {
+      const ripple = ripples[index];
+      const age = (now - ripple.at) / 1400;
+      if (age >= 1) {
+        ripples.splice(index, 1);
+        continue;
+      }
+      const eased = 1 - (1 - age) ** 3;
+      context.strokeStyle = `rgba(213, 231, 174, ${(1 - age) * 0.55})`;
+      context.lineWidth = 1;
+      context.beginPath();
+      context.arc(ripple.x, ripple.y, eased * ripple.reach, 0, tau);
+      context.stroke();
+      context.strokeStyle = `rgba(182, 230, 203, ${(1 - age) * 0.28})`;
+      context.beginPath();
+      context.arc(ripple.x, ripple.y, eased * ripple.reach * 0.62, 0, tau);
+      context.stroke();
+    }
+    const radius = follow
+      ? Math.min(width * (mobile ? 0.42 : 0.2), height * 0.3, 300)
+      : Math.min(
+          mobile ? width * 0.6 : width * 0.25,
+          height * (mobile ? 0.5 : 0.4),
+          400,
+        );
+    const cx = follow
+      ? width * (0.5 + pointer.x * 0.4)
+      : width * (mobile ? 0.62 : 0.72) + pointer.x * radius * 0.13;
+    const cy = follow
+      ? height * (0.5 + pointer.y * 0.4)
+      : height * (mobile ? 0.7 : 0.5) + pointer.y * radius * 0.09;
     const minor = radius * 0.24;
     const tilt = 0.62 + Math.sin(phase * 0.18) * 0.16 + pointer.y * 0.35;
-    const yaw = 0.35 + phase * 0.07 + pointer.x * 0.48;
-    const project = (u, v) => {
-      const x = (radius + minor * Math.cos(v)) * Math.cos(u);
-      const y = (radius + minor * Math.cos(v)) * Math.sin(u);
-      const z = minor * Math.sin(v);
+    const yaw = 0.35 + phase * 0.07 + pointer.x * 0.48 + spin;
+    const place = (x, y, z) => {
       const yy = y * Math.cos(tilt) - z * Math.sin(tilt);
       const zz = y * Math.sin(tilt) + z * Math.cos(tilt);
       const xx = x * Math.cos(yaw) + zz * Math.sin(yaw);
@@ -1200,6 +1436,50 @@
       const scale = 1100 / (1100 + depth);
       return { x: cx + xx * scale, y: cy + yy * scale, depth };
     };
+    const project = (u, v, major = radius, tube = minor) =>
+      place(
+        (major + tube * Math.cos(v)) * Math.cos(u),
+        (major + tube * Math.cos(v)) * Math.sin(u),
+        tube * Math.sin(v),
+      );
+    const nearness = (depth, reach) =>
+      Math.max(0, Math.min(1, 0.5 - depth / (2 * reach)));
+    const dial = radius * 1.42;
+    context.lineWidth = 0.8;
+    for (let tick = 0; tick < 120; tick++) {
+      const u = (tick / 120) * tau;
+      const major = tick % 10 === 0;
+      const inner = project(u, 0, dial, 0);
+      const outer = project(u, 0, dial + (major ? 18 : 7), 0);
+      const light = nearness(inner.depth, dial);
+      context.strokeStyle = `rgba(150, 214, 190, ${(major ? 0.26 : 0.1) + light * (major ? 0.34 : 0.16)})`;
+      context.beginPath();
+      context.moveTo(inner.x, inner.y);
+      context.lineTo(outer.x, outer.y);
+      context.stroke();
+    }
+    const satellite = phase * 0.09;
+    context.beginPath();
+    for (let step = 0; step <= 40; step++) {
+      const p = project(satellite - (step / 40) * 0.9, 0, dial, 0);
+      if (step === 0) context.moveTo(p.x, p.y);
+      else context.lineTo(p.x, p.y);
+    }
+    const head = project(satellite, 0, dial, 0);
+    const tail = project(satellite - 0.9, 0, dial, 0);
+    const trail = context.createLinearGradient(head.x, head.y, tail.x, tail.y);
+    trail.addColorStop(0, "rgba(213, 231, 174, .55)");
+    trail.addColorStop(1, "rgba(213, 231, 174, 0)");
+    context.strokeStyle = trail;
+    context.lineWidth = 1.2;
+    context.stroke();
+    context.fillStyle = "#e4f1c8";
+    context.shadowColor = "#d5e7ae";
+    context.shadowBlur = 10;
+    context.beginPath();
+    context.arc(head.x, head.y, 2.2, 0, tau);
+    context.fill();
+    context.shadowBlur = 0;
     context.lineWidth = 0.8;
     for (let ring = 0; ring < 26; ring++) {
       context.beginPath();
@@ -1209,7 +1489,7 @@
         if (step === 0) context.moveTo(p.x, p.y);
         else context.lineTo(p.x, p.y);
       }
-      context.strokeStyle = `rgba(125, 216, 194, ${ring % 5 === 0 ? 0.3 : 0.11})`;
+      context.strokeStyle = `rgba(125, 216, 194, ${ring % 5 === 0 ? 0.32 : 0.12})`;
       context.stroke();
     }
     for (let ring = 0; ring < 64; ring++) {
@@ -1220,10 +1500,9 @@
         if (step === 0) context.moveTo(p.x, p.y);
         else context.lineTo(p.x, p.y);
       }
-      context.strokeStyle = "rgba(101, 191, 171, .14)";
+      context.strokeStyle = "rgba(101, 191, 171, .15)";
       context.stroke();
     }
-    // A few continuous paths carry light around the same form.
     for (let trace = 0; trace < 3; trace++) {
       const start = phase * 0.16 + (trace * tau) / 3;
       context.beginPath();
@@ -1240,7 +1519,20 @@
       context.stroke();
       context.shadowBlur = 0;
     }
-    // Bake the fade into this canvas, avoiding masked compositing layers beside video.
+    context.shadowColor = "#8be9c9";
+    for (const bead of beads) {
+      const p = project(bead.u + phase * bead.speed, bead.v);
+      const light = nearness(p.depth, radius + minor);
+      context.globalAlpha = 0.3 + light * 0.7;
+      context.fillStyle = "#d8fbe9";
+      context.shadowBlur = 6 + light * 8;
+      context.beginPath();
+      context.arc(p.x, p.y, 1 + light * 1.6, 0, tau);
+      context.fill();
+    }
+    context.shadowBlur = 0;
+    context.globalAlpha = 1;
+    if (follow) return;
     const fade = context.createLinearGradient(0, 0, width, 0);
     fade.addColorStop(
       0,
@@ -1254,11 +1546,22 @@
     context.globalCompositeOperation = "source-over";
   }
   function animate(time) {
-    if (time - last >= 32) {
+    const busy =
+      time - cursor.at < 2500 ||
+      ripples.length > 0 ||
+      Math.abs(spinVelocity) > 0.0004;
+    if (time - last >= (busy ? 0 : 32)) {
+      step = last ? Math.min(3, (time - last) / 16.7) : 1;
       phase = ((performance.timeOrigin + time) / 1000) % 86400;
-      pointer.x += (target.x - pointer.x) * 0.07;
-      pointer.y += (target.y - pointer.y) * 0.07;
-      pointer.strength += (target.strength - pointer.strength) * 0.07;
+      const ease = 1 - 0.93 ** step;
+      pointer.x += (target.x - pointer.x) * ease;
+      pointer.y += (target.y - pointer.y) * ease;
+      pointer.strength += (target.strength - pointer.strength) * ease;
+      const scrolled = window.scrollY - lastScroll;
+      lastScroll = window.scrollY;
+      spinVelocity += Math.max(-40, Math.min(40, scrolled)) * 0.00022;
+      spinVelocity *= 0.92 ** step;
+      spin += spinVelocity * step;
       last = time;
       draw();
     }
@@ -1270,6 +1573,10 @@
     if (reduced.matches) {
       pointer = { x: 0, y: 0, strength: 0 };
       target = { x: 0, y: 0, strength: 0 };
+      ripples.length = 0;
+      spinVelocity = 0;
+      for (const mote of dust)
+        mote.offsetX = mote.offsetY = mote.velocityX = mote.velocityY = 0;
     }
     if (!reduced.matches && !document.hidden)
       frame = requestAnimationFrame(animate);
@@ -1284,11 +1591,30 @@
         y: Math.max(-1, Math.min(1, (event.clientY / height - 0.5) * 2)),
         strength: 1,
       };
+      cursor.x = event.clientX;
+      cursor.y = event.clientY;
+      cursor.at = performance.now();
+      cursor.inside = true;
+    },
+    { passive: true },
+  );
+  host.addEventListener(
+    "pointerdown",
+    (event) => {
+      if (reduced.matches || !event.isPrimary) return;
+      ripples.push({
+        x: event.clientX,
+        y: event.clientY,
+        at: performance.now(),
+        reach: Math.min(320, Math.max(180, width * 0.2)),
+      });
+      if (ripples.length > 4) ripples.shift();
     },
     { passive: true },
   );
   host.addEventListener("pointerleave", () => {
     target = { x: 0, y: 0, strength: 0 };
+    cursor.inside = false;
   });
   new ResizeObserver(resize).observe(host);
   window.addEventListener("resize", resize);
@@ -1297,17 +1623,20 @@
   resize();
   sync();
 })();
-</script><div class="cursor-tracker" aria-hidden="true"></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le</span></a><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><span class="nav-indicator" aria-hidden="true"></span><a class="nav-link" href="#work">Work</a><a class="nav-link" href="#about">About</a><a class="nav-link" href="#experience">Experience</a><a class="nav-link" href="#community">Speaking</a><a class="nav-link" href="#notes">Notes</a><div class="header-actions"><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a class="nav-social" href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in a new tab)" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><a class="nav-social" href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in a new tab)" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.071 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.334-5.466-5.93 0-1.312.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.771.841 1.235 1.912 1.235 3.221 0 4.609-2.804 5.625-5.475 5.922.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .322.216.694.825.576C20.565 22.093 24 17.593 24 12.297c0-6.627-5.373-12-12-12z"/></svg></a></div></nav></div></header><main id="main">
+</script><div class="cursor-tracker" aria-hidden="true"><span class="cursor-label">View</span></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le</span></a><span class="header-time" hidden><span class="header-time-label">Your time</span> <span data-local-time></span></span><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><span class="nav-indicator" aria-hidden="true"></span><a class="nav-link" href="#work">Work</a><a class="nav-link" href="#about">About</a><a class="nav-link" href="#experience">Experience</a><a class="nav-link" href="#community">Speaking</a><a class="nav-link" href="#notes">Notes</a><div class="header-actions"><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a class="nav-social" href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in a new tab)" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><a class="nav-social" href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in a new tab)" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.071 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.334-5.466-5.93 0-1.312.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.771.841 1.235 1.912 1.235 3.221 0 4.609-2.804 5.625-5.475 5.922.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .322.216.694.825.576C20.565 22.093 24 17.593 24 12.297c0-6.627-5.373-12-12-12z"/></svg></a></div></nav></div></header><div class="chapter-rail" aria-hidden="true"><a href="#work" tabindex="-1"><span>01</span><em>Work</em></a><a href="#about" tabindex="-1"><span>02</span><em>About</em></a><a href="#experience" tabindex="-1"><span>03</span><em>Experience</em></a><a href="#community" tabindex="-1"><span>04</span><em>Speaking</em></a><a href="#notes" tabindex="-1"><span>05</span><em>Notes</em></a></div><main id="main">
   <div class="intro-chapter">
     <section class="hero-scene" aria-labelledby="hero-title">
       <div class="hero wrap">
         <div class="hero-copy">
-          <h1 id="hero-title">Owen Le.<br /><span>Engineer.</span></h1>
-          <p class="hero-roles">
-            Forward Deployed Engineer<br />
-            Applied AI Engineer<br />
-            Member of Technical Staff
-          </p>
+          <h1 id="hero-title">
+            <span class="line"><span>Owen Le.</span></span>
+            <span class="line hero-accent"><span>Engineer.</span></span>
+          </h1>
+          <ul class="hero-roles">
+            <li>Forward Deployed Engineer</li>
+            <li>Applied AI Engineer</li>
+            <li>Member of Technical Staff</li>
+          </ul>
           <p class="hero-description">
             I build evaluation systems, agent workflows, and software that
             connects AI to enterprise tools.
@@ -1323,11 +1652,19 @@
             >
           </div>
           <p class="hero-footnote">
-            Based in London <span aria-hidden="true">/</span> Previously Aptura
-            & IBM
+            <span class="availability">Open to new roles</span
+            ><span class="divider" aria-hidden="true"></span
+            ><span
+              >London<span
+                class="local-time"
+                data-london-time
+                hidden
+              ></span></span
+            ><span class="divider" aria-hidden="true"></span
+            ><span>Previously Aptura &amp; IBM</span>
           </p>
         </div>
-        <div class="portrait-panel">
+        <figure class="portrait-panel">
           <div class="portrait-clip">
             <video
               data-portrait-video
@@ -1346,8 +1683,12 @@
               >
             </video>
           </div>
-        </div>
+          <figcaption class="portrait-caption">
+            <span>Technical demonstration</span><span>IBM</span>
+          </figcaption>
+        </figure>
       </div>
+      <span class="scroll-cue" aria-hidden="true">Scroll</span>
     </section>
   </div>
   <section
@@ -1375,8 +1716,7 @@
     <div class="wrap">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">01 / SELECTED WORK</p>
-          <h2 id="work-title">Selected <span class="serif">projects.</span></h2>
+          <h2 id="work-title">Selected <span class="soft">projects.</span></h2>
         </div>
         <p>
           Applied AI, product engineering,<br />and the controls that make them
@@ -1385,7 +1725,7 @@
       </div>
       <div class="filters" role="group" aria-label="Filter projects">
         <button type="button" data-filter="all" aria-pressed="true">
-          All work <span>03</span></button
+          All work <span>06</span></button
         ><button type="button" data-filter="ai" aria-pressed="false">
           AI & evaluation</button
         ><button type="button" data-filter="product" aria-pressed="false">
@@ -1395,7 +1735,7 @@
         </button>
       </div>
       <p class="sr-only" id="filter-status" role="status"></p>
-      <div class="project-grid"><article class="project-card" data-category="ai"><a href="themis.html" aria-label="Read case study: Themis"><div class="card-frame" data-project="themis"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="mono">01</span><span class="card-status">Evaluation system</span></div><div class="card-copy"><p class="eyebrow">EVALUATION ENGINEERING</p><h3>Themis</h3><p class="card-description">A hybrid agentic grader combining deterministic checks, structured rubrics, and model judgement to benchmark AI-generated spreadsheets and presentations.</p></div><div class="card-skills"><span>Evaluation pipelines</span><span>LLM as a judge</span><span>Golden datasets</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></a></article><article class="project-card" data-category="product"><a href="dueform.html" aria-label="Read case study: DueForm"><div class="card-frame" data-project="dueform"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="mono">02</span><span class="card-status">Private MVP</span></div><div class="card-copy"><p class="eyebrow">APPLIED AI · FINANCE PRODUCT</p><h3>DueForm</h3><p class="card-description">A contract-to-invoice checking product with source-backed term review, deterministic calculations, separate client workspaces, and exportable evidence.</p></div><div class="card-skills"><span>Node.js</span><span>Structured extraction</span><span>Human approval</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></a></article><article class="project-card" data-category="governance"><a href="actifact.html" aria-label="Read case study: ActiFact"><div class="card-frame" data-project="actifact"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="mono">03</span><span class="card-status">Local demonstration</span></div><div class="card-copy"><p class="eyebrow">AGENT CONTROLS · VERIFICATION</p><h3>ActiFact</h3><p class="card-description">A TypeScript verifier that checks approval boundaries against actual state changes and keeps missing evidence visible.</p></div><div class="card-skills"><span>TypeScript</span><span>Permission checks</span><span>State verification</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></a></article></div>
+      <div class="project-grid"><article class="project-card" data-category="ai"><a href="themis.html" aria-label="Read case study: Themis"><div class="card-frame" data-project="themis"><div class="card-tilt"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="label">01</span><span class="card-status">Evaluation system</span></div><div class="card-copy"><p class="eyebrow">EVALUATION ENGINEERING</p><h3>Themis</h3><p class="card-description">A hybrid agentic grader combining deterministic checks, structured rubrics, and model judgement to benchmark AI-generated spreadsheets and presentations.</p></div><div class="card-skills"><span>Evaluation pipelines</span><span>LLM as a judge</span><span>Golden datasets</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></div></a></article><article class="project-card" data-category="product"><a href="dueform.html" aria-label="Read case study: DueForm"><div class="card-frame" data-project="dueform"><div class="card-tilt"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="label">02</span><span class="card-status">Private MVP</span></div><div class="card-copy"><p class="eyebrow">APPLIED AI · FINANCE PRODUCT</p><h3>DueForm</h3><p class="card-description">A contract-to-invoice checking product with source-backed term review, deterministic calculations, separate client workspaces, and exportable evidence.</p></div><div class="card-skills"><span>Node.js</span><span>Structured extraction</span><span>Human approval</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></div></a></article><article class="project-card" data-category="governance"><a href="actifact.html" aria-label="Read case study: ActiFact"><div class="card-frame" data-project="actifact"><div class="card-tilt"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="label">03</span><span class="card-status">Local demonstration</span></div><div class="card-copy"><p class="eyebrow">AGENT CONTROLS · VERIFICATION</p><h3>ActiFact</h3><p class="card-description">A TypeScript verifier that checks approval boundaries against actual state changes and keeps missing evidence visible.</p></div><div class="card-skills"><span>TypeScript</span><span>Permission checks</span><span>State verification</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></div></a></article><article class="project-card" data-category="ai"><a href="financial-qa.html" aria-label="Read case study: Financial document QA"><div class="card-frame" data-project="financial-qa"><div class="card-tilt"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="label">04</span><span class="card-status">Evaluated prototype</span></div><div class="card-copy"><p class="eyebrow">CONVERSATIONAL AI · EVALUATION</p><h3>Financial document QA</h3><p class="card-description">A conversational financial QA pipeline with structured model output, restricted expression execution, and resumable evaluation on ConvFinQA.</p></div><div class="card-skills"><span>Python</span><span>Pydantic</span><span>OpenAI Responses API</span><span>Gemini API</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></div></a></article><article class="project-card" data-category="ai"><a href="vodafone-tobi.html" aria-label="Read case study: Vodafone TOBi"><div class="card-frame" data-project="vodafone-tobi"><div class="card-tilt"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="label">05</span><span class="card-status">Enterprise pilot</span></div><div class="card-copy"><p class="eyebrow">ENTERPRISE AI · EVALUATION</p><h3>Vodafone TOBi</h3><p class="card-description">Contributed to Vodafone’s TOBi generative AI pilot at IBM, focusing on evaluations and retrieval-augmented generation for document querying.</p></div><div class="card-skills"><span>Evaluations</span><span>Retrieval-augmented generation</span><span>Document querying</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></div></a></article><article class="project-card" data-category="governance"><a href="nationwide-governance.html" aria-label="Read case study: Nationwide AI Governance"><div class="card-frame" data-project="nationwide-governance"><div class="card-tilt"><svg class="card-outline" viewBox="0 0 420 520" preserveAspectRatio="none" aria-hidden="true"><path vector-effect="non-scaling-stroke" d="M12 1H408Q419 1 419 12V452Q419 463 408 463H251C240 463 236 466 230 474L198 509C192 516 185 519 177 519H12Q1 519 1 508V12Q1 1 12 1Z"/></svg><div class="card-content"><div class="card-meta"><span class="label">06</span><span class="card-status">Governance pilot</span></div><div class="card-copy"><p class="eyebrow">ENTERPRISE AI · GOVERNANCE</p><h3>Nationwide AI Governance</h3><p class="card-description">Contributed to an AI governance pilot for Nationwide, translating policy requirements into risk classification, evidence requirements and controlled approval workflows.</p></div><div class="card-skills"><span>watsonx.governance</span><span>watsonx Orchestrate</span><span>OpenShift</span></div></div><div class="card-caption"><span>Explore project</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></div></div></div></a></article></div>
     </div>
   </section>
   <section
@@ -1422,9 +1762,8 @@
     </div>
     <div class="wrap about-grid">
       <div>
-        <p class="eyebrow">02 / HOW I WORK</p>
         <h2 id="about-title">
-          How I<br /><span class="serif">build systems.</span>
+          How I<br /><span class="soft">build systems.</span>
         </h2>
         <p class="about-intro">
           I start with the data and the workflow, make the controls explicit,
@@ -1445,7 +1784,7 @@
       </div>
       <div class="principles">
         <div>
-          <span class="mono">01</span>
+          <span class="label">01</span>
           <div>
             <h3>Start with the problem.</h3>
             <p>
@@ -1455,7 +1794,7 @@
           </div>
         </div>
         <div>
-          <span class="mono">02</span>
+          <span class="label">02</span>
           <div>
             <h3>Build the boundaries.</h3>
             <p>
@@ -1465,7 +1804,7 @@
           </div>
         </div>
         <div>
-          <span class="mono">03</span>
+          <span class="label">03</span>
           <div>
             <h3>Measure what matters.</h3>
             <p>
@@ -1501,9 +1840,8 @@
     </div>
     <div class="section-heading">
       <div>
-        <p class="eyebrow">03 / EXPERIENCE</p>
         <h2 id="experience-title">
-          Engineering<br /><span class="serif">experience.</span>
+          Engineering<br /><span class="soft">experience.</span>
         </h2>
       </div>
       <a
@@ -1516,17 +1854,15 @@
     </div>
     <div class="impact-strip" aria-label="Selected career impact">
       <a href="#ibm-experience"
-        ><strong>20<span>+</span></strong
+        ><strong data-count="20">20<span>+</span></strong
         ><span
-          >enterprise engagements<br /><small
-            >IBM Client Engineering</small
-          ></span
+          >Enterprise engagements<small>IBM Client Engineering</small></span
         ></a
       >
       <a href="themis.html"
-        ><strong>98.7<span>%</span></strong
+        ><strong data-count="98.7">98.7<span>%</span></strong
         ><span
-          >lower evaluation cost per run<br /><small
+          >Lower evaluation cost per run<small
             >Themis evaluation benchmark</small
           ></span
         ></a
@@ -1534,14 +1870,14 @@
       <a href="#ibm-experience"
         ><strong>4–8<span>w</span></strong
         ><span
-          >AI pilot delivery cycles<br /><small
+          >AI pilot delivery cycles<small
             >Cross-functional engineering squads</small
           ></span
         ></a
       >
     </div>
     <div class="experience-row">
-      <p class="mono experience-date">JUN – AUG 2026</p>
+      <p class="label experience-date">Jun – Aug 2026</p>
       <div class="company">
         <h3>Aptura</h3>
         <span>Member of Technical Staff</span>
@@ -1554,7 +1890,7 @@
       </div>
     </div>
     <div id="ibm-experience" class="experience-row">
-      <p class="mono experience-date">2023 – JUL 2026</p>
+      <p class="label experience-date">2023 – Jul 2026</p>
       <div class="company">
         <h3>IBM</h3>
         <span
@@ -1577,7 +1913,7 @@
       </div>
     </div>
     <div class="experience-row">
-      <p class="mono experience-date">2021 – 2022</p>
+      <p class="label experience-date">2021 – 2022</p>
       <div class="company">
         <h3>Independent venture</h3>
         <span>Co-Founder & Technical Lead</span>
@@ -1591,14 +1927,14 @@
       </div>
     </div>
     <div class="education">
-      <span class="mono">FOUNDATION</span>
+      <span class="label">Foundation</span>
       <p>
         <strong>BEng Mechanical Engineering · First Class Honours</strong
         ><br />University of Portsmouth · 2017–2021
       </p>
     </div>
     <div class="credentials" aria-label="Selected professional learning">
-      <span class="mono">SELECTED LEARNING</span>
+      <span class="label">Selected learning</span>
       <div>
         <a
           href="https://www.credly.com/badges/8121e13f-04ce-4ea7-8eb6-5a53570e7364/linked_in_profile"
@@ -1623,27 +1959,48 @@
         >
       </div>
     </div>
-    <div class="toolkit">
-      <div>
-        <h3>AI & evaluation</h3>
-        <p>
-          Agent orchestration · RAG · MCP<br />Structured outputs · Evaluation
-          frameworks<br />LangChain · LangFlow · Milvus
-        </p>
+    <div class="toolkit" role="group" aria-labelledby="toolkit-title">
+      <h3 id="toolkit-title" class="label">Toolkit</h3>
+      <div class="marquee">
+        <div class="marquee-track">
+          <ul class="marquee-list">
+            <li class="marquee-group">AI &amp; evaluation</li>
+            <li>Agent orchestration</li>
+            <li>RAG</li>
+            <li>MCP</li>
+            <li>Structured outputs</li>
+            <li>Evaluation frameworks</li>
+            <li>LangChain</li>
+            <li>LangFlow</li>
+            <li>Milvus</li>
+            <li class="marquee-group">Infrastructure &amp; delivery</li>
+            <li>Docker</li>
+            <li>Podman</li>
+            <li>OpenShift</li>
+            <li>Kubernetes</li>
+            <li>Terraform</li>
+            <li>CI/CD</li>
+            <li>Technical discovery</li>
+            <li>AI governance</li>
+          </ul>
+        </div>
       </div>
-      <div>
-        <h3>Product & backend</h3>
-        <p>
-          Python · TypeScript · SQL · FastAPI<br />React · Next.js · REST ·
-          GraphQL<br />PostgreSQL · Supabase
-        </p>
-      </div>
-      <div>
-        <h3>Infrastructure & delivery</h3>
-        <p>
-          Docker · Podman · OpenShift<br />Kubernetes · Terraform · CI/CD<br />Technical
-          discovery · AI governance
-        </p>
+      <div class="marquee marquee-reverse">
+        <div class="marquee-track">
+          <ul class="marquee-list">
+            <li class="marquee-group">Product &amp; backend</li>
+            <li>Python</li>
+            <li>TypeScript</li>
+            <li>SQL</li>
+            <li>FastAPI</li>
+            <li>React</li>
+            <li>Next.js</li>
+            <li>REST</li>
+            <li>GraphQL</li>
+            <li>PostgreSQL</li>
+            <li>Supabase</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -1672,9 +2029,8 @@
     <div class="wrap">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">04 / SPEAKING & MENTORSHIP</p>
           <h2 id="community-title">
-            Speaking &<br /><span class="serif">mentorship.</span>
+            Speaking &<br /><span class="soft">mentorship.</span>
           </h2>
         </div>
       </div>
@@ -1794,7 +2150,7 @@
       <article class="mentorship-panel">
         <div class="mentorship-intro">
           <p class="event-date">Industry mentorship</p>
-          <h3>University of<br /><span class="serif">Nottingham.</span></h3>
+          <h3>University of<br /><span class="soft">Nottingham.</span></h3>
           <p>
             Mentored two groups of University of Nottingham students through
             their final year projects.
@@ -1853,20 +2209,11 @@
     </div>
     <div class="section-heading">
       <div>
-        <p class="eyebrow">05 / ENGINEERING NOTES</p>
-        <h2 id="notes-title">Engineering <span class="serif">notes.</span></h2>
+        <h2 id="notes-title">Engineering <span class="soft">notes.</span></h2>
       </div>
       <a class="text-link" href="blog_homepage.html">All notes <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a>
     </div>
-    <a class="note-row" href="create_agent.html"
-      ><span class="mono">AGENTS / PRACTICAL GUIDE</span>
-      <h3>Building an agent with watsonx Orchestrate</h3>
-      <span class="round-arrow"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></a
-    ><a class="note-row" href="engineering-reliable-ai.html"
-      ><span class="mono">SYSTEMS / DESIGN NOTES</span>
-      <h3>Reason, verify, deliver: the system around the model</h3>
-      <span class="round-arrow"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></a
-    >
+    <a class="note-row" href="create_agent.html" data-preview="A complete walkthrough of the developer and visual builder routes: installation, environment setup, a Python FAQ tool, agent configuration, knowledge, and testing." data-preview-meta="7 sections · 9 min read"><span class="label">Agents / Practical guide</span><h3>Building an agent with watsonx Orchestrate</h3><span class="round-arrow"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></a><a class="note-row" href="engineering-reliable-ai.html" data-preview="The engineering around the model determines whether an AI capability becomes a reliable product." data-preview-meta="4 sections · 1 min read"><span class="label">Systems / Design notes</span><h3>Reason, verify, deliver: the system around the model</h3><span class="round-arrow"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></span></a>
   </section>
 </main>
-<footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">HAVE SOMETHING IN MIND?</p><h2>Let’s build<br><span class="serif">something useful.</span></h2></div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></div><p class="copy-status" id="copy-status" role="status"></p></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom</span><div class="footer-links"><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a></div></div></div></footer></body></html>
+<footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">Have something in mind?</p><h2>Let’s build<br><span class="soft">something useful.</span></h2><svg class="light-rail contact-rail" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="rail-line" pathLength="1" d="M0 32H92L120 4H1200"/><path class="rail-current rail-halo" pathLength="100" d="M0 32H92L120 4H1200"/><path class="rail-current rail-core" pathLength="100" d="M0 32H92L120 4H1200"/></svg></div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></div><p class="copy-status" id="copy-status" role="status"></p></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom<span class="footer-time" data-london-time hidden></span></span><button type="button" class="shortcut-hint" data-shortcuts>Press <kbd>?</kbd> for shortcuts</button><div class="footer-links"><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a></div></div></div></footer><dialog class="shortcuts" aria-labelledby="shortcuts-title"><div class="shortcuts-head"><h2 id="shortcuts-title">Keyboard shortcuts</h2><button type="button" class="shortcuts-close" aria-label="Close shortcuts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><dl><div><dt><kbd>G</kbd><kbd>W</kbd></dt><dd>Work</dd></div><div><dt><kbd>G</kbd><kbd>A</kbd></dt><dd>About</dd></div><div><dt><kbd>G</kbd><kbd>E</kbd></dt><dd>Experience</dd></div><div><dt><kbd>G</kbd><kbd>S</kbd></dt><dd>Speaking</dd></div><div><dt><kbd>G</kbd><kbd>N</kbd></dt><dd>Notes</dd></div><div><dt><kbd>G</kbd><kbd>P</kbd></dt><dd>All projects</dd></div><div><dt><kbd>G</kbd><kbd>H</kbd></dt><dd>Home</dd></div><div><dt><kbd>?</kbd></dt><dd>Show or hide this panel</dd></div></dl></dialog></body></html>

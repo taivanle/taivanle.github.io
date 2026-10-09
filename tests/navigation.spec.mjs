@@ -303,8 +303,8 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
                   .getAnimations({ subtree: true })
                   .filter(
                     (animation) =>
-                      !animation.effect.target.classList.contains(
-                        "navigation-card-progress-fill",
+                      !animation.effect.target.closest(
+                        ".navigation-card-progress",
                       ) &&
                       (animation.playState === "running" || animation.pending),
                   ).length,
@@ -318,11 +318,14 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         const upright = new DOMMatrix(
           getComputedStyle(rotor).transform,
         ).multiply(new DOMMatrix(getComputedStyle(back).transform));
-        const progress = new DOMMatrix(
-          getComputedStyle(
-            document.querySelector(".navigation-card-progress-fill"),
-          ).transform,
-        ).a;
+        const progress =
+          1 -
+          parseFloat(
+            getComputedStyle(
+              document.querySelector(".navigation-card-progress-fill"),
+            ).strokeDashoffset,
+          ) /
+            100;
         const field = document.querySelector(".hero-field");
         return {
           bootstrap: JSON.parse(
@@ -357,9 +360,6 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         hidden: "true",
         rotation: ["rotateX(180deg)", "rotateX(180deg)"],
       });
-      // The full flip finishes on the source page. Its geometry is fixed;
-      // only compositor transforms move it, so deferred page loading cannot
-      // split or restart the rotation midway through.
       expect(heldState.source.duration).toBe(520);
       expect(heldState.source.rotation).toEqual([
         "rotateX(0deg)",
@@ -377,7 +377,7 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
       expect(heldState.upright.m32).toBeCloseTo(0, 3);
       expect(heldState.progress).toBeGreaterThanOrEqual(0.85);
       expect(heldState.progress).toBeLessThan(1);
-      expect(heldState.mainFilter).toBe("blur(8px)");
+      expect(heldState.mainFilter).toBe("blur(12px) brightness(0.42)");
       expect(heldState.fieldFilter).toBe("none");
       expect(heldState.fieldOpacity).toBeGreaterThan(0);
       expect(heldState.coverOpacity).toBe(0);
@@ -386,7 +386,7 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         const field = document.querySelector(".hero-field");
         const fill = document.querySelector(".navigation-card-progress-fill");
         const progress = () =>
-          new DOMMatrix(getComputedStyle(fill).transform).a;
+          1 - parseFloat(getComputedStyle(fill).strokeDashoffset) / 100;
         const sample = document.createElement("canvas");
         sample.width = sample.height = 64;
         const context = sample.getContext("2d");
@@ -412,7 +412,6 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         buffering.progressBefore,
       );
       expect(buffering.progressAfter).toBeLessThan(1);
-      // The loading card stays present until the blocked deferred app is ready.
       await expect(stage).toBeAttached();
       await expect(page.locator(".navigation-card-scan")).toHaveCount(0);
       await page.evaluate((unavailable) => {
@@ -424,9 +423,6 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
           "data-page-transition",
           "leaving",
         );
-      // Normal closing completes the reverse flip on the source page before
-      // returning. Releasing the deferred app during that motion, or during
-      // the storage fallback, must not cancel the exit.
       release();
       await expect(page).toHaveURL(/projects.html$/);
       await expect(page.locator("html")).not.toHaveAttribute(
@@ -509,14 +505,22 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
 
 test("direct projects stay dark and can exit even without external styles or scripts", async ({
   browser,
+  baseURL,
 }) => {
-  for (const slug of ["themis", "dueform", "actifact"]) {
-    const context = await browser.newContext();
+  for (const slug of [
+    "themis",
+    "dueform",
+    "actifact",
+    "financial-qa",
+    "vodafone-tobi",
+    "nationwide-governance",
+  ]) {
+    const context = await browser.newContext({ baseURL });
     const page = await context.newPage();
     await page.route(/\/assets\/(?:styles\.css|app\.js)(?:\?|$)/, (route) =>
       route.abort(),
     );
-    await page.goto(`http://127.0.0.1:4178/${slug}.html`);
+    await page.goto(`/${slug}.html`);
     const colors = await page.evaluate(() => [
       getComputedStyle(document.documentElement).backgroundColor,
       getComputedStyle(document.body).backgroundColor,

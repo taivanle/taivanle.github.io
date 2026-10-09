@@ -47,7 +47,159 @@
         "Use deterministic validation for machine-checkable properties. These checks create a repeatable foundation for the rest of the assessment.",
         "Assess the remaining criteria with rubric-guided model judgement in a controlled evaluation environment.",
         "Bring the results into a repeatable benchmark report and compare quality, evaluation time, and cost across the tested workflows."
-      ]
+      ],
+      "resultsHeadline": "A measurable change in the workflow.",
+      "context": "Resume-reported outcomes for a specific evaluation benchmark. The accuracy figures describe that test set and workflow.",
+      "diagram": {
+        "title": "How Themis grades an agent’s work.",
+        "caption": "Simplified architecture · deterministic checks and an agentic judge feed one structured, weighted result.",
+        "rows": [
+          {
+            "groups": [
+              {
+                "title": "Evaluation input",
+                "items": [
+                  ["Task / instructions", "What the agent was asked to do"],
+                  ["Rubric", "Criteria and weighting"],
+                  ["Candidate artefacts", "Files, outputs, logs, trajectory"],
+                  ["Golden / reference data", "Expected outputs, schemas, etc."]
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {}
+          },
+          {
+            "groups": [
+              {
+                "title": "Themis orchestrator",
+                "tone": "core",
+                "points": [
+                  "Load evaluation and configuration",
+                  "Decompose rubric into individual criteria",
+                  "Determine evaluation strategy (deterministic vs agentic)",
+                  "Manage execution (parallelisation, retries, error handling)",
+                  "Collect and normalise results"
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1]
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Deterministic verification",
+                "subtitle": "Used for criteria that can be objectively verified",
+                "tone": "mint",
+                "stack": true,
+                "items": [
+                  [
+                    "File and folder checks",
+                    "e.g. file exists, correct format, expected structure"
+                  ],
+                  [
+                    "Content and schema validation",
+                    "e.g. JSON schema, CSV structure, workbook sheets"
+                  ],
+                  [
+                    "Exact comparisons and tests",
+                    "e.g. values, calculations, unit tests"
+                  ],
+                  [
+                    "Custom Python checks",
+                    "e.g. domain-specific validation logic"
+                  ]
+                ]
+              },
+              {
+                "title": "Agentic judge",
+                "subtitle": "Used for criteria that require semantic reasoning",
+                "tone": "lime",
+                "stack": true,
+                "items": [
+                  [
+                    "LLM reasoning",
+                    "Understand the criterion and plan investigation"
+                  ],
+                  ["Tool selection", "Choose which tools and evidence to use"],
+                  [
+                    "Reactive evidence gathering",
+                    "Inspect files, run code, query tools/MCP, analyse results"
+                  ],
+                  [
+                    "Structured judgement",
+                    "Return MET / NOT MET with reasoning and evidence"
+                  ]
+                ]
+              },
+              {
+                "title": "Environment-aligned execution",
+                "subtitle": "Judge has access to the same environment as the candidate",
+                "tone": "gold",
+                "stack": true,
+                "items": [
+                  ["Candidate workspace", "Files and artefacts"],
+                  ["Python runtime", "Installed packages and libraries"],
+                  ["Tools / MCP", "Same tools as the candidate agent"],
+                  ["Runtime state", "Databases, memory, logs, etc."]
+                ],
+                "dashed": true,
+                "span": 0.9
+              }
+            ],
+            "joins": [
+              null,
+              {
+                "label": ["Inspect", "Execute", "Query"],
+                "both": true
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1],
+              "align": "prev"
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Structured evaluation results",
+                "items": [
+                  ["Criterion verdict", "MET / NOT MET"],
+                  ["Evidence", "Files, code output, screenshots, etc."],
+                  ["Reasoning", "Explanation of the decision"],
+                  ["Usage / traces", "Tool calls, tokens, execution logs"],
+                  ["Criterion weight", "Used for final scoring"]
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {}
+          },
+          {
+            "groups": [
+              {
+                "title": "Result aggregation and scoring",
+                "tone": "core",
+                "points": [
+                  "Apply criterion weights",
+                  "Aggregate individual results",
+                  "Calculate final evaluation score",
+                  "Generate summary report (including failures and key findings)"
+                ],
+                "wide": true
+              }
+            ]
+          }
+        ]
+      }
     },
     {
       "slug": "dueform",
@@ -111,7 +263,182 @@
         "Propose structured commercial terms with exact supporting excerpts, using a replaceable AI provider or manual entry.",
         "Let the reviewer inspect the evidence, resolve ambiguities, and explicitly approve the terms that the checker will use.",
         "Compare supported billing amounts deterministically and export the calculation and evidence. A potential difference still requires finance review."
-      ]
+      ],
+      "context": "A private local MVP verified with synthetic cases. Commercial outcomes and an independent live extraction baseline remain unvalidated.",
+      "diagram": {
+        "badge": "Local Node.js application",
+        "title": "DueForm — contract-to-invoice verification",
+        "subtitle": "Human review, deterministic billing checks and evidence exports",
+        "rows": [
+          {
+            "groups": [
+              {
+                "title": "Owner & client users",
+                "tone": "sky",
+                "quiet": true,
+                "text": [
+                  "Browser interface",
+                  "Review source material",
+                  "Approve proposed terms",
+                  "Inspect invoice findings"
+                ]
+              },
+              {
+                "title": "Local Node.js server",
+                "subtitle": "HTTP routes, access control and workspace-specific application logic",
+                "span": 3.4,
+                "columns": [
+                  {
+                    "title": "Access boundary",
+                    "lines": [
+                      "Accounts, memberships and sessions",
+                      "Workspace authorisation and CSRF checks"
+                    ]
+                  },
+                  {
+                    "title": "Browser / server boundary",
+                    "lines": [
+                      "Source documents stay in ledgers",
+                      "Provider credentials stay on server"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "joins": [{}]
+          },
+          {
+            "connector": {}
+          },
+          {
+            "groups": [
+              {
+                "title": "Contract review and billing checks",
+                "subtitle": "Extraction proposes terms. Explicit approval controls which terms the checker can use.",
+                "tone": "core",
+                "steps": [
+                  [
+                    "Import sources",
+                    "Contracts and amendments",
+                    "Invoice tables and mappings"
+                  ],
+                  [
+                    "Proposed terms",
+                    "Provider or manual entry",
+                    "Schema and evidence checks"
+                  ],
+                  [
+                    "Human approval",
+                    "Review supporting excerpts",
+                    "Approve terms explicitly"
+                  ],
+                  [
+                    "Invoice comparison",
+                    "Approved terms only",
+                    "Integer money calculations"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1],
+              "both": [0],
+              "labels": {
+                "0": "Proposed terms",
+                "1": "Workspace records and check history"
+              }
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Optional extraction provider",
+                "tone": "gold",
+                "text": [
+                  "Replaceable server-side provider adapter",
+                  "An explicit action sends selected documents",
+                  "The model proposes commercial terms",
+                  "Manual entry works without live extraction"
+                ]
+              },
+              {
+                "title": "File-backed client ledgers",
+                "tone": "mint",
+                "text": [
+                  "Separate client ledgers and account registry",
+                  "Sources, proposals, approvals and decisions retain their own records and history",
+                  "Transactions use temporary-file / rename writes"
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [1],
+              "align": "prev"
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Review workflows and evidence outputs",
+                "tone": "mint",
+                "columns": [
+                  {
+                    "title": "Findings and review",
+                    "lines": [
+                      "Potential difference, confirmed error",
+                      "Correction and cash outcomes"
+                    ]
+                  },
+                  {
+                    "title": "Operational workflows",
+                    "lines": [
+                      "Draft checks, renewals and notices",
+                      "Approved billing setup sheets"
+                    ]
+                  },
+                  {
+                    "title": "Evidence exports",
+                    "lines": [
+                      "PDF, CSV and HTML reports",
+                      "Calculation and source evidence"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "title": "Key design decision",
+            "tone": "lime",
+            "text": "AI proposes structured terms. A person reviews and approves. Deterministic code calculates and compares billing amounts."
+          },
+          {
+            "title": "Evidence boundary",
+            "tone": "gold",
+            "text": "Validate provider output against the schema and source excerpts. A valid quote alone does not prove correct interpretation."
+          },
+          {
+            "title": "Billing rules",
+            "tone": "mint",
+            "text": "Money uses integer minor units. Supported recurring periods, multiple charges and seat pricing. Ambiguous periods require review."
+          },
+          {
+            "title": "Deployment scope",
+            "tone": "sky",
+            "text": "Local browser and Node.js server. JSON files; no external database. Separate ledgers per client. Local MVP / scoped evaluation."
+          }
+        ],
+        "caption": [
+          "Boxes show component responsibilities and information flow.",
+          "Manual entry remains available. Live extraction is optional. This diagram does not imply hosted production operation or live accounting integrations."
+        ]
+      }
     },
     {
       "slug": "actifact",
@@ -169,7 +496,646 @@
         "Execute the deliberately broken or corrected reference control against the synthetic ticket store.",
         "Read the resulting state and compare it with the before-state. The actual record change is the evidence.",
         "Report pass, fail, or inconclusive. An unavailable state reader cannot turn an allowed decision into a verified pass."
-      ]
+      ],
+      "context": "Five isolated synthetic scenarios against our own broken and corrected references. This demonstrates verification behaviour within that example.",
+      "diagram": {
+        "badge": "Synthetic TypeScript demo",
+        "title": "ActiFact — approval and effect verification",
+        "subtitle": "Compare the authorised action with the state change that actually occurs",
+        "rows": [
+          {
+            "groups": [
+              {
+                "title": "CLI and scenario runner",
+                "subtitle": "Five isolated scenarios, each using fresh identities, approvals and fictional ticket records",
+                "tone": "sky",
+                "items": [
+                  [
+                    "Scenario expectations",
+                    "Expected allow / deny",
+                    "Expected changed ticket IDs"
+                  ],
+                  [
+                    "Fresh fixture",
+                    "In-memory ticket store",
+                    "Simulated actor and reviewer"
+                  ],
+                  [
+                    "Scoped approval",
+                    "Actor, organisation and ticket",
+                    "Prepared execution attempt"
+                  ],
+                  [
+                    "Two control modes",
+                    "Intentionally broken reference",
+                    "Corrected reference"
+                  ]
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1]
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Synthetic reference controls",
+                "subtitle": "Execute a close-ticket attempt against an in-memory store",
+                "span": 1.75,
+                "items": [
+                  {
+                    "title": "Broken reference",
+                    "lines": [
+                      "Approval-to-ticket binding is deliberately omitted"
+                    ],
+                    "tone": "rose"
+                  },
+                  {
+                    "title": "Corrected reference",
+                    "lines": [
+                      "Approval and requested ticket must match the permitted scope"
+                    ],
+                    "tone": "mint"
+                  }
+                ]
+              },
+              {
+                "title": "Observe ticket state",
+                "tone": "gold",
+                "text": [
+                  "Validate the baseline snapshot",
+                  "Execute the prepared attempt",
+                  "Validate the post-action snapshot",
+                  "Preserve both observations"
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1],
+              "align": "prev",
+              "labels": {
+                "0": "Returned decision",
+                "1": "State evidence"
+              }
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Verification engine",
+                "subtitle": "Compare the decision and complete observed effects with the scenario expectation",
+                "tone": "core",
+                "columns": [
+                  {
+                    "title": "Decision agreement",
+                    "lines": ["Did allow / deny match the expected decision?"]
+                  },
+                  {
+                    "title": "Changed record IDs",
+                    "lines": ["Did only the expected ticket records change?"]
+                  },
+                  {
+                    "title": "Exact post-state",
+                    "lines": [
+                      "Does the full resulting state match the expected state?"
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "label": "Runner result classification"
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Pass",
+                "tone": "mint",
+                "quiet": true,
+                "text": "Expected decision and exact effects match"
+              },
+              {
+                "title": "Fail",
+                "tone": "rose",
+                "quiet": true,
+                "text": "Observed decision or state differs from expected"
+              },
+              {
+                "title": "Inconclusive",
+                "tone": "gold",
+                "quiet": true,
+                "text": "Required observation is missing or malformed"
+              },
+              {
+                "title": "Error",
+                "tone": "grey",
+                "quiet": true,
+                "text": "Other adapter or runner exception"
+              }
+            ]
+          },
+          {
+            "connector": {}
+          },
+          {
+            "groups": [
+              {
+                "title": "Self-contained HTML + JSON evidence reports and command exit codes",
+                "tone": "mint",
+                "quiet": true
+              }
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "title": "Key design decision",
+            "tone": "lime",
+            "text": "An allowed decision is not proof of a correct effect. Observe the resulting state and compare exact changes."
+          },
+          {
+            "title": "Five scenarios",
+            "tone": "sky",
+            "points": [
+              "Approved action",
+              "Missing approval",
+              "Changed ticket target",
+              "Cross-customer access",
+              "Unavailable post-action evidence"
+            ]
+          },
+          {
+            "title": "Seeded target-binding bug",
+            "tone": "rose",
+            "text": "Approval is for ticket A-101. The attempt targets A-102. The broken control changes A-102. The corrected control denies it."
+          },
+          {
+            "title": "Execution scope",
+            "tone": "grey",
+            "text": "No real agent, model or API. Fixture identities and tickets. Local reference demonstration."
+          }
+        ],
+        "caption": [
+          "Missing observations and other runner errors never produce a pass.",
+          "Five scenarios run against both controls. Results apply to the observed synthetic fixture, not to a customer system or production security assessment."
+        ]
+      }
+    },
+    {
+      "slug": "financial-qa",
+      "name": "Financial document QA",
+      "category": "ai",
+      "eyebrow": "CONVERSATIONAL AI · EVALUATION",
+      "status": "Evaluated prototype",
+      "title": "Model reasoning. Verified arithmetic.",
+      "summary": "A conversational financial QA pipeline with structured model output, restricted expression execution, and resumable evaluation on ConvFinQA.",
+      "overview": [
+        "Financial questions require both language understanding and precise calculation. I built a conversational pipeline that uses a language model to identify relevant values and propose a calculation, then executes that calculation through a restricted Python interpreter.",
+        "The system preserves conversation history, validates structured responses, supports explicit abstention and records reproducible evaluation results."
+      ],
+      "tags": ["Python", "Pydantic", "OpenAI Responses API", "Gemini API"],
+      "theme": "conversation",
+      "role": "Pipeline implementation and evaluation",
+      "period": "2026 prototype",
+      "affiliation": "Independent project",
+      "dataset": "ConvFinQA",
+      "details": true,
+      "problemHeadline": "A plausible answer is not enough for financial questions.",
+      "challenge": [
+        "Financial questions can depend on table values, numerical relationships and previous answers. Follow-up questions such as “that value” or “the difference” require the system to maintain context across a conversation.",
+        "A correct-looking response can still contain an arithmetic error, a percentage representation mismatch or an unsupported assumption. Strong performance on individual questions can also conceal failures across a complete conversation."
+      ],
+      "focus": [
+        "Precise numerical calculation",
+        "Resolving conversational context",
+        "Measuring correctness with repeatable evaluation"
+      ],
+      "flow": [
+        "Document & history",
+        "Structured model response",
+        "Restricted arithmetic",
+        "Answer & evaluation"
+      ],
+      "stages": [
+        "Load the cleaned financial record and current question with the selected conversation history. Previous turns contain the question, answer and expression; future answers are excluded.",
+        "Request an expression, answer type, evidence and short explanation. Pydantic validates the response before it reaches the calculation layer. An explicit unanswerable response allows the system to abstain.",
+        "Validate and execute the proposed expression using a small Python interpreter. It supports the required arithmetic and comparisons while blocking function calls, imports and unsupported syntax.",
+        "Return the calculated answer and record evaluation outputs in resumable JSONL files. Report strict turn accuracy, percentage-normalised accuracy and whole-conversation accuracy separately."
+      ],
+      "decision": "The model selects values and operations; deterministic code computes the numerical answer. The supplied records were small enough to use full-document context, avoiding retrieval errors in the initial reasoning baseline.",
+      "buildLabels": [
+        "Conversation pipeline",
+        "Typed responses",
+        "Arithmetic & providers",
+        "Evaluation & tests"
+      ],
+      "approach": [
+        "Built a CLI pipeline for loading financial records and answering follow-up questions with preserved conversation history. Supported gold history to isolate current-turn reasoning and predicted history to investigate error propagation.",
+        "Defined a typed response contract with Pydantic, rejecting invalid responses before calculation. Added explicit abstention for questions unsupported by the supplied document.",
+        "Separated model reasoning from arithmetic through restricted expression execution. Implemented interchangeable OpenAI and Gemini adapters returning the same response model.",
+        "Built seeded sampling and resumable evaluation that skips completed conversations after an interruption. Added tests for data validation, expression execution, prompts, structured responses, solving, abstention, metrics, sampling, resumption and provider failures."
+      ],
+      "resultsSetting": "Recorded Gemini run · 4 conversations · 14 turns · seed 42 · gold history",
+      "results": [
+        ["78.57%", "strict turn accuracy", "11 of 14 turns"],
+        ["92.86%", "percentage-normalised turn accuracy", "13 of 14 turns"],
+        ["25.00%", "strict whole-conversation accuracy", "1 of 4 conversations"]
+      ],
+      "context": [
+        "Two strict mismatches came from percentage representation: displayed percentages were compared with gold values stored as decimal ratios. The disclosed normalisation rule recognised those equivalent representations. The remaining error was a false abstention on an answerable question.",
+        "The project report recorded 82 passing automated tests and 87% source coverage, with Ruff and mypy passing at that verification point."
+      ],
+      "perspectiveHeadline": "Measure the conversation, not just the answer.",
+      "reflection": "The most useful boundary was separating probabilistic language reasoning from deterministic calculation. Structured responses made invalid output visible, while separate metrics exposed differences between numerical representation and sustained conversational correctness.",
+      "limitations": [
+        "Evidence is required but not yet verified against source text.",
+        "The live sample is small and uses gold history.",
+        "Only Gemini was evaluated live; there is no measured provider comparison.",
+        "Full-document context may become inefficient for longer reports.",
+        "The restricted expression language intentionally supports a limited operation set."
+      ],
+      "nextSteps": [
+        "Repeat the same sample using predicted history.",
+        "Expand to a representative set of conversations.",
+        "Verify evidence using source spans or table coordinates.",
+        "Compare models on identical records, including latency and cost.",
+        "Test retrieval for longer documents against the full-context baseline."
+      ],
+      "closing": "Disclose the denominator and history setting with every accuracy number. A high turn score can coexist with weak whole-conversation performance.",
+      "resultsScope": "These figures describe a small prototype smoke test. They are not a stable benchmark estimate or evidence of production performance. The live run used gold history and therefore did not measure error propagation from the system’s own previous answers.",
+      "diagram": {
+        "badge": "ConvFinQA Python prototype",
+        "title": "Financial document QA — conversational pipeline",
+        "subtitle": "Structured model reasoning, restricted arithmetic and repeatable ConvFinQA evaluation",
+        "rows": [
+          {
+            "groups": [
+              {
+                "title": "Financial inputs",
+                "tone": "sky",
+                "quiet": true,
+                "text": [
+                  "Cleaned document",
+                  "Table and report text",
+                  "Current question",
+                  "Previous conversation turns"
+                ]
+              },
+              {
+                "title": "Python solver and prompt context",
+                "subtitle": "Validate dataset records and build the prompt using the full cleaned document",
+                "span": 3.4,
+                "columns": [
+                  {
+                    "title": "Current-turn inputs",
+                    "lines": [
+                      "Document content and the current question",
+                      "No future dialogue answers in the prompt"
+                    ]
+                  },
+                  {
+                    "title": "Previous-turn history",
+                    "lines": [
+                      "Question, answer and expression",
+                      "Gold or predicted history setting"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "joins": [{}]
+          },
+          {
+            "connector": {
+              "drops": [0]
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Provider-independent LLM interface",
+                "subtitle": "OpenAI Responses API or Gemini adapter",
+                "span": 2,
+                "text": [
+                  "Typed response: expression, answer type, evidence and explanation",
+                  "The model selects values and operations"
+                ]
+              },
+              {
+                "title": "Pydantic response validation",
+                "tone": "gold",
+                "text": [
+                  "Validate required response fields",
+                  "Check supported answer types",
+                  "Reject invalid response contracts"
+                ]
+              }
+            ],
+            "joins": [{}]
+          },
+          {
+            "connector": {
+              "drops": [0, 1],
+              "from": 1,
+              "labels": {
+                "0": "Answerable expression",
+                "1": "Unanswerable"
+              }
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Restricted expression interpreter",
+                "tone": "core",
+                "span": 2,
+                "text": [
+                  "Validate and execute supported arithmetic or comparisons",
+                  "Block function calls, imports and unsupported Python syntax",
+                  "Check the result type and format the final answer"
+                ]
+              },
+              {
+                "title": "Explicit abstention",
+                "tone": "gold",
+                "text": [
+                  "Skip arithmetic execution",
+                  "Return an unanswerable result",
+                  "Preserve the explanation"
+                ]
+              }
+            ],
+            "joins": [
+              {
+                "spacer": true
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1],
+              "align": "prev"
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Answers, history and evaluation outputs",
+                "tone": "mint",
+                "columns": [
+                  {
+                    "title": "Answer and conversation history",
+                    "lines": [
+                      "Answer, expression, evidence and explanation",
+                      "Previous question, answer and expression become the next turn’s predicted history"
+                    ]
+                  },
+                  {
+                    "title": "Evaluation runner",
+                    "lines": [
+                      "Compare against executed gold answers",
+                      "Strict, percentage-normalised and conversation metrics",
+                      "Seeded sampling and resumable JSONL results"
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "title": "Key design decision",
+            "tone": "lime",
+            "text": "The model identifies the values and proposes the calculation. Restricted Python computes the final numerical answer."
+          },
+          {
+            "title": "Conversation settings",
+            "tone": "sky",
+            "text": "Gold history isolates the turn. Predicted history uses the system’s own previous answers. The recorded live run used gold."
+          },
+          {
+            "title": "Evidence limitation",
+            "tone": "gold",
+            "text": "Answerable responses require evidence, which is not yet verified against source text. Answer metrics do not check it."
+          },
+          {
+            "title": "Implemented scope",
+            "tone": "grey",
+            "text": "Full-document context baseline. No retrieval or vector database. CLI-based evaluated prototype."
+          }
+        ],
+        "caption": [
+          "Resumable evaluation records complete conversations in JSONL."
+        ]
+      }
+    },
+    {
+      "slug": "vodafone-tobi",
+      "name": "Vodafone TOBi",
+      "category": "ai",
+      "eyebrow": "ENTERPRISE AI · EVALUATION",
+      "status": "Enterprise pilot",
+      "organisation": "IBM Client Engineering",
+      "title": "Evaluations and document querying for TOBi",
+      "summary": "Contributed to Vodafone’s TOBi generative AI pilot at IBM, focusing on evaluations and retrieval-augmented generation for document querying.",
+      "overview": [
+        "I contributed to an IBM generative AI pilot for Vodafone’s digital assistant, TOBi. My work focused mainly on evaluations and implementing retrieval-augmented generation (RAG) and document-query functionality."
+      ],
+      "contributions": [
+        "Evaluation of AI workflows",
+        "RAG and document-query implementation"
+      ],
+      "tags": [
+        "Evaluations",
+        "Retrieval-augmented generation",
+        "Document querying"
+      ],
+      "theme": "rag",
+      "role": "Evaluations and RAG/document-query implementation",
+      "problemHeadline": "Testing conversations and finding content gaps",
+      "challenge": [
+        "The wider pilot addressed conversation journey testing and differences between Vodafone’s central content library and local-market journeys. IBM Client Engineering and IBM Consulting supported the build.",
+        "My contribution focused on evaluations and implementing functionality for querying documents."
+      ],
+      "problemSource": {
+        "label": "IBM’s Vodafone TOBi case study",
+        "href": "https://www.ibm.com/case-studies/vodafone-tobi"
+      },
+      "focus": [
+        "Evaluation of system behaviour",
+        "Retrieval of relevant document content",
+        "Document-query implementation"
+      ],
+      "architectureHeadline": "The document-query workflow",
+      "architectureNote": "Simplified view of the RAG workflow.",
+      "flow": [
+        "Question and source material",
+        "Retrieval",
+        "Response generation",
+        "Evaluation"
+      ],
+      "stages": [
+        "A query provides the information need, with documents supplying the reference material.",
+        "The system retrieves relevant content from the available documents.",
+        "Retrieved material supplies context for the model’s response.",
+        "Evaluation examines the system’s behaviour and outputs."
+      ],
+      "decisionToggle": "About this diagram",
+      "decisionLabel": "ABOUT THIS DIAGRAM",
+      "decision": "This diagram explains the document-query approach at a high level rather than reproducing the complete deployment architecture.",
+      "buildHeadline": "Retrieval implementation and evaluations",
+      "buildLabels": ["RAG and document querying", "Evaluations"],
+      "approach": [
+        "I worked on implementing RAG and document-query functionality, connecting questions with relevant reference material.",
+        "I contributed to evaluation work alongside the implementation. This covered assessing the AI workflows as part of the enterprise pilot."
+      ],
+      "resultsHeadline": "Published outcomes of the wider pilot",
+      "resultsSetting": "Published by IBM for the wider Vodafone–IBM pilot",
+      "resultLabels": true,
+      "results": [
+        ["99%", "journey-testing turnaround", "Improvement in turnaround"],
+        [
+          "Under one minute",
+          "journey testing",
+          "Per journey, per persona in the pilot"
+        ],
+        ["Under five minutes", "gap analysis", "Per journey"]
+      ],
+      "context": [
+        "IBM reports that testing a new journey previously took around 6.5 hours. The pilot demonstrated testing in under one minute per journey and persona.",
+        "These figures describe the wider Vodafone–IBM pilot. My contribution focused on evaluations and RAG/document-query implementation."
+      ],
+      "source": {
+        "label": "IBM’s published pilot results",
+        "href": "https://www.ibm.com/case-studies/vodafone-tobi"
+      },
+      "perspectiveHeadline": "Retrieval and evaluation belong together",
+      "reflection": "Document retrieval determines what information an assistant can use. Evaluation helps establish whether the resulting behaviour is useful. Developing both together makes it easier to understand where an enterprise AI workflow needs improvement.",
+      "scope": "My main contribution was in evaluations and document querying. The wider project included additional workstreams across data, design, architecture and development.",
+      "closing": "My contribution combined implementation work with evaluation in an enterprise assistant setting.",
+      "details": true
+    },
+    {
+      "slug": "nationwide-governance",
+      "name": "Nationwide AI Governance",
+      "category": "governance",
+      "theme": "governance",
+      "eyebrow": "ENTERPRISE AI · GOVERNANCE",
+      "status": "Governance pilot",
+      "organisation": "IBM",
+      "role": "Governance workflows, technical implementation, evaluations and integrations",
+      "tags": ["watsonx.governance", "watsonx Orchestrate", "OpenShift"],
+      "technologies": [
+        "watsonx.governance",
+        "watsonx Orchestrate",
+        "Watson Document Understanding",
+        "FileNet",
+        "OpenShift",
+        "Postgres",
+        "Object Storage"
+      ],
+      "details": true,
+      "title": "AI governance workflows for Nationwide",
+      "summary": "Contributed to an AI governance pilot for Nationwide, translating policy requirements into risk classification, evidence requirements and controlled approval workflows.",
+      "overview": [
+        "I worked on a governance pilot for Nationwide at IBM. My contribution covered governance workflows, technical implementation, evaluations and enterprise integrations.",
+        "The pilot translated policy and risk requirements into structured inputs and workflow rules. Evidence requirements and approval checkpoints controlled how an AI initiative could progress through its lifecycle."
+      ],
+      "problemHeadline": "Policy requirements need enforceable workflows",
+      "challenge": [
+        "Governance policies describe the reviews, documentation and approvals an AI initiative requires. Implementing those requirements means defining which information drives a decision, which controls apply and when a project can progress.",
+        "The pilot addressed this through structured risk assessment and controlled workflow transitions."
+      ],
+      "focus": [
+        "Classifying risk consistently",
+        "Applying the appropriate evidence and approval requirements",
+        "Preventing projects from skipping mandatory checkpoints",
+        "Making review decisions traceable"
+      ],
+      "flow": [
+        "Project information",
+        "Risk classification",
+        "Evidence & approval gates",
+        "Lifecycle records"
+      ],
+      "stages": [
+        "Capture structured inputs including model type, use case, data sensitivity, customer impact and regulatory exposure.",
+        "Apply risk logic and map the resulting tier to the required controls.",
+        "Require the relevant documentation and review before allowing progression. Conditional paths apply additional requirements where appropriate.",
+        "Preserve evidence and versioned approval checkpoints so reviewers can trace decisions to their supporting information."
+      ],
+      "decision": "Model customer impact and data sensitivity as separate fields. This makes it clearer which risk attribute triggered a control and what the team needs to address.",
+      "integrations": [
+        "The pilot used watsonx.governance, with orchestration and workflow enforcement in watsonx Orchestrate. Enterprise integrations connected the workflow with document-processing services and the systems used to store records, metadata and evidence.",
+        "Watson Document Understanding supported document processing. FileNet persisted enterprise records, Postgres supported structured metadata storage and Object Storage held durable artefacts. Enterprise content services ran on OpenShift."
+      ],
+      "buildLabels": [
+        "Metadata and risk tiers",
+        "Workflow controls",
+        "Evaluations and evidence",
+        "Integrations",
+        "Technical consideration"
+      ],
+      "approach": [
+        "Defined metadata schemas that translated policy concepts into structured fields. Implemented risk-tier logic and mapping between risk classifications and required controls.",
+        "Built conditional workflow paths with mandatory evidence and approval checkpoints. Designed state transitions that prevented skipped documentation or direct jumps to approval states.",
+        "Worked on evaluations and traceability across the governance workflow. Linked evidence requirements to lifecycle boundaries and risk classifications.",
+        "Contributed to integrations with document-processing and enterprise platform services.",
+        "Higher-risk paths required stricter controls, while lower-risk paths needed to remain usable. Workflow rules had to preserve policy intent without creating unnecessary review friction."
+      ],
+      "resultsHeadline": "Structured controls and traceable decisions",
+      "results": [
+        [
+          "Controlled",
+          "workflow progression",
+          "Mandatory checkpoints controlled movement through the lifecycle"
+        ],
+        [
+          "Risk-aligned",
+          "risk classification",
+          "Assessed risk determined documentation and approval requirements"
+        ],
+        [
+          "Traceable",
+          "evidence capture",
+          "Review decisions connected to structured inputs and captured artefacts"
+        ],
+        [
+          "Versioned",
+          "approval tracking",
+          "Versioned checkpoints improved traceability"
+        ]
+      ],
+      "context": [
+        "The pilot established structured governance workflows and reduced reliance on manual tracking and email-based approvals.",
+        "These outcomes are qualitative: no quantified efficiency gains, model-accuracy figures or production rollout are claimed."
+      ],
+      "resultsScope": "IBM’s case study describes the broader Nationwide AI partnership and governance programme. It provides context rather than evidence of every implementation detail above.",
+      "source": {
+        "label": "IBM’s Nationwide case study",
+        "href": "https://www.ibm.com/case-studies/nationwide-building-society"
+      },
+      "perspectiveHeadline": "Governance is a systems design problem",
+      "reflection": [
+        "Implementing governance requires precise definitions of risk inputs, control requirements and valid transitions. Reviewers also need to understand why a requirement applies and what evidence supports a decision.",
+        "The design challenge is to make higher-risk paths appropriately strict while keeping lower-risk workflows usable."
+      ],
+      "nextSteps": [
+        "Expand evaluation coverage across risk classifications and exception paths.",
+        "Test attempts to bypass documentation and approval prerequisites.",
+        "Check how policy changes affect existing rules and review records.",
+        "Review workflow usability alongside control enforcement."
+      ],
+      "closing": "Clear rules and traceable evidence make governance easier to operate and review."
     }
   ]
 }

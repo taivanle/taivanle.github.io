@@ -182,7 +182,6 @@ async function assertStableReturn(
   const settled = returned().find(
     (record) => record.kind === "transition" && record.phase === "settled",
   );
-  // No further scrolling or interaction occurs during this observation window.
   await expect
     .poll(
       () => {
@@ -201,8 +200,6 @@ async function assertStableReturn(
     (record) => record.kind === "sample" && record.time >= settled.time,
   );
   const restored = samples[0]?.documentId === departedDocumentId;
-  // A cold reload may reveal its new heading once. A restored heading was
-  // already revealed before departure and must not replay at all.
   const allowance = restored ? 0 : 1;
   const starts = timeline.filter((record) => record.kind === "animationstart");
   const baselineIds = new Set(
@@ -355,8 +352,6 @@ test.describe("landing chapter return", () => {
           name: `Read case study: ${name}`,
           exact: true,
         });
-        // Click the visible top of the card so automation does not scroll the
-        // heading away merely to centre the entire tall project link.
         await link.click({ position: { x: 40, y: 24 } });
         await expect(page).toHaveURL(new RegExp(`/${slug}\\.html$`));
         await expect(page.locator("html")).not.toHaveAttribute(
