@@ -324,19 +324,29 @@ test.describe("landing chapter return", () => {
         .toBeGreaterThanOrEqual(0.98);
       await expect
         .poll(() =>
-          page
-            .locator("#work-title")
-            .evaluate(
-              (heading) =>
-                heading
-                  .getAnimations({ subtree: true })
-                  .filter(
-                    (animation) =>
-                      animation.playState === "running" || animation.pending,
-                  ).length,
-            ),
+          page.locator("#work-title").evaluate((heading) =>
+            heading
+              .getAnimations({ subtree: true })
+              .filter((animation) => {
+                if (animation.playState === "finished") return false;
+                const timing = animation.effect.getComputedTiming();
+                return !(
+                  Number.isFinite(timing.endTime) &&
+                  typeof animation.currentTime === "number" &&
+                  animation.currentTime >= timing.endTime &&
+                  timing.progress === 1
+                );
+              })
+              .map((animation) => ({
+                name: animation.animationName,
+                state: animation.playState,
+                pending: animation.pending,
+                currentTime: animation.currentTime,
+                timing: animation.effect.getComputedTiming(),
+              })),
+          ),
         )
-        .toBe(0);
+        .toEqual([]);
       for (let repeat = 1; repeat <= 2; repeat++) {
         const departedDocumentId = await page.evaluate(
           () => window.__chapterReturnDocumentId,
