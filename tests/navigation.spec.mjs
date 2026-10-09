@@ -351,7 +351,7 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         };
       });
       expect(heldState.bootstrap).toEqual({
-        duration: 180,
+        duration: 250,
         readyState: "loading",
         inert: true,
         hidden: "true",

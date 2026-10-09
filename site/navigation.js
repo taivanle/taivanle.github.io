@@ -144,7 +144,7 @@
     });
     signal(
       "entering",
-      marker.direction === "open" ? 180 : 140,
+      marker.direction === "open" ? 250 : 140,
       marker.direction,
     );
     return true;
@@ -563,7 +563,7 @@
       Promise.all([departureCard.finished, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
-        marker.flip.progress = departureCard.progress();
+        marker.flip.progress = departureCard.progress(true);
         marker.at = Date.now();
         write(transitionKey, marker);
         if (back) history.back();

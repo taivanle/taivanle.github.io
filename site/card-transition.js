@@ -227,8 +227,14 @@
       );
     });
 
-    function progressValue() {
-      return new DOMMatrix(getComputedStyle(fill).transform).a;
+    function progressValue(hold = false) {
+      const value = new DOMMatrix(getComputedStyle(fill).transform).a;
+      if (hold) {
+        waiting?.cancel();
+        loading?.cancel();
+        fill.style.transform = `scaleX(${value})`;
+      }
+      return value;
     }
 
     function cancel() {
@@ -264,7 +270,7 @@
         waiting?.cancel();
         loading?.cancel();
         fill.style.transform = `scaleX(${loadedProgress})`;
-        animate(
+        const completed = animate(
           fill,
           [
             { transform: `scaleX(${loadedProgress})` },
@@ -276,6 +282,10 @@
             easing: "ease-out",
           },
         );
+        if (direction === "open") {
+          await completed.finished.catch(() => {});
+          if (cancelled || !actualFrame.isConnected) return;
+        }
 
         let unveiling;
         if (direction === "close") {

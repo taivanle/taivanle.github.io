@@ -228,8 +228,14 @@
       );
     });
 
-    function progressValue() {
-      return new DOMMatrix(getComputedStyle(fill).transform).a;
+    function progressValue(hold = false) {
+      const value = new DOMMatrix(getComputedStyle(fill).transform).a;
+      if (hold) {
+        waiting?.cancel();
+        loading?.cancel();
+        fill.style.transform = `scaleX(${value})`;
+      }
+      return value;
     }
 
     function cancel() {
@@ -265,7 +271,7 @@
         waiting?.cancel();
         loading?.cancel();
         fill.style.transform = `scaleX(${loadedProgress})`;
-        animate(
+        const completed = animate(
           fill,
           [
             { transform: `scaleX(${loadedProgress})` },
@@ -277,6 +283,10 @@
             easing: "ease-out",
           },
         );
+        if (direction === "open") {
+          await completed.finished.catch(() => {});
+          if (cancelled || !actualFrame.isConnected) return;
+        }
 
         let unveiling;
         if (direction === "close") {
@@ -495,7 +505,7 @@
     });
     signal(
       "entering",
-      marker.direction === "open" ? 180 : 140,
+      marker.direction === "open" ? 250 : 140,
       marker.direction,
     );
     return true;
@@ -914,7 +924,7 @@
       Promise.all([departureCard.finished, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
-        marker.flip.progress = departureCard.progress();
+        marker.flip.progress = departureCard.progress(true);
         marker.at = Date.now();
         write(transitionKey, marker);
         if (back) history.back();
@@ -1097,6 +1107,43 @@
   let pointer = { x: 0, y: 0, strength: 0 };
   let target = { x: 0, y: 0, strength: 0 };
   const tau = Math.PI * 2;
+  const pointerKey = "portfolio-field-pointer";
+
+  function restorePointer() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(pointerKey));
+      if (!saved || Date.now() - saved.at > 15000) return;
+      const valid = (value) =>
+        value &&
+        Number.isFinite(value.x) &&
+        Math.abs(value.x) <= 1 &&
+        Number.isFinite(value.y) &&
+        Math.abs(value.y) <= 1 &&
+        Number.isFinite(value.strength) &&
+        value.strength >= 0 &&
+        value.strength <= 1;
+      if (valid(saved.pointer) && valid(saved.target)) {
+        pointer = saved.pointer;
+        target = saved.target;
+      }
+    } catch {}
+  }
+  restorePointer();
+  window.addEventListener("pagehide", () => {
+    if (!host.hasAttribute("data-card-transition")) return;
+    try {
+      sessionStorage.setItem(
+        pointerKey,
+        JSON.stringify({ pointer, target, at: Date.now() }),
+      );
+    } catch {}
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      restorePointer();
+      draw();
+    }
+  });
 
   function resize() {
     width = host.clientWidth;

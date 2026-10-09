@@ -14,6 +14,43 @@
   let pointer = { x: 0, y: 0, strength: 0 };
   let target = { x: 0, y: 0, strength: 0 };
   const tau = Math.PI * 2;
+  const pointerKey = "portfolio-field-pointer";
+
+  function restorePointer() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(pointerKey));
+      if (!saved || Date.now() - saved.at > 15000) return;
+      const valid = (value) =>
+        value &&
+        Number.isFinite(value.x) &&
+        Math.abs(value.x) <= 1 &&
+        Number.isFinite(value.y) &&
+        Math.abs(value.y) <= 1 &&
+        Number.isFinite(value.strength) &&
+        value.strength >= 0 &&
+        value.strength <= 1;
+      if (valid(saved.pointer) && valid(saved.target)) {
+        pointer = saved.pointer;
+        target = saved.target;
+      }
+    } catch {}
+  }
+  restorePointer();
+  window.addEventListener("pagehide", () => {
+    if (!host.hasAttribute("data-card-transition")) return;
+    try {
+      sessionStorage.setItem(
+        pointerKey,
+        JSON.stringify({ pointer, target, at: Date.now() }),
+      );
+    } catch {}
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      restorePointer();
+      draw();
+    }
+  });
 
   function resize() {
     width = host.clientWidth;
