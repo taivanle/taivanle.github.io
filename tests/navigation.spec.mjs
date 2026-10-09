@@ -140,36 +140,136 @@ test("the first Escape closes the project menu and the next Escape returns", asy
 test("a deferred script finishing during Escape cannot cancel the project exit", async ({
   page,
 }) => {
-  await page.goto("/projects.html");
-  let release;
-  let intercept;
-  const held = new Promise((resolve) => (release = resolve));
-  const intercepted = new Promise((resolve) => (intercept = resolve));
-  await page.route("**/assets/app.js*", async (route) => {
-    if (route.request().headers().referer?.includes("/themis.html")) {
-      intercept();
-      await held;
-    }
-    await route.continue().catch(() => {});
+  await page.addInitScript(() => {
+    const setItem = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (key, value) {
+      if (
+        window.rejectClosingMarker &&
+        key === "portfolio-navigation-transition" &&
+        JSON.parse(value).direction === "close"
+      )
+        throw new DOMException("Storage unavailable", "QuotaExceededError");
+      return setItem.call(this, key, value);
+    };
+    document.addEventListener("portfolio-transition", (event) => {
+      if (
+        event.detail.phase === "leaving" &&
+        event.detail.direction === "close"
+      )
+        sessionStorage.setItem(
+          "tested-deferred-exit",
+          JSON.stringify({
+            duration: event.detail.duration,
+            phase: document.documentElement.dataset.pageTransition,
+            source: location.pathname,
+          }),
+        );
+    });
+    document.addEventListener("DOMContentLoaded", () => {
+      if (window.rejectClosingMarker)
+        sessionStorage.setItem(
+          "tested-deferred-completion",
+          JSON.stringify({
+            phase: document.documentElement.dataset.pageTransition,
+            appReady: document.documentElement.classList.contains("js"),
+          }),
+        );
+    });
   });
-  try {
-    await page
-      .getByRole("link", { name: "Read case study: Themis", exact: true })
-      .click({ noWaitAfter: true });
-    await page.waitForURL(/themis.html$/, { waitUntil: "commit" });
-    await intercepted;
-    await page.keyboard.press("Escape");
-    await expect(page.locator("html")).toHaveAttribute(
-      "data-page-transition",
-      "leaving",
-    );
-    release();
-    await expect(page).toHaveURL(/projects.html$/);
-    await expect(
-      page.getByRole("link", { name: "Read case study: Themis", exact: true }),
-    ).toBeVisible();
-  } finally {
-    release();
+
+  for (const storageUnavailable of [false, true]) {
+    await page.goto("/projects.html");
+    await page.evaluate(() => {
+      sessionStorage.removeItem("tested-deferred-exit");
+      sessionStorage.removeItem("tested-deferred-completion");
+    });
+    let release;
+    let intercept;
+    const held = new Promise((resolve) => (release = resolve));
+    const intercepted = new Promise((resolve) => (intercept = resolve));
+    const holdApp = async (route) => {
+      if (route.request().headers().referer?.includes("/themis.html")) {
+        intercept();
+        await held;
+      }
+      await route.continue().catch(() => {});
+    };
+    await page.route("**/assets/app.js*", holdApp);
+    try {
+      await page
+        .getByRole("link", { name: "Read case study: Themis", exact: true })
+        .click({ noWaitAfter: true });
+      await page.waitForURL(/themis.html$/, { waitUntil: "commit" });
+      await intercepted;
+      expect(
+        (await page.locator("html").getAttribute("class")) || "",
+      ).not.toContain("js");
+      await page.evaluate((unavailable) => {
+        window.rejectClosingMarker = unavailable;
+      }, storageUnavailable);
+      await page.keyboard.press("Escape");
+      if (storageUnavailable)
+        await expect(page.locator("html")).toHaveAttribute(
+          "data-page-transition",
+          "leaving",
+        );
+      // Normal closing hands over immediately to the landing page. When
+      // storage fails, the source animates instead; release the delayed app
+      // while that exit is still active so its completion cannot cancel it.
+      release();
+      await expect(page).toHaveURL(/projects.html$/);
+      await expect(page.locator("html")).not.toHaveAttribute(
+        "data-page-transition",
+        /^(entering|leaving)$/,
+      );
+      await expect(page.locator("html")).not.toHaveAttribute(
+        "data-cover-ready",
+        "true",
+      );
+      await expect(page.locator(".navigation-return-frame")).toHaveCount(0);
+      await expect(
+        page.getByRole("link", {
+          name: "Read case study: Themis",
+          exact: true,
+        }),
+      ).toBeVisible();
+      const result = await page.evaluate(() => ({
+        exit: JSON.parse(sessionStorage.getItem("tested-deferred-exit")),
+        completion: JSON.parse(
+          sessionStorage.getItem("tested-deferred-completion"),
+        ),
+        colors: [
+          getComputedStyle(document.documentElement).backgroundColor,
+          getComputedStyle(document.body).backgroundColor,
+        ],
+        cover: document.getElementById("navigation-cover")
+          ? {
+              opacity: getComputedStyle(
+                document.getElementById("navigation-cover"),
+              ).opacity,
+              pointerEvents: getComputedStyle(
+                document.getElementById("navigation-cover"),
+              ).pointerEvents,
+            }
+          : null,
+      }));
+      expect(result.exit).toEqual({
+        duration: 1100,
+        phase: "leaving",
+        source: "/themis.html",
+      });
+      if (storageUnavailable)
+        expect(result.completion).toEqual({
+          phase: "leaving",
+          appReady: true,
+        });
+      expect(result.colors).toEqual(["rgb(12, 28, 26)", "rgb(12, 28, 26)"]);
+      if (result.cover)
+        expect(result.cover).toEqual({ opacity: "0", pointerEvents: "none" });
+    } finally {
+      release();
+      await page.unroute("**/assets/app.js*", holdApp);
+    }
   }
 });
 

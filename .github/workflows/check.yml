@@ -20,7 +20,7 @@ jobs:
       - run: git diff --exit-code -- docs
       - run: npx playwright install --with-deps chromium webkit
       - run: >-
-          npm test -- --reporter=line --grep 'landing Work → Themis → Escape stays dark|same-document persisted pageshow|repeated Escape returns|Escape after a project reload|Escape unwinds chained projects|mobile reduce|DueForm: all scenes|Birmingham photos|project cards expand'
+          npm test -- --reporter=line --grep 'landing Work → Themis → Escape stays dark|same-document persisted pageshow|repeated Escape returns|Escape after a project reload|Escape unwinds chained projects|mobile reduce|DueForm: all scenes|Birmingham photos|project cards expand|a deferred script finishing'
       - run: npm test -- --reporter=line
       - uses: actions/upload-artifact@v4
         if: failure()
