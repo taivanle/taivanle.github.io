@@ -109,7 +109,11 @@
 
   function deckRect() {
     const mobile = innerWidth <= 760;
-    const width = mobile ? innerWidth - 24 : Math.min(1200, innerWidth - 96);
+    const width = mobile
+      ? innerWidth - 24
+      : innerWidth <= 1100
+        ? innerWidth - 64
+        : Math.min(1200, innerWidth - 96);
     return {
       x: (innerWidth - width) / 2,
       y: mobile ? 122 : 142,
@@ -117,17 +121,6 @@
       height: Math.max(100, innerHeight - (mobile ? 212 : 250)),
       viewportWidth: innerWidth,
       viewportHeight: innerHeight,
-    };
-  }
-  function between(a, b) {
-    return {
-      ...a,
-      ...Object.fromEntries(
-        ["x", "y", "width", "height"].map((key) => [
-          key,
-          a[key] + (b[key] - a[key]) * 0.55,
-        ]),
-      ),
     };
   }
   function startCardArrival(marker) {
@@ -147,11 +140,11 @@
       ...flip,
       direction: marker.direction,
       arrival: true,
-      duration: marker.direction === "open" ? 270 : 210,
+      duration: 0,
     });
     signal(
       "entering",
-      marker.direction === "open" ? 390 : 330,
+      marker.direction === "open" ? 250 : 140,
       marker.direction,
     );
     return true;
@@ -383,8 +376,9 @@
             restoreCardScroll(marker, actual);
           }
           root.dataset.coverReady = "true";
-          root.removeAttribute("data-card-transition");
-          await card.reveal(actual);
+          await card.reveal(actual, () => {
+            root.removeAttribute("data-card-transition");
+          });
           if (departing || incomingCard !== card) return;
           incomingCard = null;
           settled(direction);
@@ -512,7 +506,7 @@
     if (canFlip)
       marker.flip = {
         frame: isProject ? origin.card : snapshot,
-        rect: between(source, target),
+        rect: target,
         target,
         name:
           origin?.name ||
@@ -521,7 +515,7 @@
           "",
       };
     if (duration && !projectRoutes.has(new URL(to).pathname))
-      marker.exitFrame = captureExitFrame(frame);
+      marker.exitFrame = snapshot;
     const stored = write(transitionKey, marker);
     // The destination displays the landing page behind the contracting card.
     // If storage is unavailable, retain the dark-backed in-page fallback.
@@ -546,7 +540,7 @@
     root.dataset.pageTransition = "leaving";
     root.dataset.coverReady = "true";
     if (stored && marker.flip) {
-      const travel = isProject ? 220 : 260;
+      const travel = isProject ? 460 : 520;
       clearCardMotion();
       root.dataset.cardTransition = "true";
       root.dataset.pageTransition = "leaving";
@@ -570,6 +564,9 @@
       Promise.all([departureCard.finished, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
+        marker.flip.progress = departureCard.progress(true);
+        marker.at = Date.now();
+        write(transitionKey, marker);
         if (back) history.back();
         else location.assign(to);
       });

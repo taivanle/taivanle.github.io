@@ -944,11 +944,31 @@ test("project cards expand into a dark presentation and return through the real 
       const stage = document.querySelector(".navigation-flip-stage");
       if (!stage) return;
       const rotor = stage.querySelector(".navigation-card-rotor");
+      const layout = () => ({
+        x: parseFloat(stage.style.left),
+        y: parseFloat(stage.style.top),
+        width: parseFloat(stage.style.width),
+        height: parseFloat(stage.style.height),
+      });
+      const fixedLayout = layout();
+      const geometry = stage
+        .getAnimations()
+        .find((animation) => animation.effect.getKeyframes()[0].transform);
       const evidence = {
         ...event.detail,
         inert: stage.inert,
         hidden: stage.getAttribute("aria-hidden"),
         geometry: animations(stage),
+        layout: fixedLayout,
+        geometryBounds: geometry.effect.getKeyframes().map((frame) => {
+          const matrix = new DOMMatrix(frame.transform);
+          return {
+            x: fixedLayout.x + matrix.e,
+            y: fixedLayout.y + matrix.f,
+            width: fixedLayout.width * matrix.a,
+            height: fixedLayout.height * matrix.d,
+          };
+        }),
         rotation: animations(rotor),
         backRotation: stage.querySelector(".navigation-card-back").style
           .transform,
@@ -973,6 +993,7 @@ test("project cards expand into a dark presentation and return through the real 
         const progress = stage.querySelector(".navigation-card-progress-fill");
         if (main && field) {
           evidence.samples.push({
+            layout: layout(),
             foregroundFilter: getComputedStyle(main).filter,
             fieldFilter: getComputedStyle(field).filter,
             fieldOpacity: Number(getComputedStyle(field).opacity),
@@ -1028,49 +1049,44 @@ test("project cards expand into a dark presentation and return through the real 
   }));
   const sourceOpen = opening.evidence["/index.html:leaving:open"];
   const arrivalOpen = opening.evidence["/themis.html:entering:open"];
-  expect(sourceOpen.duration).toBe(260);
-  expect(arrivalOpen.duration).toBe(390);
+  expect(sourceOpen.duration).toBe(520);
+  expect(arrivalOpen.duration).toBe(250);
   const geometry = (record) =>
-    record.geometry.find((animation) => animation.frames[0].left);
-  const bounds = (frame) => ({
-    x: parseFloat(frame.left),
-    y: parseFloat(frame.top),
-    width: parseFloat(frame.width),
-    height: parseFloat(frame.height),
-  });
+    record.geometry.find((animation) => animation.frames[0].transform);
   for (const key of ["x", "y", "width", "height"]) {
-    expect(bounds(geometry(sourceOpen).frames[0])[key]).toBeCloseTo(
+    expect(sourceOpen.geometryBounds[0][key]).toBeCloseTo(
       opening.origin[key],
       1,
     );
-    expect(bounds(geometry(sourceOpen).frames.at(-1))[key]).toBeCloseTo(
-      bounds(geometry(arrivalOpen).frames[0])[key],
+    expect(sourceOpen.geometryBounds.at(-1)[key]).toBeCloseTo(
+      arrivalOpen.geometryBounds[0][key],
       1,
     );
-    expect(bounds(geometry(arrivalOpen).frames.at(-1))[key]).toBeCloseTo(
+    expect(arrivalOpen.geometryBounds.at(-1)[key]).toBeCloseTo(
       opening.deck[key],
       1,
     );
   }
-  expect(geometry(sourceOpen).duration).toBe(260);
-  expect(geometry(arrivalOpen).duration).toBe(270);
+  expect(geometry(sourceOpen).duration).toBe(520);
+  expect(geometry(arrivalOpen).duration).toBe(0);
   expect(sourceOpen.rotation[0].frames.map((frame) => frame.transform)).toEqual(
-    ["rotateX(0deg)", "rotateX(135deg)"],
+    ["rotateX(0deg)", "rotateX(180deg)"],
   );
   expect(
     arrivalOpen.rotation[0].frames.map((frame) => frame.transform),
-  ).toEqual(["rotateX(135deg)", "rotateX(180deg)"]);
+  ).toEqual(["rotateX(180deg)", "rotateX(180deg)"]);
+  expect(arrivalOpen.rotation[0].duration).toBe(0);
   expect(arrivalOpen.backRotation).toBe("rotateX(180deg)");
   expect(arrivalOpen.scan).not.toBeNull();
   expect(arrivalOpen.scan.appReady).toBe(true);
   expect(
     Math.max(...arrivalOpen.samples.map((sample) => sample.progress || 0)),
   ).toBeGreaterThanOrEqual(0.99);
-  expect(arrivalOpen.scan.line[0].duration).toBe(120);
+  expect(arrivalOpen.scan.line[0].duration).toBe(180);
   const scanReveal = arrivalOpen.scan.deck.find(
     (animation) => animation.frames[0].clipPath,
   );
-  expect(scanReveal.duration).toBe(120);
+  expect(scanReveal.duration).toBe(180);
   expect(scanReveal.frames[0].clipPath).toContain("100%");
   expect(scanReveal.frames.at(-1).clipPath).not.toContain("100%");
   expect(
@@ -1107,26 +1123,42 @@ test("project cards expand into a dark presentation and return through the real 
   }));
   const sourceClose = closing.evidence["/themis.html:leaving:close"];
   const arrivalClose = closing.evidence["/index.html:entering:close"];
-  expect(sourceClose.duration).toBe(220);
-  expect(arrivalClose.duration).toBe(330);
-  expect(geometry(sourceClose).duration).toBe(220);
-  expect(geometry(arrivalClose).duration).toBe(210);
+  expect(sourceClose.duration).toBe(460);
+  expect(arrivalClose.duration).toBe(140);
+  expect(geometry(sourceClose).duration).toBe(460);
+  expect(geometry(arrivalClose).duration).toBe(0);
   expect(
     sourceClose.rotation[0].frames.map((frame) => frame.transform),
-  ).toEqual(["rotateX(0deg)", "rotateX(-135deg)"]);
+  ).toEqual(["rotateX(0deg)", "rotateX(-180deg)"]);
   expect(
     arrivalClose.rotation[0].frames.map((frame) => frame.transform),
-  ).toEqual(["rotateX(45deg)", "rotateX(0deg)"]);
+  ).toEqual(["rotateX(0deg)", "rotateX(0deg)"]);
+  expect(arrivalClose.rotation[0].duration).toBe(0);
   expect(arrivalClose.frontName).toBe("Themis");
   for (const key of ["x", "y", "width", "height"]) {
-    expect(bounds(geometry(sourceClose).frames.at(-1))[key]).toBeCloseTo(
-      bounds(geometry(arrivalClose).frames[0])[key],
+    expect(sourceClose.geometryBounds.at(-1)[key]).toBeCloseTo(
+      arrivalClose.geometryBounds[0][key],
       1,
     );
-    expect(bounds(geometry(arrivalClose).frames.at(-1))[key]).toBeCloseTo(
+    expect(arrivalClose.geometryBounds.at(-1)[key]).toBeCloseTo(
       closing.card[key],
       1,
     );
+  }
+  // The entire flip uses one source animation with fixed layout dimensions.
+  // Navigation starts at rest, so loading cannot splice two easing curves.
+  for (const record of [sourceOpen, sourceClose]) {
+    expect(
+      record.samples.every(
+        (sample) =>
+          JSON.stringify(sample.layout) === JSON.stringify(record.layout),
+      ),
+    ).toBe(true);
+    for (const frame of geometry(record).frames) {
+      expect(frame.transform).toBeTruthy();
+      for (const property of ["left", "top", "width", "height"])
+        expect(frame[property]).toBeUndefined();
+    }
   }
   for (const record of [sourceOpen, arrivalOpen, sourceClose, arrivalClose]) {
     expect(record.inert).toBe(true);
@@ -1285,7 +1317,7 @@ for (const [slug, name] of [
           Number(sessionStorage.getItem("tested-close-duration")),
         ),
       )
-      .toBe(220);
+      .toBe(460);
     await card.click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.keyboard.press("Escape");

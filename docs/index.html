@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en" data-project-routes="themis.html dueform.html actifact.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:filter 100ms ease,opacity 100ms ease}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress{filter:blur(8px);opacity:0;pointer-events:none}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:none}}</style><script>(() => {
+<html lang="en" data-project-routes="themis.html dueform.html actifact.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;transition:opacity 180ms ease}body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:opacity 100ms ease}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress{filter:blur(8px);opacity:0;pointer-events:none}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){.hero-field,body>main,body>.site-header,body>.contact-section,body>.scroll-progress{transition:none}}</style><script>(() => {
   if (window.PortfolioCardMotion) return;
 
   const green = "#d7f4af";
-  const easing = "cubic-bezier(.22,.72,.24,1)";
+  const easing = "cubic-bezier(.4,0,.2,1)";
   function bounds(value, fallback = {}) {
     const number = (key, otherwise) => {
       const result = Number(value?.[key] ?? fallback[key]);
@@ -26,6 +26,7 @@
     direction = "open",
     arrival = false,
     duration = 0,
+    progress: carriedProgress = 0.86,
   }) {
     const source = bounds(rect, frame);
     const destination = bounds(target, source);
@@ -34,6 +35,7 @@
     let cancelled = false;
     let revealing = null;
     let scan = null;
+    let waiting = null;
 
     const element = document.createElement("div");
     element.className = "navigation-flip-stage";
@@ -43,15 +45,16 @@
       "position:fixed;z-index:2147483500;pointer-events:none;" +
       "perspective:1600px;perspective-origin:50% 50%;" +
       "margin:0;padding:0;border:0;background:transparent;" +
-      "box-sizing:border-box;isolation:isolate;" +
-      `left:${source.x}px;top:${source.y}px;` +
-      `width:${source.width}px;height:${source.height}px`;
+      "box-sizing:border-box;isolation:isolate;transform-origin:top left;" +
+      "will-change:transform;" +
+      `left:${destination.x}px;top:${destination.y}px;` +
+      `width:${destination.width}px;height:${destination.height}px`;
 
     const rotor = document.createElement("div");
     rotor.className = "navigation-card-rotor";
     rotor.style.cssText =
       "position:absolute;inset:0;transform-style:preserve-3d;" +
-      "transform-origin:50% 50%;pointer-events:none";
+      "transform-origin:50% 50%;pointer-events:none;will-change:transform";
 
     function face(className) {
       const node = document.createElement("div");
@@ -98,13 +101,13 @@
         maxHeight: "none",
         margin: "0",
         transformOrigin: "top left",
-        transform: `scale(${source.width / width}, ${source.height / height})`,
+        transform: `scale(${destination.width / width}, ${destination.height / height})`,
         animation: "none",
         transition: "none",
         pointerEvents: "none",
       });
       faceNode.append(node);
-      paintedFrames.push({ node, width, height, scaling: null });
+      paintedFrames.push({ node, width, height });
       return node;
     }
     if (!mountFrame(frame, front)) {
@@ -116,7 +119,7 @@
     title.className = "navigation-card-name";
     title.textContent = name;
     title.style.cssText =
-      "font-family:Manrope,Arial,sans-serif;font-size:clamp(26px,5cqw,44px);" +
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(44, Math.max(26, destination.width * 0.05))}px;` +
       "font-weight:500;line-height:1.15;letter-spacing:-1.2px;margin:0";
     back.append(title);
 
@@ -171,16 +174,10 @@
       element,
       [
         {
-          left: `${source.x}px`,
-          top: `${source.y}px`,
-          width: `${source.width}px`,
-          height: `${source.height}px`,
+          transform: `translate3d(${source.x - destination.x}px,${source.y - destination.y}px,0) scale(${source.width / destination.width},${source.height / destination.height})`,
         },
         {
-          left: `${destination.x}px`,
-          top: `${destination.y}px`,
-          width: `${destination.width}px`,
-          height: `${destination.height}px`,
+          transform: "translate3d(0,0,0) scale(1,1)",
         },
       ],
       { duration: milliseconds, easing, fill: "forwards" },
@@ -188,31 +185,20 @@
     const angles =
       direction === "close"
         ? arrival
-          ? [45, 0]
-          : [0, -135]
+          ? [0, 0]
+          : [0, -180]
         : arrival
-          ? [135, 180]
-          : [0, 135];
+          ? [180, 180]
+          : [0, 180];
     const rotation = animate(
       rotor,
       angles.map((angle) => ({ transform: `rotateX(${angle}deg)` })),
       { duration: milliseconds, easing, fill: "forwards" },
     );
-    for (const painted of paintedFrames)
-      painted.scaling = animate(
-        painted.node,
-        [
-          {
-            transform: `scale(${source.width / painted.width}, ${source.height / painted.height})`,
-          },
-          {
-            transform: `scale(${destination.width / painted.width}, ${destination.height / painted.height})`,
-          },
-        ],
-        { duration: milliseconds, easing, fill: "forwards" },
-      );
-    const progressStart = arrival ? 0.48 : 0.15;
-    const progressEnd = arrival ? 0.86 : 0.48;
+    const progressStart = arrival
+      ? Math.max(0.86, Math.min(0.96, Number(carriedProgress) || 0.86))
+      : 0.15;
+    const progressEnd = arrival ? progressStart : 0.86;
     fill.style.transform = `scaleX(${progressStart})`;
     const loading =
       !backFrame?.html && (arrival || direction === "open")
@@ -230,15 +216,27 @@
           )
         : null;
     const finished = Promise.allSettled(
-      [
-        geometry,
-        rotation,
-        ...paintedFrames.map((painted) => painted.scaling),
-        loading,
-      ]
+      [geometry, rotation, loading]
         .filter(Boolean)
         .map((animation) => animation.finished),
-    ).then(() => {});
+    ).then(() => {
+      if (cancelled || direction !== "open" || backFrame?.html) return;
+      waiting = animate(
+        fill,
+        [{ transform: `scaleX(${progressEnd})` }, { transform: "scaleX(.96)" }],
+        { duration: 2600, easing: "ease-out", fill: "forwards" },
+      );
+    });
+
+    function progressValue(hold = false) {
+      const value = new DOMMatrix(getComputedStyle(fill).transform).a;
+      if (hold) {
+        waiting?.cancel();
+        loading?.cancel();
+        fill.style.transform = `scaleX(${value})`;
+      }
+      return value;
+    }
 
     function cancel() {
       if (cancelled) return;
@@ -249,7 +247,7 @@
       element.remove();
     }
 
-    function reveal(actualFrame) {
+    function reveal(actualFrame, showContent = () => {}) {
       if (revealing) return revealing;
       revealing = (async () => {
         await finished;
@@ -260,35 +258,45 @@
         }
         const actual = bounds(actualFrame.getBoundingClientRect());
         geometry.cancel();
-        for (const painted of paintedFrames) painted.scaling?.cancel();
         Object.assign(element.style, {
           left: `${actual.x}px`,
           top: `${actual.y}px`,
           width: `${actual.width}px`,
           height: `${actual.height}px`,
+          transform: "none",
         });
         for (const painted of paintedFrames)
           painted.node.style.transform = `scale(${actual.width / painted.width}, ${actual.height / painted.height})`;
+        const loadedProgress = progressValue();
+        waiting?.cancel();
         loading?.cancel();
-        fill.style.transform = "scaleX(.86)";
-        animate(
+        fill.style.transform = `scaleX(${loadedProgress})`;
+        const completed = animate(
           fill,
-          [{ transform: "scaleX(.86)" }, { transform: "scaleX(1)" }],
+          [
+            { transform: `scaleX(${loadedProgress})` },
+            { transform: "scaleX(1)" },
+          ],
           {
             duration: 70,
             fill: "forwards",
             easing: "ease-out",
           },
         );
+        if (direction === "open") {
+          await completed.finished.catch(() => {});
+          if (cancelled || !actualFrame.isConnected) return;
+        }
+        showContent();
 
         let unveiling;
         if (direction === "close") {
           animate(actualFrame, [{ opacity: 0 }, { opacity: 1 }], {
-            duration: 120,
+            duration: 140,
             easing: "ease-out",
           });
           unveiling = animate(element, [{ opacity: 1 }, { opacity: 0 }], {
-            duration: 120,
+            duration: 140,
             easing: "ease-out",
             fill: "forwards",
           });
@@ -299,7 +307,7 @@
               { clipPath: "inset(0 0 100% 0)" },
               { clipPath: "inset(0 0 0% 0)" },
             ],
-            { duration: 120, easing: "ease-out" },
+            { duration: 180, easing: "cubic-bezier(.25,.1,.25,1)" },
           );
           unveiling = animate(
             element,
@@ -307,7 +315,11 @@
               { clipPath: "inset(0% 0 0 0)" },
               { clipPath: "inset(100% 0 0 0)" },
             ],
-            { duration: 120, easing: "ease-out", fill: "forwards" },
+            {
+              duration: 180,
+              easing: "cubic-bezier(.25,.1,.25,1)",
+              fill: "forwards",
+            },
           );
           scan = document.createElement("div");
           scan.className = "navigation-card-scan";
@@ -323,7 +335,11 @@
               { transform: "translateY(0px)", opacity: 0.7 },
               { transform: `translateY(${actual.height}px)`, opacity: 0 },
             ],
-            { duration: 120, easing: "ease-out", fill: "forwards" },
+            {
+              duration: 180,
+              easing: "cubic-bezier(.25,.1,.25,1)",
+              fill: "forwards",
+            },
           );
         }
         await unveiling.finished.catch(() => {});
@@ -332,7 +348,14 @@
       return revealing;
     }
 
-    return { element, rotor, finished, reveal, cancel };
+    return {
+      element,
+      rotor,
+      finished,
+      reveal,
+      cancel,
+      progress: progressValue,
+    };
   }
 
   window.PortfolioCardMotion = { create };
@@ -448,7 +471,11 @@
 
   function deckRect() {
     const mobile = innerWidth <= 760;
-    const width = mobile ? innerWidth - 24 : Math.min(1200, innerWidth - 96);
+    const width = mobile
+      ? innerWidth - 24
+      : innerWidth <= 1100
+        ? innerWidth - 64
+        : Math.min(1200, innerWidth - 96);
     return {
       x: (innerWidth - width) / 2,
       y: mobile ? 122 : 142,
@@ -456,17 +483,6 @@
       height: Math.max(100, innerHeight - (mobile ? 212 : 250)),
       viewportWidth: innerWidth,
       viewportHeight: innerHeight,
-    };
-  }
-  function between(a, b) {
-    return {
-      ...a,
-      ...Object.fromEntries(
-        ["x", "y", "width", "height"].map((key) => [
-          key,
-          a[key] + (b[key] - a[key]) * 0.55,
-        ]),
-      ),
     };
   }
   function startCardArrival(marker) {
@@ -486,11 +502,11 @@
       ...flip,
       direction: marker.direction,
       arrival: true,
-      duration: marker.direction === "open" ? 270 : 210,
+      duration: 0,
     });
     signal(
       "entering",
-      marker.direction === "open" ? 390 : 330,
+      marker.direction === "open" ? 250 : 140,
       marker.direction,
     );
     return true;
@@ -722,8 +738,9 @@
             restoreCardScroll(marker, actual);
           }
           root.dataset.coverReady = "true";
-          root.removeAttribute("data-card-transition");
-          await card.reveal(actual);
+          await card.reveal(actual, () => {
+            root.removeAttribute("data-card-transition");
+          });
           if (departing || incomingCard !== card) return;
           incomingCard = null;
           settled(direction);
@@ -851,7 +868,7 @@
     if (canFlip)
       marker.flip = {
         frame: isProject ? origin.card : snapshot,
-        rect: between(source, target),
+        rect: target,
         target,
         name:
           origin?.name ||
@@ -860,7 +877,7 @@
           "",
       };
     if (duration && !projectRoutes.has(new URL(to).pathname))
-      marker.exitFrame = captureExitFrame(frame);
+      marker.exitFrame = snapshot;
     const stored = write(transitionKey, marker);
     // The destination displays the landing page behind the contracting card.
     // If storage is unavailable, retain the dark-backed in-page fallback.
@@ -885,7 +902,7 @@
     root.dataset.pageTransition = "leaving";
     root.dataset.coverReady = "true";
     if (stored && marker.flip) {
-      const travel = isProject ? 220 : 260;
+      const travel = isProject ? 460 : 520;
       clearCardMotion();
       root.dataset.cardTransition = "true";
       root.dataset.pageTransition = "leaving";
@@ -909,6 +926,9 @@
       Promise.all([departureCard.finished, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
+        marker.flip.progress = departureCard.progress(true);
+        marker.at = Date.now();
+        write(transitionKey, marker);
         if (back) history.back();
         else location.assign(to);
       });
@@ -1089,6 +1109,43 @@
   let pointer = { x: 0, y: 0, strength: 0 };
   let target = { x: 0, y: 0, strength: 0 };
   const tau = Math.PI * 2;
+  const pointerKey = "portfolio-field-pointer";
+
+  function restorePointer() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(pointerKey));
+      if (!saved || Date.now() - saved.at > 15000) return;
+      const valid = (value) =>
+        value &&
+        Number.isFinite(value.x) &&
+        Math.abs(value.x) <= 1 &&
+        Number.isFinite(value.y) &&
+        Math.abs(value.y) <= 1 &&
+        Number.isFinite(value.strength) &&
+        value.strength >= 0 &&
+        value.strength <= 1;
+      if (valid(saved.pointer) && valid(saved.target)) {
+        pointer = saved.pointer;
+        target = saved.target;
+      }
+    } catch {}
+  }
+  restorePointer();
+  window.addEventListener("pagehide", () => {
+    if (!host.hasAttribute("data-card-transition")) return;
+    try {
+      sessionStorage.setItem(
+        pointerKey,
+        JSON.stringify({ pointer, target, at: Date.now() }),
+      );
+    } catch {}
+  });
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) {
+      restorePointer();
+      draw();
+    }
+  });
 
   function resize() {
     width = host.clientWidth;
