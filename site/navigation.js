@@ -376,8 +376,9 @@
             restoreCardScroll(marker, actual);
           }
           root.dataset.coverReady = "true";
-          root.removeAttribute("data-card-transition");
-          await card.reveal(actual);
+          await card.reveal(actual, () => {
+            root.removeAttribute("data-card-transition");
+          });
           if (departing || incomingCard !== card) return;
           incomingCard = null;
           settled(direction);

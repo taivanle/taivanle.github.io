@@ -247,7 +247,7 @@
       element.remove();
     }
 
-    function reveal(actualFrame) {
+    function reveal(actualFrame, showContent = () => {}) {
       if (revealing) return revealing;
       revealing = (async () => {
         await finished;
@@ -287,6 +287,7 @@
           await completed.finished.catch(() => {});
           if (cancelled || !actualFrame.isConnected) return;
         }
+        showContent();
 
         let unveiling;
         if (direction === "close") {
@@ -737,8 +738,9 @@
             restoreCardScroll(marker, actual);
           }
           root.dataset.coverReady = "true";
-          root.removeAttribute("data-card-transition");
-          await card.reveal(actual);
+          await card.reveal(actual, () => {
+            root.removeAttribute("data-card-transition");
+          });
           if (departing || incomingCard !== card) return;
           incomingCard = null;
           settled(direction);

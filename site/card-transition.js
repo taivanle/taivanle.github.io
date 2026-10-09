@@ -246,7 +246,7 @@
       element.remove();
     }
 
-    function reveal(actualFrame) {
+    function reveal(actualFrame, showContent = () => {}) {
       if (revealing) return revealing;
       revealing = (async () => {
         await finished;
@@ -286,6 +286,7 @@
           await completed.finished.catch(() => {});
           if (cancelled || !actualFrame.isConnected) return;
         }
+        showContent();
 
         let unveiling;
         if (direction === "close") {
