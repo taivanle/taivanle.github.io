@@ -162,6 +162,11 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
             duration: event.detail.duration,
             phase: document.documentElement.dataset.pageTransition,
             source: location.pathname,
+            destinationFrame: Boolean(
+              JSON.parse(
+                sessionStorage.getItem("portfolio-navigation-transition"),
+              )?.exitFrame,
+            ),
           }),
         );
     });
@@ -201,6 +206,7 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         .click({ noWaitAfter: true });
       await page.waitForURL(/themis.html$/, { waitUntil: "commit" });
       await intercepted;
+      await expect(page.locator(".presentation-deck")).toBeAttached();
       expect(
         (await page.locator("html").getAttribute("class")) || "",
       ).not.toContain("js");
@@ -257,6 +263,7 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         duration: 1100,
         phase: "leaving",
         source: "/themis.html",
+        destinationFrame: !storageUnavailable,
       });
       if (storageUnavailable)
         expect(result.completion).toEqual({
