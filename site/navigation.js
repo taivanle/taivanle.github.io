@@ -278,6 +278,13 @@
       : slug
         ? document.querySelector(`.card-frame[data-project="${slug}"]`)
         : null;
+    if (!isProject && direction === "close") {
+      const section = frame?.closest(".chapter-section");
+      section?.classList.add("is-chapter-active");
+      const title = section?.querySelector(".chapter-title");
+      // A fresh document return must be as steady as a cached history return.
+      if (title) title.style.animation = "none";
+    }
     returnFrame = !isProject ? restoreExitFrame(marker, frame) : null;
     const duration = returnFrame
       ? closingDuration
