@@ -2,6 +2,7 @@
 <html lang="en" data-project-routes="themis.html dueform.html actifact.html"><head><meta charset="utf-8"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}html[data-page-transition="entering"]:not([data-cover-ready])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}</style><script>// Install navigation before external styles/scripts can delay first paint.
 (() => {
   const root = document.documentElement;
+  root.style.viewTransitionName = "none";
   // The shared build supplies these routes from the project content file.
   const projectRoutes = new Map(
     (root.dataset.projectRoutes || "")

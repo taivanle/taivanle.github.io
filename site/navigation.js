@@ -1,6 +1,7 @@
 // Install navigation before external styles/scripts can delay first paint.
 (() => {
   const root = document.documentElement;
+  root.style.viewTransitionName = "none";
   // The shared build supplies these routes from the project content file.
   const projectRoutes = new Map(
     (root.dataset.projectRoutes || "")
