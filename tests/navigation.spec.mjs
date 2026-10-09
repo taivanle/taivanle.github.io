@@ -152,6 +152,53 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
       return setItem.call(this, key, value);
     };
     document.addEventListener("portfolio-transition", (event) => {
+      if (event.detail.phase === "leaving") {
+        const stage = document.querySelector(".navigation-flip-stage");
+        const rotor = stage?.querySelector(".navigation-card-rotor");
+        const geometry = stage?.getAnimations()[0];
+        if (geometry && rotor) {
+          const layout = () => ({
+            left: stage.style.left,
+            top: stage.style.top,
+            width: stage.style.width,
+            height: stage.style.height,
+          });
+          const marker = JSON.parse(
+            sessionStorage.getItem("portfolio-navigation-transition"),
+          );
+          const motion = {
+            duration: event.detail.duration,
+            rotation: rotor
+              .getAnimations()[0]
+              ?.effect.getKeyframes()
+              .map((frame) => frame.transform),
+            geometry: geometry.effect
+              .getKeyframes()
+              .map((frame) =>
+                Object.keys(frame).filter(
+                  (property) =>
+                    ![
+                      "offset",
+                      "computedOffset",
+                      "easing",
+                      "composite",
+                    ].includes(property),
+                ),
+              ),
+            before: layout(),
+            rect: marker?.flip?.rect,
+            target: marker?.flip?.target,
+          };
+          geometry.finished
+            .then(() => {
+              sessionStorage.setItem(
+                `tested-deferred-source-${event.detail.direction}`,
+                JSON.stringify({ ...motion, after: layout() }),
+              );
+            })
+            .catch(() => {});
+        }
+      }
       if (
         event.detail.phase === "entering" &&
         event.detail.direction === "open" &&
@@ -220,6 +267,8 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
       sessionStorage.removeItem("tested-deferred-exit");
       sessionStorage.removeItem("tested-deferred-completion");
       sessionStorage.removeItem("tested-deferred-arrival");
+      sessionStorage.removeItem("tested-deferred-source-open");
+      sessionStorage.removeItem("tested-deferred-source-close");
     });
     let release;
     let intercept;
@@ -254,7 +303,10 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
                   .getAnimations({ subtree: true })
                   .filter(
                     (animation) =>
-                      animation.playState === "running" || animation.pending,
+                      !animation.effect.target.classList.contains(
+                        "navigation-card-progress-fill",
+                      ) &&
+                      (animation.playState === "running" || animation.pending),
                   ).length,
             ),
           { timeout: 8000 },
@@ -276,6 +328,9 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
           bootstrap: JSON.parse(
             sessionStorage.getItem("tested-deferred-arrival"),
           ),
+          source: JSON.parse(
+            sessionStorage.getItem("tested-deferred-source-open"),
+          ),
           upright: {
             m22: upright.m22,
             m23: upright.m23,
@@ -296,12 +351,26 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         };
       });
       expect(heldState.bootstrap).toEqual({
-        duration: 390,
+        duration: 180,
         readyState: "loading",
         inert: true,
         hidden: "true",
-        rotation: ["rotateX(135deg)", "rotateX(180deg)"],
+        rotation: ["rotateX(180deg)", "rotateX(180deg)"],
       });
+      // The full flip finishes on the source page. Its geometry is fixed;
+      // only compositor transforms move it, so deferred page loading cannot
+      // split or restart the rotation midway through.
+      expect(heldState.source.duration).toBe(520);
+      expect(heldState.source.rotation).toEqual([
+        "rotateX(0deg)",
+        "rotateX(180deg)",
+      ]);
+      expect(heldState.source.geometry).toEqual([["transform"], ["transform"]]);
+      expect(heldState.source.after).toEqual(heldState.source.before);
+      for (const property of ["x", "y", "width", "height"])
+        expect(heldState.source.rect[property]).toBe(
+          heldState.source.target[property],
+        );
       expect(heldState.upright.m22).toBeCloseTo(1, 3);
       expect(heldState.upright.m33).toBeCloseTo(1, 3);
       expect(heldState.upright.m23).toBeCloseTo(0, 3);
@@ -313,27 +382,36 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
       expect(heldState.fieldOpacity).toBeGreaterThan(0);
       expect(heldState.coverOpacity).toBe(0);
       expect(heldState.phase).toBe("entering");
-      expect(
-        await page.evaluate(async () => {
-          const field = document.querySelector(".hero-field");
-          const sample = document.createElement("canvas");
-          sample.width = sample.height = 64;
-          const context = sample.getContext("2d");
-          function pixels() {
-            context.clearRect(0, 0, 64, 64);
-            context.drawImage(field, 0, 0, 64, 64);
-            return Array.from(context.getImageData(0, 0, 64, 64).data).join(
-              ",",
-            );
-          }
-          const before = pixels();
-          const until = performance.now() + 180;
-          do {
-            await new Promise(requestAnimationFrame);
-          } while (performance.now() < until);
-          return before !== pixels();
-        }),
-      ).toBe(true);
+      const buffering = await page.evaluate(async () => {
+        const field = document.querySelector(".hero-field");
+        const fill = document.querySelector(".navigation-card-progress-fill");
+        const progress = () =>
+          new DOMMatrix(getComputedStyle(fill).transform).a;
+        const sample = document.createElement("canvas");
+        sample.width = sample.height = 64;
+        const context = sample.getContext("2d");
+        function pixels() {
+          context.clearRect(0, 0, 64, 64);
+          context.drawImage(field, 0, 0, 64, 64);
+          return Array.from(context.getImageData(0, 0, 64, 64).data).join(",");
+        }
+        const before = pixels();
+        const progressBefore = progress();
+        const until = performance.now() + 180;
+        do {
+          await new Promise(requestAnimationFrame);
+        } while (performance.now() < until);
+        return {
+          fieldMoves: before !== pixels(),
+          progressBefore,
+          progressAfter: progress(),
+        };
+      });
+      expect(buffering.fieldMoves).toBe(true);
+      expect(buffering.progressAfter).toBeGreaterThanOrEqual(
+        buffering.progressBefore,
+      );
+      expect(buffering.progressAfter).toBeLessThan(1);
       // The loading card stays present until the blocked deferred app is ready.
       await expect(stage).toBeAttached();
       await expect(page.locator(".navigation-card-scan")).toHaveCount(0);
@@ -346,9 +424,9 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
           "data-page-transition",
           "leaving",
         );
-      // Normal closing continues the flip on the landing page. When storage
-      // fails, the source animates instead; releasing the deferred app while
-      // either exit is active must not cancel it.
+      // Normal closing completes the reverse flip on the source page before
+      // returning. Releasing the deferred app during that motion, or during
+      // the storage fallback, must not cancel the exit.
       release();
       await expect(page).toHaveURL(/projects.html$/);
       await expect(page.locator("html")).not.toHaveAttribute(
@@ -379,6 +457,9 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         completion: JSON.parse(
           sessionStorage.getItem("tested-deferred-completion"),
         ),
+        source: JSON.parse(
+          sessionStorage.getItem("tested-deferred-source-close"),
+        ),
         colors: [
           getComputedStyle(document.documentElement).backgroundColor,
           getComputedStyle(document.body).backgroundColor,
@@ -395,13 +476,22 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
           : null,
       }));
       expect(result.exit).toEqual({
-        duration: storageUnavailable ? 550 : 220,
+        duration: storageUnavailable ? 550 : 460,
         phase: "leaving",
         source: "/themis.html",
         destinationFrame: !storageUnavailable,
         destinationFlip: !storageUnavailable,
         coverOpacity: 0,
       });
+      if (!storageUnavailable) {
+        expect(result.source.duration).toBe(460);
+        expect(result.source.rotation).toEqual([
+          "rotateX(0deg)",
+          "rotateX(-180deg)",
+        ]);
+        expect(result.source.geometry).toEqual([["transform"], ["transform"]]);
+        expect(result.source.after).toEqual(result.source.before);
+      }
       if (storageUnavailable)
         expect(result.completion).toEqual({
           phase: "leaving",

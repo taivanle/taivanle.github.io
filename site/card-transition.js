@@ -2,7 +2,7 @@
   if (window.PortfolioCardMotion) return;
 
   const green = "#d7f4af";
-  const easing = "cubic-bezier(.22,.72,.24,1)";
+  const easing = "cubic-bezier(.4,0,.2,1)";
   function bounds(value, fallback = {}) {
     const number = (key, otherwise) => {
       const result = Number(value?.[key] ?? fallback[key]);
@@ -25,6 +25,7 @@
     direction = "open",
     arrival = false,
     duration = 0,
+    progress: carriedProgress = 0.86,
   }) {
     const source = bounds(rect, frame);
     const destination = bounds(target, source);
@@ -33,6 +34,7 @@
     let cancelled = false;
     let revealing = null;
     let scan = null;
+    let waiting = null;
 
     const element = document.createElement("div");
     element.className = "navigation-flip-stage";
@@ -42,15 +44,16 @@
       "position:fixed;z-index:2147483500;pointer-events:none;" +
       "perspective:1600px;perspective-origin:50% 50%;" +
       "margin:0;padding:0;border:0;background:transparent;" +
-      "box-sizing:border-box;isolation:isolate;" +
-      `left:${source.x}px;top:${source.y}px;` +
-      `width:${source.width}px;height:${source.height}px`;
+      "box-sizing:border-box;isolation:isolate;transform-origin:top left;" +
+      "will-change:transform;" +
+      `left:${destination.x}px;top:${destination.y}px;` +
+      `width:${destination.width}px;height:${destination.height}px`;
 
     const rotor = document.createElement("div");
     rotor.className = "navigation-card-rotor";
     rotor.style.cssText =
       "position:absolute;inset:0;transform-style:preserve-3d;" +
-      "transform-origin:50% 50%;pointer-events:none";
+      "transform-origin:50% 50%;pointer-events:none;will-change:transform";
 
     function face(className) {
       const node = document.createElement("div");
@@ -97,13 +100,13 @@
         maxHeight: "none",
         margin: "0",
         transformOrigin: "top left",
-        transform: `scale(${source.width / width}, ${source.height / height})`,
+        transform: `scale(${destination.width / width}, ${destination.height / height})`,
         animation: "none",
         transition: "none",
         pointerEvents: "none",
       });
       faceNode.append(node);
-      paintedFrames.push({ node, width, height, scaling: null });
+      paintedFrames.push({ node, width, height });
       return node;
     }
     if (!mountFrame(frame, front)) {
@@ -115,7 +118,7 @@
     title.className = "navigation-card-name";
     title.textContent = name;
     title.style.cssText =
-      "font-family:Manrope,Arial,sans-serif;font-size:clamp(26px,5cqw,44px);" +
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(44, Math.max(26, destination.width * 0.05))}px;` +
       "font-weight:500;line-height:1.15;letter-spacing:-1.2px;margin:0";
     back.append(title);
 
@@ -170,16 +173,10 @@
       element,
       [
         {
-          left: `${source.x}px`,
-          top: `${source.y}px`,
-          width: `${source.width}px`,
-          height: `${source.height}px`,
+          transform: `translate3d(${source.x - destination.x}px,${source.y - destination.y}px,0) scale(${source.width / destination.width},${source.height / destination.height})`,
         },
         {
-          left: `${destination.x}px`,
-          top: `${destination.y}px`,
-          width: `${destination.width}px`,
-          height: `${destination.height}px`,
+          transform: "translate3d(0,0,0) scale(1,1)",
         },
       ],
       { duration: milliseconds, easing, fill: "forwards" },
@@ -187,31 +184,20 @@
     const angles =
       direction === "close"
         ? arrival
-          ? [45, 0]
-          : [0, -135]
+          ? [0, 0]
+          : [0, -180]
         : arrival
-          ? [135, 180]
-          : [0, 135];
+          ? [180, 180]
+          : [0, 180];
     const rotation = animate(
       rotor,
       angles.map((angle) => ({ transform: `rotateX(${angle}deg)` })),
       { duration: milliseconds, easing, fill: "forwards" },
     );
-    for (const painted of paintedFrames)
-      painted.scaling = animate(
-        painted.node,
-        [
-          {
-            transform: `scale(${source.width / painted.width}, ${source.height / painted.height})`,
-          },
-          {
-            transform: `scale(${destination.width / painted.width}, ${destination.height / painted.height})`,
-          },
-        ],
-        { duration: milliseconds, easing, fill: "forwards" },
-      );
-    const progressStart = arrival ? 0.48 : 0.15;
-    const progressEnd = arrival ? 0.86 : 0.48;
+    const progressStart = arrival
+      ? Math.max(0.86, Math.min(0.96, Number(carriedProgress) || 0.86))
+      : 0.15;
+    const progressEnd = arrival ? progressStart : 0.86;
     fill.style.transform = `scaleX(${progressStart})`;
     const loading =
       !backFrame?.html && (arrival || direction === "open")
@@ -229,15 +215,21 @@
           )
         : null;
     const finished = Promise.allSettled(
-      [
-        geometry,
-        rotation,
-        ...paintedFrames.map((painted) => painted.scaling),
-        loading,
-      ]
+      [geometry, rotation, loading]
         .filter(Boolean)
         .map((animation) => animation.finished),
-    ).then(() => {});
+    ).then(() => {
+      if (cancelled || direction !== "open" || backFrame?.html) return;
+      waiting = animate(
+        fill,
+        [{ transform: `scaleX(${progressEnd})` }, { transform: "scaleX(.96)" }],
+        { duration: 2600, easing: "ease-out", fill: "forwards" },
+      );
+    });
+
+    function progressValue() {
+      return new DOMMatrix(getComputedStyle(fill).transform).a;
+    }
 
     function cancel() {
       if (cancelled) return;
@@ -259,20 +251,25 @@
         }
         const actual = bounds(actualFrame.getBoundingClientRect());
         geometry.cancel();
-        for (const painted of paintedFrames) painted.scaling?.cancel();
         Object.assign(element.style, {
           left: `${actual.x}px`,
           top: `${actual.y}px`,
           width: `${actual.width}px`,
           height: `${actual.height}px`,
+          transform: "none",
         });
         for (const painted of paintedFrames)
           painted.node.style.transform = `scale(${actual.width / painted.width}, ${actual.height / painted.height})`;
+        const loadedProgress = progressValue();
+        waiting?.cancel();
         loading?.cancel();
-        fill.style.transform = "scaleX(.86)";
+        fill.style.transform = `scaleX(${loadedProgress})`;
         animate(
           fill,
-          [{ transform: "scaleX(.86)" }, { transform: "scaleX(1)" }],
+          [
+            { transform: `scaleX(${loadedProgress})` },
+            { transform: "scaleX(1)" },
+          ],
           {
             duration: 70,
             fill: "forwards",
@@ -283,11 +280,11 @@
         let unveiling;
         if (direction === "close") {
           animate(actualFrame, [{ opacity: 0 }, { opacity: 1 }], {
-            duration: 120,
+            duration: 140,
             easing: "ease-out",
           });
           unveiling = animate(element, [{ opacity: 1 }, { opacity: 0 }], {
-            duration: 120,
+            duration: 140,
             easing: "ease-out",
             fill: "forwards",
           });
@@ -298,7 +295,7 @@
               { clipPath: "inset(0 0 100% 0)" },
               { clipPath: "inset(0 0 0% 0)" },
             ],
-            { duration: 120, easing: "ease-out" },
+            { duration: 180, easing: "cubic-bezier(.25,.1,.25,1)" },
           );
           unveiling = animate(
             element,
@@ -306,7 +303,11 @@
               { clipPath: "inset(0% 0 0 0)" },
               { clipPath: "inset(100% 0 0 0)" },
             ],
-            { duration: 120, easing: "ease-out", fill: "forwards" },
+            {
+              duration: 180,
+              easing: "cubic-bezier(.25,.1,.25,1)",
+              fill: "forwards",
+            },
           );
           scan = document.createElement("div");
           scan.className = "navigation-card-scan";
@@ -322,7 +323,11 @@
               { transform: "translateY(0px)", opacity: 0.7 },
               { transform: `translateY(${actual.height}px)`, opacity: 0 },
             ],
-            { duration: 120, easing: "ease-out", fill: "forwards" },
+            {
+              duration: 180,
+              easing: "cubic-bezier(.25,.1,.25,1)",
+              fill: "forwards",
+            },
           );
         }
         await unveiling.finished.catch(() => {});
@@ -331,7 +336,14 @@
       return revealing;
     }
 
-    return { element, rotor, finished, reveal, cancel };
+    return {
+      element,
+      rotor,
+      finished,
+      reveal,
+      cancel,
+      progress: progressValue,
+    };
   }
 
   window.PortfolioCardMotion = { create };
