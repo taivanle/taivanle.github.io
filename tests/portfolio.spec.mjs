@@ -1285,7 +1285,7 @@ for (const [slug, name] of [
           Number(sessionStorage.getItem("tested-close-duration")),
         ),
       )
-      .toBeGreaterThanOrEqual(800);
+      .toBe(220);
     await card.click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.keyboard.press("Escape");

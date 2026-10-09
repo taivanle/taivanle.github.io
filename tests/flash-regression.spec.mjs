@@ -812,18 +812,20 @@ test.describe("flash regression", () => {
           ),
         )
         .toBe(0);
-      // Abort only the first real document navigation so the real leave() state,
-      // opaque cover and departing latch remain in this original document.
+      // Allow the preparation fetch, then abort the first actual document
+      // navigation so the flipped card and departing latch stay in this DOM.
       let abortedRequests = 0;
-      await page.route(
-        projectUrl(project),
-        async (route) => {
-          expect(route.request().isNavigationRequest()).toBe(true);
-          abortedRequests++;
-          await route.abort("aborted");
-        },
-        { times: 1 },
-      );
+      const targetRoute = projectUrl(project);
+      const abortFirstNavigation = async (route) => {
+        if (!route.request().isNavigationRequest() || abortedRequests) {
+          await route.continue();
+          return;
+        }
+        abortedRequests++;
+        await route.abort("aborted");
+        await page.unroute(targetRoute, abortFirstNavigation);
+      };
+      await page.route(targetRoute, abortFirstNavigation);
       const firstRecord = records.length;
       const restored = await recordJourney(
         page,
@@ -846,6 +848,10 @@ test.describe("flash regression", () => {
                 document.querySelector("#work-title, .page-hero h1"),
               phase: document.documentElement.dataset.pageTransition,
               coverReady: document.documentElement.dataset.coverReady,
+              cardTransition: document.documentElement.dataset.cardTransition,
+              flipStage: Boolean(
+                document.querySelector(".navigation-flip-stage"),
+              ),
               opacity: cover && getComputedStyle(cover).opacity,
               pointerEvents: cover && getComputedStyle(cover).pointerEvents,
               marker: JSON.parse(
@@ -858,12 +864,15 @@ test.describe("flash regression", () => {
             sameHeading: true,
             phase: "leaving",
             coverReady: "true",
-            opacity: "1",
+            cardTransition: "true",
+            flipStage: true,
+            opacity: "0",
             pointerEvents: "auto",
           });
           expect(frozen.marker.from).toBe(page.url());
           expect(frozen.marker.to).toMatch(projectUrl(project));
           expect(frozen.marker.direction).toBe("open");
+          expect(frozen.marker.flip).toBeTruthy();
           // Explicitly simulated persisted events are untrusted. No browser
           // cache eligibility, freeze or restoration is claimed by this test.
           await page.evaluate(() =>
@@ -880,6 +889,10 @@ test.describe("flash regression", () => {
                 from: outgoing.to,
                 to: outgoing.from,
                 direction: "close",
+                flip: {
+                  ...outgoing.flip,
+                  target: outgoing.rect,
+                },
                 at: Date.now(),
               }),
             );
@@ -920,6 +933,11 @@ test.describe("flash regression", () => {
             document.querySelector("#work-title, .page-hero h1"),
           phase: document.documentElement.dataset.pageTransition || null,
           coverReady: document.documentElement.dataset.coverReady || null,
+          cardTransition:
+            document.documentElement.dataset.cardTransition || null,
+          flipStages: document.querySelectorAll(
+            ".navigation-flip-stage, .navigation-card-scan, .navigation-return-frame",
+          ).length,
           marker: sessionStorage.getItem("portfolio-navigation-transition"),
           opacity: cover && getComputedStyle(cover).opacity,
           pointerEvents: cover && getComputedStyle(cover).pointerEvents,
@@ -931,6 +949,8 @@ test.describe("flash regression", () => {
         sameHeading: true,
         phase: null,
         coverReady: null,
+        cardTransition: null,
+        flipStages: 0,
         marker: null,
         opacity: "0",
         pointerEvents: "none",

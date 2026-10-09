@@ -33,6 +33,9 @@
   let incomingCard = null;
   let preparation = null;
   const preparedPages = new Map();
+  const pageShown = new Promise((resolve) =>
+    window.addEventListener("pageshow", resolve, { once: true }),
+  );
 
   function read(key) {
     try {
@@ -174,6 +177,18 @@
     incomingCard?.cancel();
     outgoingCard = incomingCard = null;
     root.removeAttribute("data-card-transition");
+  }
+  function restoreCardScroll(marker, frame) {
+    if (
+      !isProject &&
+      marker?.direction === "close" &&
+      frame &&
+      Number.isFinite(marker.flip?.target?.y)
+    )
+      window.scrollTo({
+        top: scrollY + frame.getBoundingClientRect().top - marker.flip.target.y,
+        behavior: "instant",
+      });
   }
 
   function signal(phase, duration, direction) {
@@ -361,6 +376,12 @@
         if (title) title.style.animation = "none";
         card.finished.then(async () => {
           if (departing || incomingCard !== card) return;
+          if (direction === "close") {
+            await pageShown;
+            await new Promise(requestAnimationFrame);
+            if (departing || incomingCard !== card) return;
+            restoreCardScroll(marker, actual);
+          }
           root.dataset.coverReady = "true";
           root.removeAttribute("data-card-transition");
           await card.reveal(actual);
