@@ -981,8 +981,7 @@ test("project cards expand into a dark presentation and return through the real 
       page.evaluate(() =>
         window.projectArrival?.some(
           (animation) =>
-            animation.duration >= 600 &&
-            animation.duration <= 750 &&
+            animation.duration === 1100 &&
             animation.frames[0].transform !== "none" &&
             animation.frames.at(-1).transform === "none",
         ),
