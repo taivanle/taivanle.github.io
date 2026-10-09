@@ -15,8 +15,9 @@
   const isProject = projectRoutes.has(location.pathname);
   const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
   const transitionKey = "portfolio-navigation-transition";
-  const openingDuration = 1100;
-  const closingDuration = 1100;
+  const openingDuration = 650;
+  const closingDuration = 550;
+  const cardMotion = window.PortfolioCardMotion;
   let departing = false;
   let pendingUrl = null;
   let departureTimer = 0;
@@ -28,6 +29,13 @@
   let entrySource = null;
   let returnFrame = null;
   let returnCardAnimation = null;
+  let outgoingCard = null;
+  let incomingCard = null;
+  let preparation = null;
+  const preparedPages = new Map();
+  const pageShown = new Promise((resolve) =>
+    window.addEventListener("pageshow", resolve, { once: true }),
+  );
 
   function read(key) {
     try {
@@ -97,6 +105,91 @@
   const knownSource = Boolean(incoming);
   // This state paints a solid dark cover before the external stylesheet arrives.
   if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
+  if (incoming?.flip && !motion.matches) startCardArrival(incoming);
+
+  function deckRect() {
+    const mobile = innerWidth <= 760;
+    const width = mobile ? innerWidth - 24 : Math.min(1200, innerWidth - 96);
+    return {
+      x: (innerWidth - width) / 2,
+      y: mobile ? 122 : 142,
+      width,
+      height: Math.max(100, innerHeight - (mobile ? 212 : 250)),
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    };
+  }
+  function between(a, b) {
+    return {
+      ...a,
+      ...Object.fromEntries(
+        ["x", "y", "width", "height"].map((key) => [
+          key,
+          a[key] + (b[key] - a[key]) * 0.55,
+        ]),
+      ),
+    };
+  }
+  function startCardArrival(marker) {
+    const flip = marker?.flip;
+    if (
+      !cardMotion ||
+      !flip?.frame?.html ||
+      !flip.rect ||
+      !flip.target ||
+      Math.abs(flip.rect.viewportWidth - innerWidth) > 2 ||
+      Math.abs(flip.rect.viewportHeight - innerHeight) > 2
+    )
+      return false;
+    root.dataset.cardTransition = "true";
+    root.dataset.pageTransition = "entering";
+    incomingCard = cardMotion.create({
+      ...flip,
+      direction: marker.direction,
+      arrival: true,
+      duration: marker.direction === "open" ? 270 : 210,
+    });
+    signal(
+      "entering",
+      marker.direction === "open" ? 390 : 330,
+      marker.direction,
+    );
+    return true;
+  }
+  function preparePage(to) {
+    if (!preparedPages.has(to)) {
+      const controller = new AbortController();
+      const ready = fetch(to, {
+        credentials: "same-origin",
+        signal: controller.signal,
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Page unavailable");
+          return response.text();
+        })
+        .catch(() => null);
+      preparedPages.set(to, { ready, controller });
+    }
+    return preparedPages.get(to);
+  }
+  function clearCardMotion() {
+    outgoingCard?.cancel();
+    incomingCard?.cancel();
+    outgoingCard = incomingCard = null;
+    root.removeAttribute("data-card-transition");
+  }
+  function restoreCardScroll(marker, frame) {
+    if (
+      !isProject &&
+      marker?.direction === "close" &&
+      frame &&
+      Number.isFinite(marker.flip?.target?.y)
+    )
+      window.scrollTo({
+        top: scrollY + frame.getBoundingClientRect().top - marker.flip.target.y,
+        behavior: "instant",
+      });
+  }
 
   function signal(phase, duration, direction) {
     document.dispatchEvent(
@@ -241,6 +334,7 @@
   function settled(direction) {
     root.removeAttribute("data-page-transition");
     root.removeAttribute("data-cover-ready");
+    root.removeAttribute("data-card-transition");
     signal("settled", 0, direction);
   }
   function reveal() {
@@ -251,6 +345,8 @@
     arrivalAnimation?.cancel();
     coverAnimation?.cancel();
     clearReturnFrame();
+    outgoingCard?.cancel();
+    outgoingCard = null;
     root.classList.remove("project-return");
     focusPresentation();
     const previous = previousPortfolioUrl();
@@ -263,6 +359,40 @@
     const direction = marker?.direction || "open";
     const element = cover();
     if (element) element.style.pointerEvents = "none";
+    if (marker?.flip && !motion.matches) {
+      if (!incomingCard) startCardArrival(marker);
+      const slug = marker.from
+        ? projectRoutes.get(new URL(marker.from).pathname)
+        : null;
+      const actual = isProject
+        ? document.querySelector(".presentation-deck")
+        : document.querySelector(`.card-frame[data-project="${slug}"]`);
+      if (incomingCard && actual) {
+        if (element) element.style.opacity = "0";
+        const card = incomingCard;
+        const section = actual.closest(".chapter-section");
+        section?.classList.add("is-chapter-active");
+        const title = section?.querySelector(".chapter-title");
+        if (title) title.style.animation = "none";
+        card.finished.then(async () => {
+          if (departing || incomingCard !== card) return;
+          if (direction === "close") {
+            await pageShown;
+            await new Promise(requestAnimationFrame);
+            if (departing || incomingCard !== card) return;
+            restoreCardScroll(marker, actual);
+          }
+          root.dataset.coverReady = "true";
+          root.removeAttribute("data-card-transition");
+          await card.reveal(actual);
+          if (departing || incomingCard !== card) return;
+          incomingCard = null;
+          settled(direction);
+        });
+        return;
+      }
+    }
+    clearCardMotion();
     if ((!marker && !isProject) || motion.matches) {
       if (element) element.style.opacity = "0";
       settled(direction);
@@ -348,7 +478,7 @@
       settled(direction);
     }, duration);
   }
-  function leave(to, { back = false, rect = null } = {}) {
+  function leave(to, { back = false, rect = null, card = null } = {}) {
     if (departing) return;
     departing = true;
     pendingUrl = to;
@@ -358,7 +488,38 @@
     const duration =
       motion.matches || document.hidden || !isProject ? 0 : closingDuration;
     const marker = { from: location.href, to, direction, rect, at: Date.now() };
-    const frame = document.querySelector(".presentation-deck");
+    const frame =
+      !initialized && incomingCard
+        ? incomingCard.element
+        : document.querySelector(".presentation-deck");
+    const origin = isProject
+      ? read(`portfolio-project-origin:${location.pathname}`)
+      : null;
+    const snapshot = captureExitFrame(isProject ? frame : card);
+    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
+    const canFlip =
+      !motion.matches &&
+      !document.hidden &&
+      cardMotion &&
+      snapshot &&
+      (isProject
+        ? !destinationIsProject &&
+          origin?.card &&
+          destinationMatchesOrigin(origin.from, to)
+        : destinationIsProject && card);
+    const target = isProject ? origin?.rect : deckRect();
+    const source = snapshot?.rect;
+    if (canFlip)
+      marker.flip = {
+        frame: isProject ? origin.card : snapshot,
+        rect: between(source, target),
+        target,
+        name:
+          origin?.name ||
+          card?.querySelector("h3")?.textContent ||
+          document.querySelector("h1")?.textContent ||
+          "",
+      };
     if (duration && !projectRoutes.has(new URL(to).pathname))
       marker.exitFrame = captureExitFrame(frame);
     const stored = write(transitionKey, marker);
@@ -369,6 +530,8 @@
       write(`portfolio-project-origin:${new URL(to).pathname}`, {
         from: location.href,
         rect,
+        card: snapshot,
+        name: card?.querySelector("h3")?.textContent || "",
       });
     const element = cover();
     const first = frame
@@ -382,6 +545,37 @@
     clearReturnFrame();
     root.dataset.pageTransition = "leaving";
     root.dataset.coverReady = "true";
+    if (stored && marker.flip) {
+      const travel = isProject ? 220 : 260;
+      clearCardMotion();
+      root.dataset.cardTransition = "true";
+      root.dataset.pageTransition = "leaving";
+      if (element) {
+        element.style.opacity = "0";
+        element.style.pointerEvents = "auto";
+      }
+      outgoingCard = cardMotion.create({
+        frame: snapshot,
+        backFrame: isProject ? origin.card : null,
+        rect: source,
+        target: marker.flip.rect,
+        name: marker.flip.name,
+        direction,
+        arrival: false,
+        duration: travel,
+      });
+      preparation = back ? null : preparePage(to);
+      signal("leaving", travel, direction);
+      const departureCard = outgoingCard;
+      Promise.all([departureCard.finished, preparation?.ready]).then(() => {
+        if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
+          return;
+        if (back) history.back();
+        else location.assign(to);
+      });
+      return;
+    }
+    clearCardMotion();
     signal("leaving", duration, direction);
     if (element) {
       element.style.pointerEvents = "auto";
@@ -476,6 +670,10 @@
     ) {
       event.preventDefault();
       window.stop();
+      preparation?.controller.abort();
+      preparedPages.delete(pendingUrl);
+      preparation = null;
+      clearCardMotion();
       incoming = null;
       try {
         sessionStorage.removeItem(transitionKey);
@@ -508,7 +706,8 @@
       )
         return;
       event.preventDefault();
-      leave(to.href, { rect: originRect(link.querySelector(".card-frame")) });
+      const card = link.querySelector(".card-frame");
+      leave(to.href, { rect: originRect(card), card });
       return;
     }
     if (
@@ -520,4 +719,18 @@
     )
       returnToPreviousPage();
   });
+  for (const type of ["pointerover", "focusin"])
+    document.addEventListener(
+      type,
+      (event) => {
+        const link = event.target.closest?.(".project-card a[href]");
+        if (
+          link &&
+          link.origin === location.origin &&
+          projectRoutes.has(new URL(link.href).pathname)
+        )
+          preparePage(link.href);
+      },
+      { passive: true },
+    );
 })();

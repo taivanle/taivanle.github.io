@@ -923,52 +923,85 @@ test("project cards expand into a dark presentation and return through the real 
   page,
 }) => {
   await page.addInitScript(() => {
+    function animations(node) {
+      return (
+        node?.getAnimations().map((animation) => ({
+          duration: animation.effect.getTiming().duration,
+          frames: animation.effect.getKeyframes().map((frame) => ({
+            left: frame.left,
+            top: frame.top,
+            width: frame.width,
+            height: frame.height,
+            transform: frame.transform,
+            clipPath: frame.clipPath,
+            opacity: frame.opacity,
+          })),
+        })) || []
+      );
+    }
     document.addEventListener("portfolio-transition", (event) => {
-      if (event.detail.phase === "entering") {
-        requestAnimationFrame(() => {
-          const deck = document.querySelector(".presentation-deck");
-          window.projectArrival = deck?.getAnimations().map((animation) => ({
-            duration: animation.effect.getTiming().duration,
-            frames: animation.effect
-              .getKeyframes()
-              .map(({ transform, opacity }) => ({ transform, opacity })),
-          }));
-          const returning = document.querySelector(".navigation-return-frame");
-          if (!returning || event.detail.direction !== "close") return;
-          const target = document.querySelector(
-            '.card-frame[data-project="themis"]',
-          );
-          const style = getComputedStyle(returning);
-          sessionStorage.setItem(
-            "tested-project-return-frame",
-            JSON.stringify({
-              inert: returning.inert,
-              hidden: returning.getAttribute("aria-hidden"),
-              source: {
-                x: parseFloat(style.left),
-                y: parseFloat(style.top),
-                width: parseFloat(style.width),
-                height: parseFloat(style.height),
-              },
-              target: target?.getBoundingClientRect().toJSON(),
-              animations: returning.getAnimations().map((animation) => ({
-                duration: animation.effect.getTiming().duration,
-                easing: animation.effect.getTiming().easing,
-                frames: animation.effect
-                  .getKeyframes()
-                  .map(({ transform, opacity, easing }) => ({
-                    transform,
-                    opacity,
-                    easing,
-                  })),
-              })),
-            }),
-          );
-        });
+      if (!["entering", "leaving"].includes(event.detail.phase)) return;
+      const stage = document.querySelector(".navigation-flip-stage");
+      if (!stage) return;
+      const rotor = stage.querySelector(".navigation-card-rotor");
+      const evidence = {
+        ...event.detail,
+        inert: stage.inert,
+        hidden: stage.getAttribute("aria-hidden"),
+        geometry: animations(stage),
+        rotation: animations(rotor),
+        backRotation: stage.querySelector(".navigation-card-back").style
+          .transform,
+        frontName: stage.querySelector(".navigation-card-front h3")
+          ?.textContent,
+        samples: [],
+        scan: null,
+      };
+      const key = `${location.pathname}:${event.detail.phase}:${event.detail.direction}`;
+      const save = () => {
+        const stored = JSON.parse(
+          sessionStorage.getItem("tested-card-motion") || "{}",
+        );
+        stored[key] = evidence;
+        sessionStorage.setItem("tested-card-motion", JSON.stringify(stored));
+      };
+      save();
+      function sample() {
+        const main = document.querySelector("main");
+        const field = document.querySelector(".hero-field");
+        const cover = document.getElementById("navigation-cover");
+        const progress = stage.querySelector(".navigation-card-progress-fill");
+        if (main && field) {
+          evidence.samples.push({
+            foregroundFilter: getComputedStyle(main).filter,
+            fieldFilter: getComputedStyle(field).filter,
+            fieldOpacity: Number(getComputedStyle(field).opacity),
+            coverOpacity: cover ? Number(getComputedStyle(cover).opacity) : 0,
+            firstPaintCover: getComputedStyle(
+              document.documentElement,
+              "::before",
+            ).content,
+            progress: progress
+              ? new DOMMatrix(getComputedStyle(progress).transform).a
+              : null,
+          });
+        }
+        const scan = document.querySelector(".navigation-card-scan");
+        if (scan) {
+          evidence.scan = {
+            appReady: document.documentElement.classList.contains("js"),
+            line: animations(scan),
+            deck: animations(document.querySelector(".presentation-deck")),
+            overlay: animations(stage),
+          };
+        }
+        save();
+        if (stage.isConnected) requestAnimationFrame(sample);
       }
+      requestAnimationFrame(sample);
     });
   });
-  await page.goto("/");
+  await page.goto("/index.html#work");
   const card = page.locator('.project-card[data-category="ai"] .card-frame');
   await expect(card).toHaveAttribute("data-project", "themis");
   await page
@@ -976,44 +1009,70 @@ test("project cards expand into a dark presentation and return through the real 
     .click();
   await expect(page).toHaveURL(/themis.html$/);
   await expect(page.locator(".presentation-deck")).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        window.projectArrival?.some(
-          (animation) =>
-            animation.duration === 1100 &&
-            animation.frames[0].transform !== "none" &&
-            animation.frames.at(-1).transform === "none",
-        ),
-      ),
-    )
-    .toBe(true);
   await expect(page.locator("html")).not.toHaveAttribute(
     "data-page-transition",
     /entering|leaving/,
   );
-  const openingBounds = await page.evaluate(() => {
-    const deck = document.querySelector(".presentation-deck");
-    const target = deck.getBoundingClientRect();
-    const opening = window.projectArrival.find(
-      (animation) => animation.frames.at(-1).transform === "none",
-    );
-    const transform = new DOMMatrix(opening.frames[0].transform);
-    const { rect } = JSON.parse(
+  await expect(
+    page.locator(".navigation-flip-stage, .navigation-card-scan"),
+  ).toHaveCount(0);
+  const opening = await page.evaluate(() => ({
+    evidence: JSON.parse(sessionStorage.getItem("tested-card-motion")),
+    origin: JSON.parse(
       sessionStorage.getItem(`portfolio-project-origin:${location.pathname}`),
-    );
-    return {
-      origin: rect,
-      x: target.x + transform.e,
-      y: target.y + transform.f,
-      width: target.width * transform.a,
-      height: target.height * transform.d,
-    };
+    ).rect,
+    deck: document
+      .querySelector(".presentation-deck")
+      .getBoundingClientRect()
+      .toJSON(),
+  }));
+  const sourceOpen = opening.evidence["/index.html:leaving:open"];
+  const arrivalOpen = opening.evidence["/themis.html:entering:open"];
+  expect(sourceOpen.duration).toBe(260);
+  expect(arrivalOpen.duration).toBe(390);
+  const geometry = (record) =>
+    record.geometry.find((animation) => animation.frames[0].left);
+  const bounds = (frame) => ({
+    x: parseFloat(frame.left),
+    y: parseFloat(frame.top),
+    width: parseFloat(frame.width),
+    height: parseFloat(frame.height),
   });
-  // The opening fills the selected card's entire bounds, including its height.
-  // Fitting a wide deck proportionally into the card would leave empty space.
-  for (const key of ["x", "y", "width", "height"])
-    expect(openingBounds[key]).toBeCloseTo(openingBounds.origin[key], 1);
+  for (const key of ["x", "y", "width", "height"]) {
+    expect(bounds(geometry(sourceOpen).frames[0])[key]).toBeCloseTo(
+      opening.origin[key],
+      1,
+    );
+    expect(bounds(geometry(sourceOpen).frames.at(-1))[key]).toBeCloseTo(
+      bounds(geometry(arrivalOpen).frames[0])[key],
+      1,
+    );
+    expect(bounds(geometry(arrivalOpen).frames.at(-1))[key]).toBeCloseTo(
+      opening.deck[key],
+      1,
+    );
+  }
+  expect(geometry(sourceOpen).duration).toBe(260);
+  expect(geometry(arrivalOpen).duration).toBe(270);
+  expect(sourceOpen.rotation[0].frames.map((frame) => frame.transform)).toEqual(
+    ["rotateX(0deg)", "rotateX(135deg)"],
+  );
+  expect(
+    arrivalOpen.rotation[0].frames.map((frame) => frame.transform),
+  ).toEqual(["rotateX(135deg)", "rotateX(180deg)"]);
+  expect(arrivalOpen.backRotation).toBe("rotateX(180deg)");
+  expect(arrivalOpen.scan).not.toBeNull();
+  expect(arrivalOpen.scan.appReady).toBe(true);
+  expect(
+    Math.max(...arrivalOpen.samples.map((sample) => sample.progress || 0)),
+  ).toBeGreaterThanOrEqual(0.99);
+  expect(arrivalOpen.scan.line[0].duration).toBe(120);
+  const scanReveal = arrivalOpen.scan.deck.find(
+    (animation) => animation.frames[0].clipPath,
+  );
+  expect(scanReveal.duration).toBe(120);
+  expect(scanReveal.frames[0].clipPath).toContain("100%");
+  expect(scanReveal.frames.at(-1).clipPath).not.toContain("100%");
   expect(
     await page
       .locator("body")
@@ -1029,56 +1088,87 @@ test("project cards expand into a dark presentation and return through the real 
   await expect(
     page.getByRole("link", { name: "Read case study: Themis", exact: true }),
   ).toBeVisible();
-  await expect
-    .poll(() =>
-      page.evaluate(() =>
-        Boolean(sessionStorage.getItem("tested-project-return-frame")),
-      ),
-    )
-    .toBe(true);
-  const closing = await page.evaluate(() => {
-    const evidence = JSON.parse(
-      sessionStorage.getItem("tested-project-return-frame"),
-    );
-    const travel = evidence.animations.find(
-      (animation) =>
-        animation.frames.at(-1).transform &&
-        animation.frames.at(-1).transform !== "none",
-    );
-    const transform = new DOMMatrix(travel.frames.at(-1).transform);
-    return {
-      ...evidence,
-      travel,
-      final: {
-        x: evidence.source.x + transform.e,
-        y: evidence.source.y + transform.f,
-        width: evidence.source.width * transform.a,
-        height: evidence.source.height * transform.d,
-      },
-      nativeNames: [
-        getComputedStyle(document.documentElement).viewTransitionName,
-        getComputedStyle(
-          document.querySelector('.card-frame[data-project="themis"]'),
-        ).viewTransitionName,
-      ],
-    };
-  });
-  expect(closing.inert).toBe(true);
-  expect(closing.hidden).toBe("true");
-  expect(closing.travel.duration).toBeGreaterThanOrEqual(1000);
-  expect(closing.travel.duration).toBeLessThanOrEqual(1200);
-  expect(closing.travel.frames[0].easing.replaceAll(" ", "")).toBe(
-    "cubic-bezier(0.22,1,0.36,1)",
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-page-transition",
+    /entering|leaving/,
   );
-  expect(Number(closing.travel.frames[0].opacity)).toBe(1);
-  for (const key of ["x", "y", "width", "height"])
-    expect(closing.final[key]).toBeCloseTo(closing.target[key], 1);
+  const closing = await page.evaluate(() => ({
+    evidence: JSON.parse(sessionStorage.getItem("tested-card-motion")),
+    card: document
+      .querySelector('.card-frame[data-project="themis"]')
+      .getBoundingClientRect()
+      .toJSON(),
+    nativeNames: [
+      getComputedStyle(document.documentElement).viewTransitionName,
+      getComputedStyle(
+        document.querySelector('.card-frame[data-project="themis"]'),
+      ).viewTransitionName,
+    ],
+  }));
+  const sourceClose = closing.evidence["/themis.html:leaving:close"];
+  const arrivalClose = closing.evidence["/index.html:entering:close"];
+  expect(sourceClose.duration).toBe(220);
+  expect(arrivalClose.duration).toBe(330);
+  expect(geometry(sourceClose).duration).toBe(220);
+  expect(geometry(arrivalClose).duration).toBe(210);
+  expect(
+    sourceClose.rotation[0].frames.map((frame) => frame.transform),
+  ).toEqual(["rotateX(0deg)", "rotateX(-135deg)"]);
+  expect(
+    arrivalClose.rotation[0].frames.map((frame) => frame.transform),
+  ).toEqual(["rotateX(45deg)", "rotateX(0deg)"]);
+  expect(arrivalClose.frontName).toBe("Themis");
+  for (const key of ["x", "y", "width", "height"]) {
+    expect(bounds(geometry(sourceClose).frames.at(-1))[key]).toBeCloseTo(
+      bounds(geometry(arrivalClose).frames[0])[key],
+      1,
+    );
+    expect(bounds(geometry(arrivalClose).frames.at(-1))[key]).toBeCloseTo(
+      closing.card[key],
+      1,
+    );
+  }
+  for (const record of [sourceOpen, arrivalOpen, sourceClose, arrivalClose]) {
+    expect(record.inert).toBe(true);
+    expect(record.hidden).toBe("true");
+    expect(record.samples.length).toBeGreaterThan(0);
+    expect(
+      record.samples.some(
+        (sample) =>
+          parseFloat(
+            /blur\(([^)]+)\)/.exec(sample.foregroundFilter)?.[1] || "0",
+          ) > 0,
+      ),
+    ).toBe(true);
+    expect(
+      record.samples.every(
+        (sample) => sample.fieldFilter === "none" && sample.fieldOpacity > 0,
+      ),
+    ).toBe(true);
+    expect(record.samples.every((sample) => sample.coverOpacity === 0)).toBe(
+      true,
+    );
+    expect(
+      record.samples.every((sample) =>
+        ["none", "normal"].includes(sample.firstPaintCover),
+      ),
+    ).toBe(true);
+  }
   expect(closing.nativeNames).toEqual(["none", "none"]);
   await expect(page.locator("html")).not.toHaveAttribute(
     "data-page-transition",
     /entering|leaving/,
   );
-  await expect(page.locator(".navigation-return-frame")).toHaveCount(0);
+  await expect(
+    page.locator(
+      ".navigation-return-frame, .navigation-flip-stage, .navigation-card-scan",
+    ),
+  ).toHaveCount(0);
+  await expect(page.locator("html")).not.toHaveAttribute(
+    "data-card-transition",
+    "true",
+  );
+  await expect(page.locator("main")).toHaveCSS("filter", "none");
   const title = page.locator("#work-title");
   await expect(title).toBeVisible();
   const stableTitle = await title.evaluate(async (element) => {
@@ -1195,7 +1285,7 @@ for (const [slug, name] of [
           Number(sessionStorage.getItem("tested-close-duration")),
         ),
       )
-      .toBeGreaterThanOrEqual(800);
+      .toBe(220);
     await card.click();
     await expect(page).toHaveURL(new RegExp(`${slug}.html$`));
     await page.keyboard.press("Escape");

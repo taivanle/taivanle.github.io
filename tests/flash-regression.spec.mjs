@@ -367,11 +367,15 @@ async function installPersistedLifecycleProbe(page, selector) {
       if (!running) return;
       const style = getComputedStyle(heading);
       const rect = heading.getBoundingClientRect();
+      const foreground = heading.closest("main");
       let opacity = 1;
+      let nonForegroundOpacity = 1;
       let visible = rect.width > 0 && rect.height > 0;
       for (let element = heading; element; element = element.parentElement) {
         const ancestor = getComputedStyle(element);
         opacity *= Number(ancestor.opacity);
+        if (element !== foreground)
+          nonForegroundOpacity *= Number(ancestor.opacity);
         if (
           ancestor.display === "none" ||
           ancestor.visibility !== "visible" ||
@@ -430,6 +434,13 @@ async function installPersistedLifecycleProbe(page, selector) {
       report({
         kind: "lifecycle-heading",
         opacity,
+        ownOpacity: Number(style.opacity),
+        foregroundOpacity: foreground
+          ? Number(getComputedStyle(foreground).opacity)
+          : 1,
+        nonForegroundOpacity,
+        phase: document.documentElement.dataset.pageTransition || null,
+        cardTransition: document.documentElement.dataset.cardTransition || null,
         clipPath: style.clipPath,
         supportedClip,
         visibleFraction: visible
@@ -480,17 +491,20 @@ async function installPersistedLifecycleProbe(page, selector) {
 
 async function assertPersistedHeading(page, records, firstRecord, documentId) {
   const timeline = () => records.slice(firstRecord);
-  const settled = timeline().find(
-    (record) => record.kind === "transition" && record.phase === "settled",
-  );
+  const settled = () =>
+    timeline().find(
+      (record) => record.kind === "transition" && record.phase === "settled",
+    );
   await expect
     .poll(
       () => {
-        const samples = timeline().filter(
-          (record) => record.kind === "lifecycle-heading",
-        );
+        const complete = settled();
+        if (!complete) return false;
+        const samples = timeline()
+          .slice(timeline().indexOf(complete) + 1)
+          .filter((record) => record.kind === "lifecycle-heading");
         return (
-          samples.length >= 20 && samples.at(-1).time - settled.time >= 2000
+          samples.length >= 20 && samples.at(-1).time - complete.time >= 2000
         );
       },
       { timeout: 5000 },
@@ -499,6 +513,9 @@ async function assertPersistedHeading(page, records, firstRecord, documentId) {
   const headings = timeline().filter(
     (record) => record.kind === "lifecycle-heading",
   );
+  const settledHeadings = timeline()
+    .slice(timeline().indexOf(settled()) + 1)
+    .filter((record) => record.kind === "lifecycle-heading");
   const baselineIds = new Set(
     records
       .slice(0, firstRecord)
@@ -524,8 +541,24 @@ async function assertPersistedHeading(page, records, firstRecord, documentId) {
     (record) =>
       record.documentId !== documentId ||
       !record.supportedClip ||
-      record.opacity < 0.98 ||
+      record.ownOpacity !== 1 ||
+      record.nonForegroundOpacity < 0.98 ||
+      (record.opacity < 0.98 &&
+        (!(
+          ["entering", "leaving"].includes(record.phase) ||
+          record.cardTransition === "true"
+        ) ||
+          Math.abs(
+            record.opacity -
+              record.foregroundOpacity * record.nonForegroundOpacity,
+          ) > 0.001)) ||
       record.visibleFraction < 0.98,
+  );
+  const fadedAfterSettled = settledHeadings.find(
+    (record) =>
+      record.opacity < 0.98 ||
+      record.phase !== null ||
+      record.cardTransition !== null,
   );
   const starts = timeline().filter(
     (record) => record.kind === "lifecycle-heading-start",
@@ -535,16 +568,23 @@ async function assertPersistedHeading(page, records, firstRecord, documentId) {
     Math.min(...headings.map((record) => record.scrollY));
   if (
     invisible ||
+    fadedAfterSettled ||
     starts.length ||
     newIds.size ||
     rewinds ||
     scrollRange > 2 ||
-    headings.length < 20
+    settledHeadings.length < 20
   ) {
     await test.info().attach("persisted-lifecycle-heading.json", {
       body: Buffer.from(
         JSON.stringify(
-          { timeline: timeline(), newIds: [...newIds], rewinds, scrollRange },
+          {
+            timeline: timeline(),
+            newIds: [...newIds],
+            rewinds,
+            scrollRange,
+            fadedAfterSettled,
+          },
           null,
           2,
         ),
@@ -557,12 +597,16 @@ async function assertPersistedHeading(page, records, firstRecord, documentId) {
     });
   }
   expect(
-    headings.length,
-    "observe the same heading for two seconds",
+    settledHeadings.length,
+    "observe the same settled heading for two seconds",
   ).toBeGreaterThanOrEqual(20);
   expect(
     invisible,
-    "the retained heading stays opaque, unclipped, and in view",
+    "only the active card transition may fade the foreground; the heading stays opaque and unclipped",
+  ).toBeUndefined();
+  expect(
+    fadedAfterSettled,
+    "the settled foreground and heading stay fully opaque",
   ).toBeUndefined();
   expect(
     starts,
@@ -812,18 +856,20 @@ test.describe("flash regression", () => {
           ),
         )
         .toBe(0);
-      // Abort only the first real document navigation so the real leave() state,
-      // opaque cover and departing latch remain in this original document.
+      // Allow the preparation fetch, then abort the first actual document
+      // navigation so the flipped card and departing latch stay in this DOM.
       let abortedRequests = 0;
-      await page.route(
-        projectUrl(project),
-        async (route) => {
-          expect(route.request().isNavigationRequest()).toBe(true);
-          abortedRequests++;
-          await route.abort("aborted");
-        },
-        { times: 1 },
-      );
+      const targetRoute = projectUrl(project);
+      const abortFirstNavigation = async (route) => {
+        if (!route.request().isNavigationRequest() || abortedRequests) {
+          await route.continue();
+          return;
+        }
+        abortedRequests++;
+        await route.abort("aborted");
+        await page.unroute(targetRoute, abortFirstNavigation);
+      };
+      await page.route(targetRoute, abortFirstNavigation);
       const firstRecord = records.length;
       const restored = await recordJourney(
         page,
@@ -846,6 +892,10 @@ test.describe("flash regression", () => {
                 document.querySelector("#work-title, .page-hero h1"),
               phase: document.documentElement.dataset.pageTransition,
               coverReady: document.documentElement.dataset.coverReady,
+              cardTransition: document.documentElement.dataset.cardTransition,
+              flipStage: Boolean(
+                document.querySelector(".navigation-flip-stage"),
+              ),
               opacity: cover && getComputedStyle(cover).opacity,
               pointerEvents: cover && getComputedStyle(cover).pointerEvents,
               marker: JSON.parse(
@@ -858,12 +908,15 @@ test.describe("flash regression", () => {
             sameHeading: true,
             phase: "leaving",
             coverReady: "true",
-            opacity: "1",
+            cardTransition: "true",
+            flipStage: true,
+            opacity: "0",
             pointerEvents: "auto",
           });
           expect(frozen.marker.from).toBe(page.url());
           expect(frozen.marker.to).toMatch(projectUrl(project));
           expect(frozen.marker.direction).toBe("open");
+          expect(frozen.marker.flip).toBeTruthy();
           // Explicitly simulated persisted events are untrusted. No browser
           // cache eligibility, freeze or restoration is claimed by this test.
           await page.evaluate(() =>
@@ -880,6 +933,10 @@ test.describe("flash regression", () => {
                 from: outgoing.to,
                 to: outgoing.from,
                 direction: "close",
+                flip: {
+                  ...outgoing.flip,
+                  target: outgoing.rect,
+                },
                 at: Date.now(),
               }),
             );
@@ -920,6 +977,11 @@ test.describe("flash regression", () => {
             document.querySelector("#work-title, .page-hero h1"),
           phase: document.documentElement.dataset.pageTransition || null,
           coverReady: document.documentElement.dataset.coverReady || null,
+          cardTransition:
+            document.documentElement.dataset.cardTransition || null,
+          flipStages: document.querySelectorAll(
+            ".navigation-flip-stage, .navigation-card-scan, .navigation-return-frame",
+          ).length,
           marker: sessionStorage.getItem("portfolio-navigation-transition"),
           opacity: cover && getComputedStyle(cover).opacity,
           pointerEvents: cover && getComputedStyle(cover).pointerEvents,
@@ -931,6 +993,8 @@ test.describe("flash regression", () => {
         sameHeading: true,
         phase: null,
         coverReady: null,
+        cardTransition: null,
+        flipStages: 0,
         marker: null,
         opacity: "0",
         pointerEvents: "none",

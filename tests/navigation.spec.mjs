@@ -153,6 +153,27 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
     };
     document.addEventListener("portfolio-transition", (event) => {
       if (
+        event.detail.phase === "entering" &&
+        event.detail.direction === "open" &&
+        location.pathname === "/themis.html"
+      ) {
+        const stage = document.querySelector(".navigation-flip-stage");
+        const rotor = stage?.querySelector(".navigation-card-rotor");
+        sessionStorage.setItem(
+          "tested-deferred-arrival",
+          JSON.stringify({
+            duration: event.detail.duration,
+            readyState: document.readyState,
+            inert: stage?.inert,
+            hidden: stage?.getAttribute("aria-hidden"),
+            rotation: rotor
+              ?.getAnimations()[0]
+              ?.effect.getKeyframes()
+              .map((frame) => frame.transform),
+          }),
+        );
+      }
+      if (
         event.detail.phase === "leaving" &&
         event.detail.direction === "close"
       )
@@ -167,6 +188,17 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
                 sessionStorage.getItem("portfolio-navigation-transition"),
               )?.exitFrame,
             ),
+            destinationFlip: Boolean(
+              JSON.parse(
+                sessionStorage.getItem("portfolio-navigation-transition"),
+              )?.flip,
+            ),
+            coverOpacity: document.getElementById("navigation-cover")
+              ? Number(
+                  getComputedStyle(document.getElementById("navigation-cover"))
+                    .opacity,
+                )
+              : 0,
           }),
         );
     });
@@ -187,6 +219,7 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
     await page.evaluate(() => {
       sessionStorage.removeItem("tested-deferred-exit");
       sessionStorage.removeItem("tested-deferred-completion");
+      sessionStorage.removeItem("tested-deferred-arrival");
     });
     let release;
     let intercept;
@@ -210,6 +243,100 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
       expect(
         (await page.locator("html").getAttribute("class")) || "",
       ).not.toContain("js");
+      const stage = page.locator(".navigation-flip-stage");
+      await expect(stage).toBeAttached();
+      await expect
+        .poll(
+          () =>
+            stage.evaluate(
+              (element) =>
+                element
+                  .getAnimations({ subtree: true })
+                  .filter(
+                    (animation) =>
+                      animation.playState === "running" || animation.pending,
+                  ).length,
+            ),
+          { timeout: 8000 },
+        )
+        .toBe(0);
+      const heldState = await page.evaluate(() => {
+        const rotor = document.querySelector(".navigation-card-rotor");
+        const back = document.querySelector(".navigation-card-back");
+        const upright = new DOMMatrix(
+          getComputedStyle(rotor).transform,
+        ).multiply(new DOMMatrix(getComputedStyle(back).transform));
+        const progress = new DOMMatrix(
+          getComputedStyle(
+            document.querySelector(".navigation-card-progress-fill"),
+          ).transform,
+        ).a;
+        const field = document.querySelector(".hero-field");
+        return {
+          bootstrap: JSON.parse(
+            sessionStorage.getItem("tested-deferred-arrival"),
+          ),
+          upright: {
+            m22: upright.m22,
+            m23: upright.m23,
+            m32: upright.m32,
+            m33: upright.m33,
+          },
+          progress,
+          mainFilter: getComputedStyle(document.querySelector("main")).filter,
+          fieldFilter: getComputedStyle(field).filter,
+          fieldOpacity: Number(getComputedStyle(field).opacity),
+          coverOpacity: document.getElementById("navigation-cover")
+            ? Number(
+                getComputedStyle(document.getElementById("navigation-cover"))
+                  .opacity,
+              )
+            : 0,
+          phase: document.documentElement.dataset.pageTransition,
+        };
+      });
+      expect(heldState.bootstrap).toEqual({
+        duration: 390,
+        readyState: "loading",
+        inert: true,
+        hidden: "true",
+        rotation: ["rotateX(135deg)", "rotateX(180deg)"],
+      });
+      expect(heldState.upright.m22).toBeCloseTo(1, 3);
+      expect(heldState.upright.m33).toBeCloseTo(1, 3);
+      expect(heldState.upright.m23).toBeCloseTo(0, 3);
+      expect(heldState.upright.m32).toBeCloseTo(0, 3);
+      expect(heldState.progress).toBeGreaterThanOrEqual(0.85);
+      expect(heldState.progress).toBeLessThan(1);
+      expect(heldState.mainFilter).toBe("blur(8px)");
+      expect(heldState.fieldFilter).toBe("none");
+      expect(heldState.fieldOpacity).toBeGreaterThan(0);
+      expect(heldState.coverOpacity).toBe(0);
+      expect(heldState.phase).toBe("entering");
+      expect(
+        await page.evaluate(async () => {
+          const field = document.querySelector(".hero-field");
+          const sample = document.createElement("canvas");
+          sample.width = sample.height = 64;
+          const context = sample.getContext("2d");
+          function pixels() {
+            context.clearRect(0, 0, 64, 64);
+            context.drawImage(field, 0, 0, 64, 64);
+            return Array.from(context.getImageData(0, 0, 64, 64).data).join(
+              ",",
+            );
+          }
+          const before = pixels();
+          const until = performance.now() + 180;
+          do {
+            await new Promise(requestAnimationFrame);
+          } while (performance.now() < until);
+          return before !== pixels();
+        }),
+      ).toBe(true);
+      // The loading card stays present until the blocked deferred app is ready.
+      await expect(stage).toBeAttached();
+      await expect(page.locator(".navigation-card-scan")).toHaveCount(0);
       await page.evaluate((unavailable) => {
         window.rejectClosingMarker = unavailable;
       }, storageUnavailable);
@@ -219,9 +346,9 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
           "data-page-transition",
           "leaving",
         );
-      // Normal closing hands over immediately to the landing page. When
-      // storage fails, the source animates instead; release the delayed app
-      // while that exit is still active so its completion cannot cancel it.
+      // Normal closing continues the flip on the landing page. When storage
+      // fails, the source animates instead; releasing the deferred app while
+      // either exit is active must not cancel it.
       release();
       await expect(page).toHaveURL(/projects.html$/);
       await expect(page.locator("html")).not.toHaveAttribute(
@@ -232,7 +359,15 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
         "data-cover-ready",
         "true",
       );
-      await expect(page.locator(".navigation-return-frame")).toHaveCount(0);
+      await expect(
+        page.locator(
+          ".navigation-return-frame, .navigation-flip-stage, .navigation-card-scan",
+        ),
+      ).toHaveCount(0);
+      await expect(page.locator("html")).not.toHaveAttribute(
+        "data-card-transition",
+        "true",
+      );
       await expect(
         page.getByRole("link", {
           name: "Read case study: Themis",
@@ -260,10 +395,12 @@ test("a deferred script finishing during Escape cannot cancel the project exit",
           : null,
       }));
       expect(result.exit).toEqual({
-        duration: 1100,
+        duration: storageUnavailable ? 550 : 220,
         phase: "leaving",
         source: "/themis.html",
         destinationFrame: !storageUnavailable,
+        destinationFlip: !storageUnavailable,
+        coverOpacity: 0,
       });
       if (storageUnavailable)
         expect(result.completion).toEqual({
