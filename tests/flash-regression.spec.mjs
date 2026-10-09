@@ -4,7 +4,22 @@ const dark = "rgb(12, 28, 26)";
 const projects = [
   { slug: "themis", name: "Themis", next: "dueform" },
   { slug: "dueform", name: "DueForm", next: "actifact" },
-  { slug: "actifact", name: "ActiFact", next: "themis" },
+  { slug: "actifact", name: "ActiFact", next: "financial-qa" },
+  {
+    slug: "financial-qa",
+    name: "Financial document QA",
+    next: "vodafone-tobi",
+  },
+  {
+    slug: "vodafone-tobi",
+    name: "Vodafone TOBi",
+    next: "nationwide-governance",
+  },
+  {
+    slug: "nationwide-governance",
+    name: "Nationwide AI Governance",
+    next: "themis",
+  },
 ];
 const origins = [
   {
@@ -15,8 +30,6 @@ const origins = [
   { name: "Projects", path: "/projects.html", url: /\/projects\.html$/ },
 ];
 
-// Keep probes in the test process: a new document and a BFCache restore must
-// contribute to the same timeline, including the frames before DOM readiness.
 async function installProbe(page) {
   const records = [];
   await page.exposeBinding("__reportFlashProbe", (_source, record) => {
@@ -37,8 +50,6 @@ async function installProbe(page) {
     function sample() {
       if (!running) return;
       const root = document.documentElement;
-      // addInitScript precedes the critical inline style itself. Start asserting
-      // at the first renderable document with that style, not at about:blank.
       if (root && document.head?.querySelector("style")) {
         const body = document.body;
         let video = null;
@@ -86,8 +97,6 @@ async function installProbe(page) {
       running = false;
       cancelAnimationFrame(frame);
     });
-    // Start before DOMContentLoaded so delayed assets do not leave the first
-    // paint outside the probe. sample() waits for the inline critical style.
     start();
   });
   return records;
@@ -130,8 +139,6 @@ async function analyseFrames(page, frames, records) {
         canvas.width,
         canvas.height,
       ).data;
-      // Only the visible natural portrait video is excluded. No central deck,
-      // card, transition cover, header, or other page region is masked.
       const mask = frame.video && {
         left: (frame.video.left * canvas.width) / frame.viewportWidth,
         top: (frame.video.top * canvas.height) / frame.viewportHeight,
@@ -142,8 +149,6 @@ async function analyseFrames(page, frames, records) {
       let unmaskedBright = 0;
       let unmaskedPixels = 0;
       if (!mask) {
-        // Project frames have no video mask. Scan every pixel directly without
-        // recomputing its coordinates; the threshold and coverage stay exact.
         for (let offset = 0; offset < pixels.length; offset += 4) {
           if (
             pixels[offset] >= 235 &&
@@ -222,7 +227,7 @@ async function recordJourney(page, records, label, action, url, selector) {
     await page.waitForLoadState("domcontentloaded");
     const destination = page.locator(selector);
     if (selector === ".project-card") {
-      await expect(destination).toHaveCount(3);
+      await expect(destination).toHaveCount(6);
       await expect(destination.first()).toBeVisible();
     } else await expect(destination).toBeVisible();
     await expect
@@ -242,10 +247,7 @@ async function recordJourney(page, records, label, action, url, selector) {
       "data-page-transition",
       /^(leaving|entering)$/,
     );
-    // Include restoration and cleanup paints after the final animation.
     await page.waitForTimeout(120);
-    // A reduced-motion page is static, so WebKit may emit just one screencast
-    // frame. Also verify a real full-viewport screenshot after cleanup settles.
     frames.push({
       data: await page.screenshot({ type: "jpeg", quality: 95 }),
       timestamp: Date.now(),
@@ -268,6 +270,7 @@ async function recordJourney(page, records, label, action, url, selector) {
     await page.screencast.stop();
   }
   const timeline = records.slice(firstRecord);
+  if (frames.length > 1 && frames[0].receivedAt < actionStarted) frames.shift();
   const metrics = await analyseFrames(page, frames, timeline);
   const brightIndex = metrics.findIndex((frame) => frame.whiteRatio > 0.25);
   const backgroundIssue = timeline.find(
@@ -285,8 +288,6 @@ async function recordJourney(page, records, label, action, url, selector) {
       record.time >= actionStarted &&
       url.test(record.href),
   );
-  // Reduced motion intentionally settles immediately, without an animated
-  // entering phase. The destination settled event is still mandatory above.
   const arrivalObserved = entering || reducedMotion;
   if (
     brightIndex >= 0 ||
@@ -330,16 +331,12 @@ const projectUrl = (project) => new RegExp(`/${project.slug}\\.html$`);
 
 async function outsideClick(page) {
   const backdrop = await page.locator(".presentation-topbar").boundingBox();
-  // Choose empty topbar space, outside the breadcrumb, title, and controls.
   await page.mouse.click(
     backdrop.x + backdrop.width * 0.55,
     backdrop.y + backdrop.height / 2,
   );
 }
 
-// This is explicit lifecycle simulation, not browser BFCache coverage. Keep the
-// actual departing DOM and navigation closure alive, then deliver the persisted
-// lifecycle events to their real listeners. Playwright disables browser BFCache.
 async function installPersistedLifecycleProbe(page, selector) {
   return page.evaluate((selector) => {
     const heading = document.querySelector(selector);
@@ -628,8 +625,6 @@ async function waitForDeckAnimations(page) {
           (deck) =>
             deck.getAnimations({ subtree: true }).filter((animation) => {
               const end = animation.effect?.getComputedTiming().endTime;
-              // Decorative stage charges and diagrams deliberately loop. Scene
-              // arrivals, stage hops, sweeps, and control transitions must finish.
               return (
                 Number.isFinite(end) &&
                 (animation.playState === "running" || animation.pending)
@@ -674,9 +669,8 @@ async function recordSceneJourney(page, records, label, action) {
     await page.screencast.stop();
   }
   const timeline = records.slice(firstRecord);
+  if (frames.length > 1 && frames[0].receivedAt < actionStarted) frames.shift();
   const metrics = [];
-  // A complete scene journey is longer than a navigation. Decode small batches
-  // so CI does not have to load hundreds of JPEGs into one browser evaluation.
   for (let offset = 0; offset < frames.length; offset += 16)
     metrics.push(
       ...(await analyseFrames(
@@ -826,8 +820,6 @@ test.describe("flash regression", () => {
         origin.name === "landing Work" ? "#work-title" : ".page-hero h1";
       const heading = page.locator(headingSelector);
       await expect(heading).toBeVisible();
-      // Establish a completed initial reveal before testing cached restoration.
-      // A first visible frame can precede the observer's class/style update.
       if (origin.name === "landing Work")
         await expect(page.locator("#work")).toHaveClass(/is-chapter-active/);
       const documentId = await installPersistedLifecycleProbe(
@@ -856,8 +848,6 @@ test.describe("flash regression", () => {
           ),
         )
         .toBe(0);
-      // Allow the preparation fetch, then abort the first actual document
-      // navigation so the flipped card and departing latch stay in this DOM.
       let abortedRequests = 0;
       const targetRoute = projectUrl(project);
       const abortFirstNavigation = async (route) => {
@@ -917,8 +907,6 @@ test.describe("flash regression", () => {
           expect(frozen.marker.to).toMatch(projectUrl(project));
           expect(frozen.marker.direction).toBe("open");
           expect(frozen.marker.flip).toBeTruthy();
-          // Explicitly simulated persisted events are untrusted. No browser
-          // cache eligibility, freeze or restoration is claimed by this test.
           await page.evaluate(() =>
             window.dispatchEvent(
               new PageTransitionEvent("pagehide", { persisted: true }),
@@ -1000,8 +988,6 @@ test.describe("flash regression", () => {
         pointerEvents: "none",
       });
       await assertPersistedHeading(page, records, firstRecord, documentId);
-      // Normal navigation after the simulation must still work. A stale
-      // departing latch or blocking cover would prevent this repeated entry.
       await recordJourney(
         page,
         records,
@@ -1040,11 +1026,7 @@ test.describe("flash regression", () => {
     test(`${project.name}: all scenes, internal controls, and reverse arrows stay dark`, async ({
       page,
     }) => {
-      // Includes image decoding/analysis for every control in all six scenes.
-      // Individual scene/animation assertions keep their shorter deadlines.
       test.setTimeout(120000);
-      // Compact presentation dimensions expose the real design/detail/build
-      // controls; selecting hidden controls would miss their rendered states.
       await page.setViewportSize({ width: 760, height: 720 });
       const records = await installProbe(page);
       await page.goto(`/${project.slug}.html`);
@@ -1089,18 +1071,23 @@ test.describe("flash regression", () => {
                 ).toBeVisible();
                 await waitForDeckAnimations(page);
               }
-              const toggle = scene.locator(".design-toggle");
-              await expect(toggle).toBeVisible();
-              await toggle.click();
-              await expect(toggle).toHaveAttribute("aria-pressed", "true");
-              await expect(
-                scene.locator(".presentation-decision"),
-              ).toBeVisible();
-              await waitForDeckAnimations(page);
-              await toggle.click();
-              await expect(toggle).toHaveAttribute("aria-pressed", "false");
-              await expect(scene.locator("#stage-panel-0")).toBeVisible();
-              await waitForDeckAnimations(page);
+              const tabs = scene.locator(".detail-toggle");
+              const toggles = (await tabs.count())
+                ? await tabs.all()
+                : [scene.locator(".design-toggle")];
+              for (const toggle of toggles) {
+                await expect(toggle).toBeVisible();
+                await toggle.click();
+                await expect(toggle).toHaveAttribute("aria-pressed", "true");
+                await expect(
+                  scene.locator(".presentation-decision"),
+                ).toBeVisible();
+                await waitForDeckAnimations(page);
+                await toggle.click();
+                await expect(toggle).toHaveAttribute("aria-pressed", "false");
+                await expect(scene.locator("#stage-panel-0")).toBeVisible();
+                await waitForDeckAnimations(page);
+              }
             } else if (scenes[index] === "build") {
               const buttons = scene.locator("[data-build]");
               expect(await buttons.count()).toBeGreaterThan(1);
@@ -1123,21 +1110,24 @@ test.describe("flash regression", () => {
               scenes[index] === "results" ||
               scenes[index] === "scope"
             ) {
-              const toggle = scene.locator(".detail-toggle");
+              const toggles = scene.locator(".detail-toggle");
               const detail = scene.locator(
                 scenes[index] === "results"
                   ? ".results-context"
                   : ".presentation-scope",
               );
-              await expect(toggle).toBeVisible();
-              await toggle.click();
-              await expect(toggle).toHaveAttribute("aria-pressed", "true");
-              await expect(detail).toBeVisible();
-              await waitForDeckAnimations(page);
-              await toggle.click();
-              await expect(toggle).toHaveAttribute("aria-pressed", "false");
-              await expect(detail).toBeHidden();
-              await waitForDeckAnimations(page);
+              for (let item = 0; item < (await toggles.count()); item++) {
+                const toggle = toggles.nth(item);
+                await expect(toggle).toBeVisible();
+                await toggle.click();
+                await expect(toggle).toHaveAttribute("aria-pressed", "true");
+                await expect(detail).toBeVisible();
+                await waitForDeckAnimations(page);
+                await toggle.click();
+                await expect(toggle).toHaveAttribute("aria-pressed", "false");
+                await expect(detail).toBeHidden();
+                await waitForDeckAnimations(page);
+              }
             }
           }
           for (let index = scenes.length - 2; index >= 0; index--) {

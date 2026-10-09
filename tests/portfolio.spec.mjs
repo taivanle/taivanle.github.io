@@ -7,6 +7,9 @@ const pages = [
   "themis.html",
   "dueform.html",
   "actifact.html",
+  "financial-qa.html",
+  "vodafone-tobi.html",
+  "nationwide-governance.html",
   "blog_homepage.html",
   "create_agent.html",
   "engineering-reliable-ai.html",
@@ -67,14 +70,12 @@ test("all five chapter handoffs have moving currents and scroll-driven type in b
 }) => {
   await page.goto("/");
   await expect(page.locator(".chapter-rule")).toHaveCount(5);
-  for (const section of ["work", "about", "experience", "community", "notes"]) {
+  const sections = ["work", "about", "experience", "community", "notes"];
+  for (const [index, section] of sections.entries()) {
     const divider = page.locator(`#${section} .chapter-rule`);
-    const number = (
-      await page.locator(`#${section} .eyebrow`).first().innerText()
-    )
-      .split("/")[0]
-      .trim();
-    await expect(divider.locator(".chapter-index")).toHaveText(number);
+    await expect(divider.locator(".chapter-index")).toHaveText(
+      String(index + 1).padStart(2, "0"),
+    );
     await divider.scrollIntoViewIfNeeded();
     await expect(divider).toHaveClass(/is-divider-active/);
     const current = divider.locator(".chapter-current-core");
@@ -135,11 +136,10 @@ test("chapter locks release immediately, work in both directions, and keep activ
   await expect(page.locator(".nav-link[aria-current]")).toHaveText(
     "Experience",
   );
-  // Moving away from an aligned section must not pull the reader back.
+  await page.waitForTimeout(500);
   await page.mouse.wheel(0, 60);
   await page.waitForTimeout(700);
   await expect.poll(top).toBeLessThan(padding - 40);
-  // Return from within the section: settle once after the gesture stops.
   await page.mouse.wheel(0, 360);
   await expect.poll(top).toBeLessThan(padding - 300);
   await page.mouse.wheel(0, -350);
@@ -223,7 +223,6 @@ for (const viewport of [
       await expect
         .poll(async () => Math.abs((await top(id)) - padding))
         .toBeLessThan(2);
-      // The lock is an arrival point, not a trap: a small next gesture continues.
       await page.mouse.wheel(0, 60);
       await page.waitForTimeout(750);
       await expect.poll(() => top(id)).toBeLessThan(padding - 40);
@@ -258,8 +257,6 @@ test("the shared navigation bubble visibly travels between sections and follows 
         : Infinity,
     );
   await expect.poll(() => aligned(about)).toBeLessThan(2);
-  // Sample rendered frames while the user clicks. Polling an attribute can
-  // otherwise miss the entire short transition on a busy CI worker.
   const travel = page.evaluate(
     () =>
       new Promise((resolve) => {
@@ -367,23 +364,23 @@ test("project filters update visible cards and announce the result", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator(".project-card:visible")).toHaveCount(3);
-  for (const name of [
-    "AI & evaluation",
-    "Product engineering",
-    "Governance & controls",
+  await expect(page.locator(".project-card:visible")).toHaveCount(6);
+  for (const [name, count] of [
+    ["AI & evaluation", 3],
+    ["Product engineering", 1],
+    ["Governance & controls", 2],
   ]) {
     await page.getByRole("button", { name, exact: true }).click();
-    await expect(page.locator(".project-card:visible")).toHaveCount(1);
+    await expect(page.locator(".project-card:visible")).toHaveCount(count);
     await expect(
       page.getByRole("button", { name, exact: true }),
     ).toHaveAttribute("aria-pressed", "true");
     await expect(page.locator("#filter-status")).toContainText(
-      "1 project shown",
+      `${count} ${count === 1 ? "project" : "projects"} shown`,
     );
   }
   await page.getByRole("button", { name: "All work" }).click();
-  await expect(page.locator(".project-card:visible")).toHaveCount(3);
+  await expect(page.locator(".project-card:visible")).toHaveCount(6);
 });
 
 test("mobile menu supports navigation, Escape, and desktop resizing", async ({
@@ -413,14 +410,16 @@ test("mobile menu supports navigation, Escape, and desktop resizing", async ({
 
 test("essential content and navigation work without JavaScript", async ({
   browser,
+  baseURL,
 }) => {
   const context = await browser.newContext({
+    baseURL,
     javaScriptEnabled: false,
     viewport: { width: 390, height: 844 },
   });
   const page = await context.newPage();
-  await page.goto("http://127.0.0.1:4178/");
-  await expect(page.locator(".project-card")).toHaveCount(3);
+  await page.goto("/");
+  await expect(page.locator(".project-card")).toHaveCount(6);
   await expect(page.locator("#navigation")).toBeVisible();
   await page
     .getByRole("link", { name: "Read case study: DueForm", exact: true })
@@ -478,7 +477,14 @@ test("presentations support scene navigation, architecture exploration, and read
   await expect(page.locator(".scene:visible")).toHaveCount(1);
 });
 
-for (const project of ["themis", "dueform", "actifact"]) {
+for (const project of [
+  "themis",
+  "dueform",
+  "actifact",
+  "financial-qa",
+  "vodafone-tobi",
+  "nationwide-governance",
+]) {
   test(`${project}: every presentation scene is accessible and fits small and wide screens`, async ({
     page,
   }) => {
@@ -710,7 +716,14 @@ test("result labels stay inside their own columns at every breakpoint", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  for (const project of ["themis", "dueform", "actifact"]) {
+  for (const project of [
+    "themis",
+    "dueform",
+    "actifact",
+    "financial-qa",
+    "vodafone-tobi",
+    "nationwide-governance",
+  ]) {
     await page.goto(`/${project}.html#results`);
     await page.evaluate(() => document.fonts.ready);
     for (const width of [2560, 1920, 1440, 1024, 768, 390, 320]) {
@@ -720,7 +733,7 @@ test("result labels stay inside their own columns at every breakpoint", async ({
         .evaluateAll((columns) =>
           columns.flatMap((column) => {
             const bounds = column.getBoundingClientRect();
-            return [...column.querySelectorAll("strong, p, .mono")].flatMap(
+            return [...column.querySelectorAll("strong, p, .label")].flatMap(
               (element) => {
                 const range = document.createRange();
                 range.selectNodeContents(element);
@@ -762,6 +775,7 @@ test("the cursor follower responds to project hover without blocking navigation"
 test("the cursor follower stays hidden for reduced motion and touch", async ({
   page,
   browser,
+  baseURL,
 }) => {
   await page.goto("/");
   await page.mouse.move(160, 200);
@@ -770,12 +784,13 @@ test("the cursor follower stays hidden for reduced motion and touch", async ({
   await expect(page.locator(".cursor-tracker")).toBeHidden();
   await expect(page.locator("html")).not.toHaveClass(/cursor-active/);
   const context = await browser.newContext({
+    baseURL,
     hasTouch: true,
     isMobile: true,
     viewport: { width: 390, height: 844 },
   });
   const touchPage = await context.newPage();
-  await touchPage.goto("http://127.0.0.1:4178/");
+  await touchPage.goto("/");
   await touchPage.mouse.move(160, 200);
   await expect(touchPage.locator(".cursor-tracker")).toBeHidden();
   await context.close();
@@ -1003,7 +1018,8 @@ test("project cards expand into a dark presentation and return through the real 
               "::before",
             ).content,
             progress: progress
-              ? new DOMMatrix(getComputedStyle(progress).transform).a
+              ? 1 -
+                parseFloat(getComputedStyle(progress).strokeDashoffset) / 100
               : null,
           });
         }
@@ -1023,7 +1039,9 @@ test("project cards expand into a dark presentation and return through the real 
     });
   });
   await page.goto("/index.html#work");
-  const card = page.locator('.project-card[data-category="ai"] .card-frame');
+  const card = page
+    .locator('.project-card[data-category="ai"] .card-frame')
+    .first();
   await expect(card).toHaveAttribute("data-project", "themis");
   await page
     .getByRole("link", { name: "Read case study: Themis", exact: true })
@@ -1145,8 +1163,6 @@ test("project cards expand into a dark presentation and return through the real 
       1,
     );
   }
-  // The entire flip uses one source animation with fixed layout dimensions.
-  // Navigation starts at rest, so loading cannot splice two easing curves.
   for (const record of [sourceOpen, sourceClose]) {
     expect(
       record.samples.every(
@@ -1251,8 +1267,6 @@ test("the light changes the illumination of the background as the pointer moves"
 test("Birmingham photos advance slowly, pause during interaction, and respect reduced motion", async ({
   page,
 }) => {
-  // The clock replays over 46 seconds of timers and background frames. Allow
-  // that work to finish on slower runners; assertion deadlines stay unchanged.
   test.setTimeout(60000);
   await page.clock.install();
   await page.goto("/#community");
@@ -1279,6 +1293,9 @@ for (const [slug, name] of [
   ["themis", "Themis"],
   ["dueform", "DueForm"],
   ["actifact", "ActiFact"],
+  ["financial-qa", "Financial document QA"],
+  ["vodafone-tobi", "Vodafone TOBi"],
+  ["nationwide-governance", "Nationwide AI Governance"],
 ]) {
   test(`${name}: outside click and Escape return to the actual previous page`, async ({
     page,
@@ -1331,23 +1348,31 @@ for (const [slug, name] of [
 
 test("direct project links have a safe return and old links retain their scene", async ({
   browser,
+  baseURL,
 }) => {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
-  await page.goto("http://127.0.0.1:4178/actifact.html");
+  await page.goto("/actifact.html");
   await page.locator(".scene.is-active .scene-title").click();
   await page.mouse.click(8, 200);
   await expect(page).toHaveURL(/index.html#work$/);
-  await page.goto("http://127.0.0.1:4178/billacord.html#results");
+  await page.goto("/billacord.html#results");
   await expect(page).toHaveURL(/dueform.html#results$/);
   await expect(page.locator("#results")).toBeVisible();
-  await page.goto("http://127.0.0.1:4178/actionproof.html?view=all#build");
+  await page.goto("/actionproof.html?view=all#build");
   await expect(page).toHaveURL(/actifact.html\?view=all#build$/);
   await expect(page.locator(".scene:visible")).toHaveCount(6);
   await context.close();
 });
 
-for (const slug of ["themis", "dueform", "actifact"]) {
+for (const slug of [
+  "themis",
+  "dueform",
+  "actifact",
+  "financial-qa",
+  "vodafone-tobi",
+  "nationwide-governance",
+]) {
   test(`${slug}: electrical stages travel in both directions and stay connected on mobile`, async ({
     page,
   }) => {
@@ -1541,7 +1566,6 @@ test("the background glow stays smooth across the space below the video frame", 
           for (let i = 1; i < pixels.length; i += 4) total += pixels[i];
           return total / (pixels.length / 4);
         };
-        // A clipped glow produces a persistent edge; one passing wire does not.
         const differences = [-18, 0, 18, 36, 54]
           .map(
             (offset) =>
@@ -1559,4 +1583,99 @@ test("the background glow stays smooth across the space below the video frame", 
       `No rectangular light boundary below the frame at x=${edge}`,
     ).toBeLessThan(8);
   }
+});
+
+test("keyboard shortcuts open a panel, jump between chapters, and Escape only closes the panel", async ({
+  page,
+}) => {
+  await page.goto("/themis.html");
+  await expect(page.locator(".presentation-deck")).toBeVisible();
+  await page.keyboard.press("?");
+  const panel = page.getByRole("dialog", { name: "Keyboard shortcuts" });
+  await expect(panel).toBeVisible();
+  await expect(panel.getByText("Move between scenes")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(page).toHaveURL(/themis.html/);
+  await page.goto("/");
+  await page.keyboard.press("g");
+  await page.keyboard.press("e");
+  await expect
+    .poll(() =>
+      page
+        .locator("#experience")
+        .evaluate((section) => Math.round(section.getBoundingClientRect().top)),
+    )
+    .toBeLessThan(200);
+  await page.getByRole("button", { name: /for shortcuts/ }).click();
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: "Close shortcuts" }).click();
+  await expect(panel).toBeHidden();
+});
+
+test("note rows preview their summary beside the pointer", async ({ page }) => {
+  await page.goto("/blog_homepage.html");
+  const row = page.locator(".note-row").first();
+  await row.hover();
+  const preview = page.locator(".note-preview");
+  await expect(preview).toHaveClass(/is-visible/);
+  await expect(preview).toContainText("A complete walkthrough");
+  await expect(preview).toContainText(/\d+ sections · \d+ min read/);
+  await page.mouse.move(10, 10);
+  await expect(preview).not.toHaveClass(/is-visible/);
+});
+
+test("the hero name responds to the pointer and keeps its accessible name", async ({
+  page,
+}) => {
+  await page.goto("/#work");
+  await page.evaluate(() => window.scrollTo(0, 0));
+  const heading = page.getByRole("heading", {
+    level: 1,
+    name: "Owen Le. Engineer.",
+  });
+  await expect(heading).toBeVisible();
+  const accent = await page.locator(".hero-accent").boundingBox();
+  for (let step = 0; step < 6; step++)
+    await page.mouse.move(
+      accent.x + accent.width * (0.3 + step * 0.04),
+      accent.y + accent.height / 2,
+    );
+  await expect
+    .poll(() =>
+      page
+        .locator(".hero h1 .line span span")
+        .evaluateAll((glyphs) =>
+          Math.max(0, ...glyphs.map((glyph) => Number(glyph.style.fontWeight))),
+        ),
+    )
+    .toBeGreaterThan(560);
+  await page.mouse.move(10, 860);
+  await expect(page.locator(".hero h1 .line span span")).toHaveCount(0);
+  await expect(page.locator(".hero h1")).toHaveText(/Owen Le\.\s+Engineer\./);
+});
+
+test("the Themis architecture opens as an accessible diagram and closes without leaving the project", async ({
+  page,
+}) => {
+  await page.goto("/themis.html#architecture");
+  await page.getByRole("button", { name: "Full architecture" }).click();
+  const diagram = page.getByRole("dialog", {
+    name: "How Themis grades an agent’s work.",
+  });
+  await expect(diagram).toBeVisible();
+  await expect(diagram.locator(".diagram-group")).toHaveCount(7);
+  await expect(
+    diagram.getByText("Environment-aligned execution"),
+  ).toBeVisible();
+  const accessibility = await new AxeBuilder({ page })
+    .include(".diagram-dialog")
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(accessibility.violations.map((violation) => violation.id)).toEqual([]);
+  await diagram.getByText("Structured judgement").click();
+  await expect(diagram).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(diagram).toBeHidden();
+  await expect(page).toHaveURL(/themis.html#architecture$/);
 });

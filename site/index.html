@@ -3,12 +3,15 @@
     <section class="hero-scene" aria-labelledby="hero-title">
       <div class="hero wrap">
         <div class="hero-copy">
-          <h1 id="hero-title">Owen Le.<br /><span>Engineer.</span></h1>
-          <p class="hero-roles">
-            Forward Deployed Engineer<br />
-            Applied AI Engineer<br />
-            Member of Technical Staff
-          </p>
+          <h1 id="hero-title">
+            <span class="line"><span>Owen Le.</span></span>
+            <span class="line hero-accent"><span>Engineer.</span></span>
+          </h1>
+          <ul class="hero-roles">
+            <li>Forward Deployed Engineer</li>
+            <li>Applied AI Engineer</li>
+            <li>Member of Technical Staff</li>
+          </ul>
           <p class="hero-description">
             I build evaluation systems, agent workflows, and software that
             connects AI to enterprise tools.
@@ -24,11 +27,19 @@
             >
           </div>
           <p class="hero-footnote">
-            Based in London <span aria-hidden="true">/</span> Previously Aptura
-            & IBM
+            <span class="availability">Open to new roles</span
+            ><span class="divider" aria-hidden="true"></span
+            ><span
+              >London<span
+                class="local-time"
+                data-london-time
+                hidden
+              ></span></span
+            ><span class="divider" aria-hidden="true"></span
+            ><span>Previously Aptura &amp; IBM</span>
           </p>
         </div>
-        <div class="portrait-panel">
+        <figure class="portrait-panel">
           <div class="portrait-clip">
             <video
               data-portrait-video
@@ -47,8 +58,12 @@
               >
             </video>
           </div>
-        </div>
+          <figcaption class="portrait-caption">
+            <span>Technical demonstration</span><span>IBM</span>
+          </figcaption>
+        </figure>
       </div>
+      <span class="scroll-cue" aria-hidden="true">Scroll</span>
     </section>
   </div>
   <section
@@ -76,8 +91,7 @@
     <div class="wrap">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">01 / SELECTED WORK</p>
-          <h2 id="work-title">Selected <span class="serif">projects.</span></h2>
+          <h2 id="work-title">Selected <span class="soft">projects.</span></h2>
         </div>
         <p>
           Applied AI, product engineering,<br />and the controls that make them
@@ -86,7 +100,7 @@
       </div>
       <div class="filters" role="group" aria-label="Filter projects">
         <button type="button" data-filter="all" aria-pressed="true">
-          All work <span>03</span></button
+          All work <span>{{projectCount}}</span></button
         ><button type="button" data-filter="ai" aria-pressed="false">
           AI & evaluation</button
         ><button type="button" data-filter="product" aria-pressed="false">
@@ -123,9 +137,8 @@
     </div>
     <div class="wrap about-grid">
       <div>
-        <p class="eyebrow">02 / HOW I WORK</p>
         <h2 id="about-title">
-          How I<br /><span class="serif">build systems.</span>
+          How I<br /><span class="soft">build systems.</span>
         </h2>
         <p class="about-intro">
           I start with the data and the workflow, make the controls explicit,
@@ -146,7 +159,7 @@
       </div>
       <div class="principles">
         <div>
-          <span class="mono">01</span>
+          <span class="label">01</span>
           <div>
             <h3>Start with the problem.</h3>
             <p>
@@ -156,7 +169,7 @@
           </div>
         </div>
         <div>
-          <span class="mono">02</span>
+          <span class="label">02</span>
           <div>
             <h3>Build the boundaries.</h3>
             <p>
@@ -166,7 +179,7 @@
           </div>
         </div>
         <div>
-          <span class="mono">03</span>
+          <span class="label">03</span>
           <div>
             <h3>Measure what matters.</h3>
             <p>
@@ -202,9 +215,8 @@
     </div>
     <div class="section-heading">
       <div>
-        <p class="eyebrow">03 / EXPERIENCE</p>
         <h2 id="experience-title">
-          Engineering<br /><span class="serif">experience.</span>
+          Engineering<br /><span class="soft">experience.</span>
         </h2>
       </div>
       <a
@@ -217,17 +229,15 @@
     </div>
     <div class="impact-strip" aria-label="Selected career impact">
       <a href="#ibm-experience"
-        ><strong>20<span>+</span></strong
+        ><strong data-count="20">20<span>+</span></strong
         ><span
-          >enterprise engagements<br /><small
-            >IBM Client Engineering</small
-          ></span
+          >Enterprise engagements<small>IBM Client Engineering</small></span
         ></a
       >
       <a href="themis.html"
-        ><strong>98.7<span>%</span></strong
+        ><strong data-count="98.7">98.7<span>%</span></strong
         ><span
-          >lower evaluation cost per run<br /><small
+          >Lower evaluation cost per run<small
             >Themis evaluation benchmark</small
           ></span
         ></a
@@ -235,14 +245,14 @@
       <a href="#ibm-experience"
         ><strong>4–8<span>w</span></strong
         ><span
-          >AI pilot delivery cycles<br /><small
+          >AI pilot delivery cycles<small
             >Cross-functional engineering squads</small
           ></span
         ></a
       >
     </div>
     <div class="experience-row">
-      <p class="mono experience-date">JUN – AUG 2026</p>
+      <p class="label experience-date">Jun – Aug 2026</p>
       <div class="company">
         <h3>Aptura</h3>
         <span>Member of Technical Staff</span>
@@ -255,7 +265,7 @@
       </div>
     </div>
     <div id="ibm-experience" class="experience-row">
-      <p class="mono experience-date">2023 – JUL 2026</p>
+      <p class="label experience-date">2023 – Jul 2026</p>
       <div class="company">
         <h3>IBM</h3>
         <span
@@ -278,7 +288,7 @@
       </div>
     </div>
     <div class="experience-row">
-      <p class="mono experience-date">2021 – 2022</p>
+      <p class="label experience-date">2021 – 2022</p>
       <div class="company">
         <h3>Independent venture</h3>
         <span>Co-Founder & Technical Lead</span>
@@ -292,14 +302,14 @@
       </div>
     </div>
     <div class="education">
-      <span class="mono">FOUNDATION</span>
+      <span class="label">Foundation</span>
       <p>
         <strong>BEng Mechanical Engineering · First Class Honours</strong
         ><br />University of Portsmouth · 2017–2021
       </p>
     </div>
     <div class="credentials" aria-label="Selected professional learning">
-      <span class="mono">SELECTED LEARNING</span>
+      <span class="label">Selected learning</span>
       <div>
         <a
           href="https://www.credly.com/badges/8121e13f-04ce-4ea7-8eb6-5a53570e7364/linked_in_profile"
@@ -324,27 +334,48 @@
         >
       </div>
     </div>
-    <div class="toolkit">
-      <div>
-        <h3>AI & evaluation</h3>
-        <p>
-          Agent orchestration · RAG · MCP<br />Structured outputs · Evaluation
-          frameworks<br />LangChain · LangFlow · Milvus
-        </p>
+    <div class="toolkit" role="group" aria-labelledby="toolkit-title">
+      <h3 id="toolkit-title" class="label">Toolkit</h3>
+      <div class="marquee">
+        <div class="marquee-track">
+          <ul class="marquee-list">
+            <li class="marquee-group">AI &amp; evaluation</li>
+            <li>Agent orchestration</li>
+            <li>RAG</li>
+            <li>MCP</li>
+            <li>Structured outputs</li>
+            <li>Evaluation frameworks</li>
+            <li>LangChain</li>
+            <li>LangFlow</li>
+            <li>Milvus</li>
+            <li class="marquee-group">Infrastructure &amp; delivery</li>
+            <li>Docker</li>
+            <li>Podman</li>
+            <li>OpenShift</li>
+            <li>Kubernetes</li>
+            <li>Terraform</li>
+            <li>CI/CD</li>
+            <li>Technical discovery</li>
+            <li>AI governance</li>
+          </ul>
+        </div>
       </div>
-      <div>
-        <h3>Product & backend</h3>
-        <p>
-          Python · TypeScript · SQL · FastAPI<br />React · Next.js · REST ·
-          GraphQL<br />PostgreSQL · Supabase
-        </p>
-      </div>
-      <div>
-        <h3>Infrastructure & delivery</h3>
-        <p>
-          Docker · Podman · OpenShift<br />Kubernetes · Terraform · CI/CD<br />Technical
-          discovery · AI governance
-        </p>
+      <div class="marquee marquee-reverse">
+        <div class="marquee-track">
+          <ul class="marquee-list">
+            <li class="marquee-group">Product &amp; backend</li>
+            <li>Python</li>
+            <li>TypeScript</li>
+            <li>SQL</li>
+            <li>FastAPI</li>
+            <li>React</li>
+            <li>Next.js</li>
+            <li>REST</li>
+            <li>GraphQL</li>
+            <li>PostgreSQL</li>
+            <li>Supabase</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -373,9 +404,8 @@
     <div class="wrap">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">04 / SPEAKING & MENTORSHIP</p>
           <h2 id="community-title">
-            Speaking &<br /><span class="serif">mentorship.</span>
+            Speaking &<br /><span class="soft">mentorship.</span>
           </h2>
         </div>
       </div>
@@ -495,7 +525,7 @@
       <article class="mentorship-panel">
         <div class="mentorship-intro">
           <p class="event-date">Industry mentorship</p>
-          <h3>University of<br /><span class="serif">Nottingham.</span></h3>
+          <h3>University of<br /><span class="soft">Nottingham.</span></h3>
           <p>
             Mentored two groups of University of Nottingham students through
             their final year projects.
@@ -554,19 +584,10 @@
     </div>
     <div class="section-heading">
       <div>
-        <p class="eyebrow">05 / ENGINEERING NOTES</p>
-        <h2 id="notes-title">Engineering <span class="serif">notes.</span></h2>
+        <h2 id="notes-title">Engineering <span class="soft">notes.</span></h2>
       </div>
       <a class="text-link" href="blog_homepage.html">All notes {{arrow}}</a>
     </div>
-    <a class="note-row" href="create_agent.html"
-      ><span class="mono">AGENTS / PRACTICAL GUIDE</span>
-      <h3>Building an agent with watsonx Orchestrate</h3>
-      <span class="round-arrow">{{arrow}}</span></a
-    ><a class="note-row" href="engineering-reliable-ai.html"
-      ><span class="mono">SYSTEMS / DESIGN NOTES</span>
-      <h3>Reason, verify, deliver: the system around the model</h3>
-      <span class="round-arrow">{{arrow}}</span></a
-    >
+    {{notes}}
   </section>
 </main>

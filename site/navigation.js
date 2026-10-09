@@ -1,8 +1,6 @@
-// Install navigation before external styles/scripts can delay first paint.
 (() => {
   const root = document.documentElement;
   root.style.viewTransitionName = "none";
-  // The shared build supplies these routes from the project content file.
   const projectRoutes = new Map(
     (root.dataset.projectRoutes || "")
       .split(" ")
@@ -17,6 +15,8 @@
   const transitionKey = "portfolio-navigation-transition";
   const openingDuration = 650;
   const closingDuration = 550;
+  const softLeaveDuration = 240;
+  const titleHold = 500;
   const cardMotion = window.PortfolioCardMotion;
   let departing = false;
   let pendingUrl = null;
@@ -65,7 +65,6 @@
     for (const value of [previousEntry, entrySource, document.referrer]) {
       try {
         const url = value ? new URL(value) : null;
-        // A reload's activation can point back to the very same project.
         if (
           url?.origin === location.origin &&
           url.pathname !== location.pathname
@@ -100,10 +99,8 @@
   }
   let incoming = consumeTransition();
   arrivalSource = incoming?.from || null;
-  // Preserve this history entry's source when a later cached return arrives.
   entrySource = incoming?.from || document.referrer || null;
   const knownSource = Boolean(incoming);
-  // This state paints a solid dark cover before the external stylesheet arrives.
   if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
   if (incoming?.flip && !motion.matches) startCardArrival(incoming);
 
@@ -225,10 +222,8 @@
       return "translateY(18px) scale(0.96)";
     const box = element.getBoundingClientRect();
     if (!box.width || !box.height) return "scale(0.96)";
-    // On entry, expand the entire selected card, as the earlier opening did.
     if (fullCard)
       return `translate(${rect.x - box.x}px, ${rect.y - box.y}px) scale(${rect.width / box.width}, ${rect.height / box.height})`;
-    // Keep type and diagrams proportional while the frame travels to its card.
     const scale = Math.min(rect.width / box.width, rect.height / box.height);
     const x = rect.x + (rect.width - box.width * scale) / 2 - box.x;
     const y = rect.y + (rect.height - box.height * scale) / 2 - box.y;
@@ -238,12 +233,10 @@
     if (isProject && [document.body, root].includes(document.activeElement))
       document
         .querySelector(".presentation-shell")
-        ?.focus({ preventScroll: true });
+        ?.focus({ preventScroll: true, focusVisible: false });
   }
   function captureExitFrame(frame) {
     if (!frame) return null;
-    // Carry only the painted DOM. Freezing its styles preserves the active
-    // slide on the landing page without browser page or canvas snapshots.
     function paintedClone(node) {
       if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode();
       if (/^(SCRIPT|IFRAME|OBJECT|EMBED|STYLE|LINK)$/.test(node.tagName))
@@ -393,7 +386,6 @@
       return;
     }
     root.dataset.pageTransition = "entering";
-    // The real DOM animates; no browser-generated page or canvas snapshots exist.
     const slug = marker?.from
       ? projectRoutes.get(new URL(marker.from).pathname)
       : null;
@@ -406,7 +398,6 @@
       const section = frame?.closest(".chapter-section");
       section?.classList.add("is-chapter-active");
       const title = section?.querySelector(".chapter-title");
-      // A fresh document return must be as steady as a cached history return.
       if (title) title.style.animation = "none";
     }
     returnFrame = !isProject ? restoreExitFrame(marker, frame) : null;
@@ -418,7 +409,6 @@
     signal("entering", duration, direction);
     if (element) {
       element.style.opacity = "1";
-      // A DOM cover takes over before the head's first-paint cover is removed.
       root.dataset.coverReady = "true";
       coverAnimation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
         duration: returnFrame || (isProject && marker?.rect) ? 80 : 220,
@@ -479,8 +469,15 @@
     incoming = null;
     clearTimeout(revealTimer);
     const direction = isProject ? "close" : "open";
+    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
     const duration =
-      motion.matches || document.hidden || !isProject ? 0 : closingDuration;
+      motion.matches || document.hidden
+        ? 0
+        : isProject
+          ? closingDuration
+          : destinationIsProject
+            ? 0
+            : softLeaveDuration;
     const marker = { from: location.href, to, direction, rect, at: Date.now() };
     const frame =
       !initialized && incomingCard
@@ -490,7 +487,6 @@
       ? read(`portfolio-project-origin:${location.pathname}`)
       : null;
     const snapshot = captureExitFrame(isProject ? frame : card);
-    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
     const canFlip =
       !motion.matches &&
       !document.hidden &&
@@ -513,12 +509,12 @@
           card?.querySelector("h3")?.textContent ||
           document.querySelector("h1")?.textContent ||
           "",
+        summary: card?.querySelector(".card-description")?.textContent || "",
+        index: card?.querySelector(".card-meta .label")?.textContent || "",
       };
     if (duration && !projectRoutes.has(new URL(to).pathname))
       marker.exitFrame = snapshot;
     const stored = write(transitionKey, marker);
-    // The destination displays the landing page behind the contracting card.
-    // If storage is unavailable, retain the dark-backed in-page fallback.
     const destinationClose = stored && Boolean(marker.exitFrame);
     if (projectRoutes.has(new URL(to).pathname) && rect)
       write(`portfolio-project-origin:${new URL(to).pathname}`, {
@@ -554,6 +550,8 @@
         rect: source,
         target: marker.flip.rect,
         name: marker.flip.name,
+        summary: marker.flip.summary,
+        index: marker.flip.index,
         direction,
         arrival: false,
         duration: travel,
@@ -561,7 +559,13 @@
       preparation = back ? null : preparePage(to);
       signal("leaving", travel, direction);
       const departureCard = outgoingCard;
-      Promise.all([departureCard.finished, preparation?.ready]).then(() => {
+      const shown = departureCard.finished.then(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(resolve, direction === "open" ? titleHold : 0),
+          ),
+      );
+      Promise.all([shown, preparation?.ready]).then(() => {
         if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
           return;
         marker.flip.progress = departureCard.progress(true);
@@ -623,8 +627,6 @@
       (projectRoutes.has(previous.pathname) ||
         /\/(?:index\.html|projects\.html)?$/.test(previous.pathname)) &&
       history.length > 1;
-    // An older, already-open portfolio cannot supply our transition marker.
-    // Reload its URL instead of restoring its stale scripts from page cache.
     leave(
       allowed ? previous.href : new URL("index.html#work", location.href).href,
       { back: Boolean(allowed && knownSource) },
@@ -635,7 +637,6 @@
     "DOMContentLoaded",
     () => {
       initialized = true;
-      // Deferred scripts completing must not cancel an exit already requested.
       if (!departing) reveal();
     },
     { once: true },
@@ -711,7 +712,7 @@
       isProject &&
       !window.getSelection()?.toString() &&
       !event.target.closest?.(
-        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button",
+        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button, dialog",
       )
     )
       returnToPreviousPage();
