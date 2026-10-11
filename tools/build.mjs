@@ -85,7 +85,7 @@ function navigation(home = false) {
   return `<a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le</span></a><span class="header-time" hidden><span class="header-time-label">Your time</span> <span data-local-time></span></span><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><span class="nav-indicator" aria-hidden="true"></span>${chapters.map(([hash, label]) => `<a class="nav-link" href="${prefix}#${hash}">${label}</a>`).join("")}<div class="header-actions"><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume ${external}</a><a class="nav-social" href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in a new tab)" title="LinkedIn">${linkedin}</a><a class="nav-social" href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in a new tab)" title="GitHub">${github}</a></div></nav></div></header>`;
 }
 function footer() {
-  return `<footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">Have something in mind?</p><h2>Let’s build<br><span class="soft">something useful.</span></h2>${lightRail(" contact-rail")}</div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address">${copy}</button></div><p class="copy-status" id="copy-status" role="status"></p></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom<span class="footer-time" data-london-time hidden></span></span><button type="button" class="shortcut-hint" data-shortcuts>Press <kbd>?</kbd> for shortcuts</button><div class="footer-links"><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn ${external}</a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub ${external}</a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume ${arrow}</a></div></div></div></footer>`;
+  return `<footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">Have something in mind?</p><h2>Let’s build<br><span class="soft">something useful.</span></h2>${lightRail(" contact-rail")}</div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address">${copy}</button></div><p class="copy-status" id="copy-status" role="status"></p><div class="booking-row"><a class="button primary" href="https://calendly.com/taivan/new-meeting" data-booking>Book a call ${arrow}</a><p class="booking-hint">Opens Calendly, which sets its own cookies. <a href="privacy.html#website">Privacy policy</a></p></div></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom<span class="footer-time" data-london-time hidden></span></span><button type="button" class="shortcut-hint" data-shortcuts>Press <kbd>?</kbd> for shortcuts</button><div class="footer-links"><a href="privacy.html">Privacy</a><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn ${external}</a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub ${external}</a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume ${arrow}</a></div></div></div></footer><dialog class="booking" aria-labelledby="booking-title"><div class="booking-head"><h2 id="booking-title">Book a call</h2><button type="button" class="booking-close" aria-label="Close booking"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="booking-frame"><p>Loading calendar…</p><iframe title="Calendly booking calendar"></iframe></div><p class="booking-note"><span>Booking runs on Calendly, which sets its own cookies. <a href="privacy.html#website">Privacy policy</a></span><a href="https://calendly.com/taivan/new-meeting" target="_blank" rel="noopener noreferrer">Open in Calendly ${external}</a></p></dialog>`;
 }
 function page(
   file,
@@ -209,6 +209,13 @@ const reliableBody = await readFile(
   path.join(root, "site/reliable-ai.html"),
   "utf8",
 );
+const privacyBody = await readFile(
+  path.join(root, "site/privacy.html"),
+  "utf8",
+);
+const privacyToc = [
+  ...privacyBody.matchAll(/<section id="([^"]+)">\s*<h2>\d+\. ([^<]+)<\/h2>/g),
+].map(([, id, label]) => [id, label]);
 const readingMinutes = (html) =>
   Math.max(
     1,
@@ -352,6 +359,12 @@ await emit(
     reliableBody,
     reliableToc,
   ),
+);
+await emit(
+  "privacy.html",
+  "Privacy policy",
+  "How DueForm, a trading name of Owen Le, handles personal data from business contacts, clients, call bookings and website visitors.",
+  `<main id="main"><header class="page-hero wrap"><p class="eyebrow">DueForm</p><h1>Privacy <span class="soft">policy.</span></h1>${lightRail(" title-rail")}<p class="article-meta">Last updated 11 October 2026</p></header><div class="case-layout wrap"><nav class="case-toc" aria-label="Policy sections"><span>In this policy</span>${privacyToc.map(([id, label]) => `<a href="#${id}">${label}</a>`).join("")}</nav><article class="case-content article-content">${privacyBody}</article></div></main>`,
 );
 await emit(
   "404.html",

@@ -2687,7 +2687,8 @@ kbd {
   }
 }
 
-.shortcuts {
+.shortcuts,
+.booking {
   width: min(420px, calc(100% - 32px));
   max-height: calc(100dvh - 48px);
   padding: 26px 28px 22px;
@@ -2704,11 +2705,13 @@ kbd {
   color: var(--ink);
 }
 
-.shortcuts[open] {
+.shortcuts[open],
+.booking[open] {
   animation: shortcuts-in 480ms var(--ease);
 }
 
-.shortcuts::backdrop {
+.shortcuts::backdrop,
+.booking::backdrop {
   background: rgb(6 16 14 / 0.5);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -2721,7 +2724,8 @@ kbd {
   }
 }
 
-.shortcuts-head {
+.shortcuts-head,
+.booking-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2729,7 +2733,8 @@ kbd {
   margin-bottom: 14px;
 }
 
-.shortcuts h2 {
+.shortcuts h2,
+.booking h2 {
   color: var(--accent);
   font-size: 11px;
   font-weight: 600;
@@ -2737,7 +2742,8 @@ kbd {
   text-transform: uppercase;
 }
 
-.shortcuts-close {
+.shortcuts-close,
+.booking-close {
   display: grid;
   place-items: center;
   width: 34px;
@@ -2751,7 +2757,8 @@ kbd {
     transform 500ms var(--ease);
 }
 
-.shortcuts-close svg {
+.shortcuts-close svg,
+.booking-close svg {
   width: 14px;
   height: 14px;
   fill: none;
@@ -2759,7 +2766,8 @@ kbd {
   stroke-width: 1.6;
 }
 
-.shortcuts-close:hover {
+.shortcuts-close:hover,
+.booking-close:hover {
   border-color: var(--lime);
   transform: rotate(90deg);
 }
@@ -2786,6 +2794,115 @@ kbd {
   margin: 0;
   color: var(--ink-soft);
   font-size: 14px;
+}
+
+.booking {
+  width: min(1040px, calc(100% - 32px));
+  max-width: none;
+  padding: 22px 24px 18px;
+}
+
+.booking[open] {
+  display: flex;
+  flex-direction: column;
+  height: min(860px, calc(100dvh - 48px));
+}
+
+.booking-frame {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.booking-frame p {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--faint);
+  font-size: 14px;
+}
+
+.booking-frame iframe {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.booking-note {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 20px;
+  margin: 14px 0 0;
+  color: var(--faint);
+  font-size: 13px;
+}
+
+.booking-note a,
+.booking-hint a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent);
+  transition: color 300ms var(--ease);
+}
+
+.booking-note a:hover,
+.booking-hint a:hover {
+  color: var(--lime);
+}
+
+.booking-note .icon {
+  width: 13px;
+  height: 13px;
+}
+
+.booking-row {
+  margin-top: 14px;
+}
+
+.contact-copy .booking-hint {
+  margin: 12px 0 0;
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.policy-table {
+  width: 100%;
+  margin: 8px 0 28px;
+  border-collapse: collapse;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.policy-table th {
+  padding: 0 20px 12px 0;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-align: left;
+  text-transform: uppercase;
+  vertical-align: bottom;
+}
+
+.policy-table td {
+  padding: 14px 20px 14px 0;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+  vertical-align: top;
+}
+
+.policy-table td:first-child {
+  color: var(--ink);
 }
 
 .diagram-open {
@@ -6393,6 +6510,51 @@ html:not(.js) .stage-track {
 
   .case-content section {
     margin-bottom: 56px;
+  }
+
+  .policy-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .policy-table,
+  .policy-table tbody,
+  .policy-table tr,
+  .policy-table td {
+    display: block;
+  }
+
+  .policy-table tr {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .policy-table td {
+    padding: 3px 0;
+    border: 0;
+  }
+
+  .policy-table td::before {
+    content: attr(data-label);
+    content: attr(data-label) / "";
+    display: block;
+    color: var(--faint);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .booking {
+    width: calc(100% - 12px);
+    padding: 16px 12px 12px;
+  }
+
+  .booking[open] {
+    height: calc(100dvh - 12px);
   }
 
   .case-content p,

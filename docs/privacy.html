@@ -1,0 +1,1545 @@
+<!doctype html>
+<html lang="en" data-project-routes="themis.html dueform.html actifact.html financial-qa.html vodafone-tobi.html nationwide-governance.html"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>html{--page-background:#0c1c1a;background:#0c1c1a;color-scheme:dark}body{background:#0c1c1a}.hero-field{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;transition:opacity 400ms ease}body>main,body>.site-header,body>.contact-section,body>.scroll-progress,body>.chapter-rail{transition:filter 420ms cubic-bezier(.33,1,.68,1)}html[data-card-transition] body>main,html[data-card-transition] body>.site-header,html[data-card-transition] body>.contact-section,html[data-card-transition] body>.scroll-progress,html[data-card-transition] body>.chapter-rail{filter:blur(12px) brightness(.42);pointer-events:none;transition:filter 520ms cubic-bezier(.22,1,.36,1)}html[data-card-transition] .hero-field{opacity:.62!important;filter:none!important}html[data-page-transition="entering"]:not([data-cover-ready]):not([data-card-transition])::before{content:"";position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;pointer-events:none}@view-transition{navigation:none}@media(prefers-reduced-motion:reduce){.hero-field,body>main,body>.site-header,body>.contact-section,body>.scroll-progress,body>.chapter-rail{transition:none!important}}</style><script>(() => {
+  if (window.PortfolioCardMotion) return;
+
+  const green = "#d7f4af";
+  const easing = "cubic-bezier(.65,0,.25,1)";
+  function bounds(value, fallback = {}) {
+    const number = (key, otherwise) => {
+      const result = Number(value?.[key] ?? fallback[key]);
+      return Number.isFinite(result) ? result : otherwise;
+    };
+    return {
+      x: number("x", 0),
+      y: number("y", 0),
+      width: Math.max(1, number("width", 1)),
+      height: Math.max(1, number("height", 1)),
+    };
+  }
+
+  function create({
+    frame,
+    backFrame,
+    rect,
+    target,
+    name = "",
+    summary = "",
+    index = "",
+    direction = "open",
+    arrival = false,
+    duration = 0,
+    progress: carriedProgress = 0.86,
+  }) {
+    const source = bounds(rect, frame);
+    const destination = bounds(target, source);
+    const milliseconds = Math.max(0, Number(duration) || 0);
+    const animations = new Set();
+    let cancelled = false;
+    let revealing = null;
+    let scan = null;
+
+    const element = document.createElement("div");
+    element.className = "navigation-flip-stage";
+    element.setAttribute("aria-hidden", "true");
+    element.setAttribute("inert", "");
+    element.style.cssText =
+      "position:fixed;z-index:2147483500;pointer-events:none;" +
+      "perspective:1600px;perspective-origin:50% 50%;" +
+      "margin:0;padding:0;border:0;background:transparent;" +
+      "box-sizing:border-box;isolation:isolate;transform-origin:top left;" +
+      "will-change:transform;" +
+      `left:${destination.x}px;top:${destination.y}px;` +
+      `width:${destination.width}px;height:${destination.height}px`;
+
+    const rotor = document.createElement("div");
+    rotor.className = "navigation-card-rotor";
+    rotor.style.cssText =
+      "position:absolute;inset:0;transform-style:preserve-3d;" +
+      "transform-origin:50% 50%;pointer-events:none;will-change:transform";
+
+    function face(className) {
+      const node = document.createElement("div");
+      node.className = className;
+      node.style.cssText =
+        "position:absolute;inset:0;box-sizing:border-box;" +
+        "backface-visibility:hidden;-webkit-backface-visibility:hidden;" +
+        "pointer-events:none;overflow:hidden;border-radius:12px";
+      return node;
+    }
+    const front = face("navigation-card-front");
+    const back = face("navigation-card-back");
+    back.style.cssText +=
+      ";transform:rotateX(180deg);" +
+      "background:radial-gradient(120% 90% at 0% 0%,#1b3a2d 0%,#10241c 58%);" +
+      "border:1px solid #78916b8c;color:#eaf0e7;" +
+      "display:flex;flex-direction:column;justify-content:center;gap:14px;" +
+      "padding:clamp(24px,4vw,56px);container-type:size;" +
+      "box-shadow:inset 0 1px 0 #d2edd810,0 30px 70px -28px #000a";
+
+    const paintedFrames = [];
+    function mountFrame(payload, faceNode) {
+      const template = document.createElement("template");
+      template.innerHTML = payload?.html || "";
+      template.content
+        .querySelectorAll("script,iframe,object,embed,style,link")
+        .forEach((node) => node.remove());
+      for (const node of template.content.querySelectorAll("*")) {
+        for (const attribute of [...node.attributes])
+          if (attribute.name === "id" || attribute.name.startsWith("on"))
+            node.removeAttribute(attribute.name);
+      }
+      const node = template.content.firstElementChild;
+      if (!node) return null;
+      const width = Math.max(1, Number(payload?.width) || source.width);
+      const height = Math.max(1, Number(payload?.height) || source.height);
+      Object.assign(node.style, {
+        position: "absolute",
+        inset: "0 auto auto 0",
+        width: `${width}px`,
+        height: `${height}px`,
+        minWidth: "0",
+        maxWidth: "none",
+        minHeight: "0",
+        maxHeight: "none",
+        margin: "0",
+        transformOrigin: "top left",
+        transform: `scale(${destination.width / width}, ${destination.height / height})`,
+        animation: "none",
+        transition: "none",
+        pointerEvents: "none",
+      });
+      faceNode.append(node);
+      paintedFrames.push({ node, width, height });
+      return node;
+    }
+    if (!mountFrame(frame, front)) {
+      front.style.background = "#10241c";
+      front.style.border = "1px solid #78916b88";
+    }
+
+    const counting = direction === "open";
+    const caption = document.createElement("div");
+    caption.className = "navigation-card-caption";
+    caption.textContent =
+      direction === "close" ? "Closing" : "Opening case study";
+    caption.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:11px;font-weight:600;" +
+      "letter-spacing:.14em;text-transform:uppercase;color:#c0d9a7;margin:0";
+    const title = document.createElement("div");
+    title.className = "navigation-card-name";
+    title.style.cssText =
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(72, Math.max(30, destination.width * 0.065))}px;` +
+      "font-weight:500;line-height:1.08;letter-spacing:-.04em;margin:0;" +
+      "overflow:hidden;padding-bottom:.08em";
+    const titleText = document.createElement("span");
+    titleText.textContent = name;
+    titleText.style.cssText = "display:block";
+    title.append(titleText);
+    back.append(caption, title);
+    const details = document.createElement("p");
+    details.className = "navigation-card-summary";
+    details.textContent = summary;
+    details.style.cssText =
+      "font-family:Manrope,Arial,sans-serif;font-size:15px;line-height:1.6;" +
+      "color:#a3b5a9;max-width:36ch;margin:4px 0 0";
+    if (counting && summary) back.append(details);
+    const numeral = document.createElement("div");
+    numeral.className = "navigation-card-index";
+    numeral.textContent = index;
+    numeral.style.cssText =
+      "position:absolute;right:clamp(24px,4vw,56px);top:50%;" +
+      `margin-top:-${Math.min(240, destination.height * 0.4) * 0.55}px;` +
+      `font-family:Manrope,Arial,sans-serif;font-size:${Math.min(240, destination.height * 0.4)}px;` +
+      "font-weight:300;line-height:1.1;letter-spacing:-.06em;color:transparent;" +
+      "-webkit-text-stroke:1px #d7f4af4d;font-variant-numeric:tabular-nums";
+    if (counting && index && destination.width >= 720) back.append(numeral);
+
+    const svgNamespace = "http://www.w3.org/2000/svg";
+    const outline = document.createElementNS(svgNamespace, "svg");
+    outline.setAttribute("class", "navigation-card-progress");
+    outline.setAttribute(
+      "viewBox",
+      `0 0 ${destination.width} ${destination.height}`,
+    );
+    outline.style.cssText =
+      "position:absolute;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none";
+    const inset = 0.75;
+    const radius = 11.25;
+    const right = destination.width - inset;
+    const bottom = destination.height - inset;
+    const edge =
+      `M${inset + radius} ${inset}H${right - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right} ${inset + radius}V${bottom - radius}` +
+      `A${radius} ${radius} 0 0 1 ${right - radius} ${bottom}H${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset} ${bottom - radius}V${inset + radius}` +
+      `A${radius} ${radius} 0 0 1 ${inset + radius} ${inset}Z`;
+    const traces = [
+      ["navigation-card-progress-halo", "6", "#d7f4af2e"],
+      ["navigation-card-progress-fill", "1.5", green],
+    ].map(([className, width, colour]) => {
+      const path = document.createElementNS(svgNamespace, "path");
+      path.setAttribute("class", className);
+      path.setAttribute("d", edge);
+      path.setAttribute("pathLength", "100");
+      path.setAttribute("fill", "none");
+      path.setAttribute("stroke", colour);
+      path.setAttribute("stroke-width", width);
+      path.style.strokeDasharray = "100 100";
+      outline.append(path);
+      return path;
+    });
+    const fill = traces[1];
+    back.append(outline);
+
+    const status = document.createElement("div");
+    status.className = "navigation-card-status";
+    status.style.cssText =
+      "position:absolute;left:clamp(24px,4vw,56px);right:clamp(24px,4vw,56px);" +
+      "bottom:clamp(20px,3.4vw,44px);display:flex;justify-content:space-between;" +
+      "align-items:baseline;font-family:Manrope,Arial,sans-serif;font-size:11px;" +
+      "font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#8a9d91";
+    const statusLabel = document.createElement("span");
+    statusLabel.textContent = "Loading";
+    const counter = document.createElement("span");
+    counter.className = "navigation-card-counter";
+    counter.style.cssText =
+      "font-size:13px;letter-spacing:.04em;color:#d5e7ae;" +
+      "font-variant-numeric:tabular-nums";
+    status.append(statusLabel, counter);
+    if (counting) back.append(status);
+
+    if (backFrame?.html) {
+      back.replaceChildren();
+      back.style.padding = "0";
+      back.style.background = "transparent";
+      back.style.border = "0";
+      mountFrame(backFrame, back);
+    }
+
+    rotor.append(front, back);
+    element.append(rotor);
+    (document.body || document.documentElement).append(element);
+
+    function animate(node, frames, options) {
+      const animation = node.animate(frames, options);
+      animations.add(animation);
+      animation.finished.catch(() => {});
+      return animation;
+    }
+    const geometry = animate(
+      element,
+      [
+        {
+          transform: `translate3d(${source.x - destination.x}px,${source.y - destination.y}px,0) scale(${source.width / destination.width},${source.height / destination.height})`,
+        },
+        {
+          transform: "translate3d(0,0,0) scale(1,1)",
+        },
+      ],
+      { duration: milliseconds, easing, fill: "forwards" },
+    );
+    const angles =
+      direction === "close"
+        ? arrival
+          ? [0, 0]
+          : [0, -180]
+        : arrival
+          ? [180, 180]
+          : [0, 180];
+    const rotation = animate(
+      rotor,
+      angles.map((angle) => ({ transform: `rotateX(${angle}deg)` })),
+      { duration: milliseconds, easing, fill: "forwards" },
+    );
+    const progressStart = arrival
+      ? Math.max(0.86, Math.min(0.96, Number(carriedProgress) || 0.86))
+      : 0;
+    const progressEnd = arrival ? progressStart : 0.86;
+    const dash = (value) => `${100 - value * 100}`;
+    let progressRun = [];
+    function setProgress(value) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = [];
+      for (const path of traces) path.style.strokeDashoffset = dash(value);
+    }
+    function runProgress(frames, options) {
+      progressRun.forEach((animation) => animation.cancel());
+      progressRun = traces.map((path) =>
+        animate(
+          path,
+          frames.map(({ value, ...frame }) => ({
+            ...frame,
+            strokeDashoffset: dash(value),
+          })),
+          options,
+        ),
+      );
+      return progressRun[1];
+    }
+    setProgress(counting || arrival ? progressStart : 1);
+    const loading =
+      !backFrame?.html && (arrival || direction === "open")
+        ? runProgress(
+            arrival
+              ? [{ value: progressStart }, { value: progressEnd }]
+              : [
+                  { value: 0 },
+                  {
+                    value: 0.04,
+                    offset: 0.42,
+                    easing: "cubic-bezier(.45,0,.25,1)",
+                  },
+                  { value: progressEnd },
+                ],
+            { duration: milliseconds, fill: "forwards" },
+          )
+        : null;
+    const finished = Promise.allSettled(
+      [geometry, rotation, loading]
+        .filter(Boolean)
+        .map((animation) => animation.finished),
+    ).then(() => {
+      if (cancelled || direction !== "open" || backFrame?.html) return;
+      runProgress([{ value: progressEnd }, { value: 0.96 }], {
+        duration: 2600,
+        easing: "ease-out",
+        fill: "forwards",
+      });
+    });
+    if (!arrival && counting && !backFrame?.html) {
+      const rise = {
+        duration: milliseconds * 0.62,
+        easing: "cubic-bezier(.22,1,.36,1)",
+        fill: "backwards",
+      };
+      animate(
+        titleText,
+        [{ transform: "translateY(110%)" }, { transform: "none" }],
+        { ...rise, delay: milliseconds * 0.38 },
+      );
+      animate(
+        caption,
+        [
+          { opacity: 0, transform: "translateY(8px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.32 },
+      );
+      animate(
+        details,
+        [
+          { opacity: 0, transform: "translateY(12px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.46 },
+      );
+      animate(
+        numeral,
+        [
+          { opacity: 0, transform: "translateX(24px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { ...rise, delay: milliseconds * 0.4 },
+      );
+    }
+
+    function progressValue(hold = false) {
+      const value =
+        1 - parseFloat(getComputedStyle(fill).strokeDashoffset) / 100;
+      const settled = Number.isFinite(value) ? value : 1;
+      if (hold) setProgress(settled);
+      return settled;
+    }
+    let counterFrame = 0;
+    function count() {
+      counter.textContent = `${Math.round(progressValue() * 100)}%`;
+      counterFrame = requestAnimationFrame(count);
+    }
+    if (counting && !backFrame?.html) count();
+
+    function cancel() {
+      if (cancelled) return;
+      cancelled = true;
+      cancelAnimationFrame(counterFrame);
+      for (const animation of animations) animation.cancel();
+      animations.clear();
+      scan?.remove();
+      element.remove();
+    }
+
+    function reveal(actualFrame, showContent = () => {}) {
+      if (revealing) return revealing;
+      revealing = (async () => {
+        await finished;
+        if (cancelled) return;
+        if (!actualFrame?.isConnected) {
+          cancel();
+          return;
+        }
+        const actual = bounds(actualFrame.getBoundingClientRect());
+        geometry.cancel();
+        Object.assign(element.style, {
+          left: `${actual.x}px`,
+          top: `${actual.y}px`,
+          width: `${actual.width}px`,
+          height: `${actual.height}px`,
+          transform: "none",
+        });
+        for (const painted of paintedFrames)
+          painted.node.style.transform = `scale(${actual.width / painted.width}, ${actual.height / painted.height})`;
+        const loadedProgress = progressValue(true);
+        const completed = runProgress(
+          [{ value: loadedProgress }, { value: 1 }],
+          {
+            duration: 160,
+            fill: "forwards",
+            easing: "ease-out",
+          },
+        );
+        if (direction === "open") {
+          await completed.finished.catch(() => {});
+          if (cancelled || !actualFrame.isConnected) return;
+        }
+        showContent();
+
+        let unveiling;
+        if (direction === "close") {
+          animate(actualFrame, [{ opacity: 0 }, { opacity: 1 }], {
+            duration: 140,
+            easing: "ease-out",
+          });
+          unveiling = animate(element, [{ opacity: 1 }, { opacity: 0 }], {
+            duration: 140,
+            easing: "ease-out",
+            fill: "forwards",
+          });
+        } else {
+          animate(
+            actualFrame,
+            [
+              { clipPath: "inset(0 0 100% 0)" },
+              { clipPath: "inset(0 0 0% 0)" },
+            ],
+            { duration: 180, easing: "cubic-bezier(.25,.1,.25,1)" },
+          );
+          unveiling = animate(
+            element,
+            [
+              { clipPath: "inset(0% 0 0 0)" },
+              { clipPath: "inset(100% 0 0 0)" },
+            ],
+            {
+              duration: 180,
+              easing: "cubic-bezier(.25,.1,.25,1)",
+              fill: "forwards",
+            },
+          );
+          scan = document.createElement("div");
+          scan.className = "navigation-card-scan";
+          scan.setAttribute("aria-hidden", "true");
+          scan.style.cssText =
+            "position:fixed;z-index:2147483501;pointer-events:none;height:1px;" +
+            `left:${actual.x}px;top:${actual.y}px;width:${actual.width}px;` +
+            `background:${green};box-shadow:0 0 6px #d7f4af44`;
+          (document.body || document.documentElement).append(scan);
+          animate(
+            scan,
+            [
+              { transform: "translateY(0px)", opacity: 0.7 },
+              { transform: `translateY(${actual.height}px)`, opacity: 0 },
+            ],
+            {
+              duration: 180,
+              easing: "cubic-bezier(.25,.1,.25,1)",
+              fill: "forwards",
+            },
+          );
+        }
+        await unveiling.finished.catch(() => {});
+        cancel();
+      })();
+      return revealing;
+    }
+
+    return {
+      element,
+      rotor,
+      finished,
+      reveal,
+      cancel,
+      progress: progressValue,
+    };
+  }
+
+  window.PortfolioCardMotion = { create };
+})();
+</script><script>(() => {
+  const root = document.documentElement;
+  root.style.viewTransitionName = "none";
+  const projectRoutes = new Map(
+    (root.dataset.projectRoutes || "")
+      .split(" ")
+      .filter(Boolean)
+      .map((file) => [
+        new URL(file, location.href).pathname,
+        file.slice(0, -5),
+      ]),
+  );
+  const isProject = projectRoutes.has(location.pathname);
+  const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const transitionKey = "portfolio-navigation-transition";
+  const openingDuration = 650;
+  const closingDuration = 550;
+  const softLeaveDuration = 240;
+  const titleHold = 500;
+  const cardMotion = window.PortfolioCardMotion;
+  let departing = false;
+  let pendingUrl = null;
+  let departureTimer = 0;
+  let revealTimer = 0;
+  let initialized = false;
+  let arrivalAnimation = null;
+  let coverAnimation = null;
+  let arrivalSource = null;
+  let entrySource = null;
+  let returnFrame = null;
+  let returnCardAnimation = null;
+  let outgoingCard = null;
+  let incomingCard = null;
+  let preparation = null;
+  const preparedPages = new Map();
+  const pageShown = new Promise((resolve) =>
+    window.addEventListener("pageshow", resolve, { once: true }),
+  );
+
+  function read(key) {
+    try {
+      return JSON.parse(sessionStorage.getItem(key));
+    } catch {
+      return null;
+    }
+  }
+  function write(key, value) {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function previousPortfolioUrl() {
+    let previousEntry = null;
+    try {
+      const navigation = window.navigation;
+      const index = navigation?.currentEntry?.index;
+      if (index > 0)
+        previousEntry = navigation
+          .entries()
+          .find((entry) => entry.index === index - 1)?.url;
+    } catch {}
+    for (const value of [previousEntry, entrySource, document.referrer]) {
+      try {
+        const url = value ? new URL(value) : null;
+        if (
+          url?.origin === location.origin &&
+          url.pathname !== location.pathname
+        )
+          return url;
+      } catch {}
+    }
+    return null;
+  }
+  function destinationMatches(value) {
+    try {
+      const to = new URL(value);
+      return (
+        to.origin === location.origin &&
+        to.pathname === location.pathname &&
+        to.search === location.search
+      );
+    } catch {
+      return false;
+    }
+  }
+  function consumeTransition() {
+    const marker = read(transitionKey);
+    try {
+      sessionStorage.removeItem(transitionKey);
+    } catch {}
+    return marker &&
+      Date.now() - marker.at < 15000 &&
+      destinationMatches(marker.to)
+      ? marker
+      : null;
+  }
+  let incoming = consumeTransition();
+  arrivalSource = incoming?.from || null;
+  entrySource = incoming?.from || document.referrer || null;
+  const knownSource = Boolean(incoming);
+  if (incoming && !motion.matches) root.dataset.pageTransition = "entering";
+  if (incoming?.flip && !motion.matches) startCardArrival(incoming);
+
+  function deckRect() {
+    const mobile = innerWidth <= 760;
+    const width = mobile
+      ? innerWidth - 24
+      : innerWidth <= 1100
+        ? innerWidth - 64
+        : Math.min(1200, innerWidth - 96);
+    return {
+      x: (innerWidth - width) / 2,
+      y: mobile ? 122 : 142,
+      width,
+      height: Math.max(100, innerHeight - (mobile ? 212 : 250)),
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    };
+  }
+  function startCardArrival(marker) {
+    const flip = marker?.flip;
+    if (
+      !cardMotion ||
+      !flip?.frame?.html ||
+      !flip.rect ||
+      !flip.target ||
+      Math.abs(flip.rect.viewportWidth - innerWidth) > 2 ||
+      Math.abs(flip.rect.viewportHeight - innerHeight) > 2
+    )
+      return false;
+    root.dataset.cardTransition = "true";
+    root.dataset.pageTransition = "entering";
+    incomingCard = cardMotion.create({
+      ...flip,
+      direction: marker.direction,
+      arrival: true,
+      duration: 0,
+    });
+    signal(
+      "entering",
+      marker.direction === "open" ? 250 : 140,
+      marker.direction,
+    );
+    return true;
+  }
+  function preparePage(to) {
+    if (!preparedPages.has(to)) {
+      const controller = new AbortController();
+      const ready = fetch(to, {
+        credentials: "same-origin",
+        signal: controller.signal,
+      })
+        .then((response) => {
+          if (!response.ok) throw new Error("Page unavailable");
+          return response.text();
+        })
+        .catch(() => null);
+      preparedPages.set(to, { ready, controller });
+    }
+    return preparedPages.get(to);
+  }
+  function clearCardMotion() {
+    outgoingCard?.cancel();
+    incomingCard?.cancel();
+    outgoingCard = incomingCard = null;
+    root.removeAttribute("data-card-transition");
+  }
+  function restoreCardScroll(marker, frame) {
+    if (
+      !isProject &&
+      marker?.direction === "close" &&
+      frame &&
+      Number.isFinite(marker.flip?.target?.y)
+    )
+      window.scrollTo({
+        top: scrollY + frame.getBoundingClientRect().top - marker.flip.target.y,
+        behavior: "instant",
+      });
+  }
+
+  function signal(phase, duration, direction) {
+    document.dispatchEvent(
+      new CustomEvent("portfolio-transition", {
+        detail: { phase, duration, direction },
+      }),
+    );
+  }
+  function cover() {
+    if (!document.body) return null;
+    let element = document.getElementById("navigation-cover");
+    if (!element) {
+      element = document.createElement("div");
+      element.id = "navigation-cover";
+      element.setAttribute("aria-hidden", "true");
+      element.style.cssText =
+        "position:fixed;inset:0;z-index:2147483600;background:#0c1c1a;opacity:0;pointer-events:none";
+      document.body.append(element);
+    }
+    return element;
+  }
+  function originRect(element) {
+    if (!element) return null;
+    const box = element.getBoundingClientRect();
+    return {
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      viewportWidth: innerWidth,
+      viewportHeight: innerHeight,
+    };
+  }
+  function rectTransform(element, rect, fullCard = false) {
+    if (
+      !rect ||
+      Math.abs(rect.viewportWidth - innerWidth) > 2 ||
+      Math.abs(rect.viewportHeight - innerHeight) > 2
+    )
+      return "translateY(18px) scale(0.96)";
+    const box = element.getBoundingClientRect();
+    if (!box.width || !box.height) return "scale(0.96)";
+    if (fullCard)
+      return `translate(${rect.x - box.x}px, ${rect.y - box.y}px) scale(${rect.width / box.width}, ${rect.height / box.height})`;
+    const scale = Math.min(rect.width / box.width, rect.height / box.height);
+    const x = rect.x + (rect.width - box.width * scale) / 2 - box.x;
+    const y = rect.y + (rect.height - box.height * scale) / 2 - box.y;
+    return `translate(${x}px, ${y}px) scale(${scale})`;
+  }
+  function focusPresentation() {
+    if (isProject && [document.body, root].includes(document.activeElement))
+      document
+        .querySelector(".presentation-shell")
+        ?.focus({ preventScroll: true, focusVisible: false });
+  }
+  function captureExitFrame(frame) {
+    if (!frame) return null;
+    function paintedClone(node) {
+      if (node.nodeType !== Node.ELEMENT_NODE) return node.cloneNode();
+      if (/^(SCRIPT|IFRAME|OBJECT|EMBED|STYLE|LINK)$/.test(node.tagName))
+        return null;
+      const style = getComputedStyle(node);
+      if (style.display === "none" || node.hidden) return null;
+      const copy = node.cloneNode(false);
+      for (const attribute of [...copy.attributes])
+        if (
+          attribute.name === "id" ||
+          attribute.name.startsWith("on") ||
+          attribute.name.startsWith("data-")
+        )
+          copy.removeAttribute(attribute.name);
+      copy.style.cssText = [...style]
+        .map((property) => `${property}:${style.getPropertyValue(property)};`)
+        .join("");
+      copy.style.animation = "none";
+      copy.style.transition = "none";
+      for (const child of node.childNodes) {
+        const cloned = paintedClone(child);
+        if (cloned) copy.append(cloned);
+      }
+      return copy;
+    }
+    const copy = paintedClone(frame);
+    const style = getComputedStyle(frame);
+    return copy
+      ? {
+          html: copy.outerHTML,
+          rect: originRect(frame),
+          width: parseFloat(style.width),
+          height: parseFloat(style.height),
+        }
+      : null;
+  }
+  function restoreExitFrame(marker, card) {
+    const saved = marker?.exitFrame;
+    if (
+      !card ||
+      !saved?.html ||
+      !saved.rect ||
+      Math.abs(saved.rect.viewportWidth - innerWidth) > 2 ||
+      Math.abs(saved.rect.viewportHeight - innerHeight) > 2
+    )
+      return null;
+    const template = document.createElement("template");
+    template.innerHTML = saved.html;
+    const frame = template.content.firstElementChild;
+    if (!frame) return null;
+    frame.className = "navigation-return-frame presentation-page";
+    frame.setAttribute("aria-hidden", "true");
+    frame.setAttribute("inert", "");
+    Object.assign(frame.style, {
+      position: "fixed",
+      left: `${saved.rect.x}px`,
+      top: `${saved.rect.y}px`,
+      width: `${saved.width}px`,
+      height: `${saved.height}px`,
+      minWidth: "0",
+      maxWidth: "none",
+      minHeight: "0",
+      maxHeight: "none",
+      margin: "0",
+      transform: "none",
+      transformOrigin: "top left",
+      opacity: "1",
+      pointerEvents: "none",
+      overflow: "hidden",
+      zIndex: "2147483500",
+    });
+    document.body.append(frame);
+    return frame;
+  }
+  function clearReturnFrame() {
+    returnFrame?.remove();
+    returnFrame = null;
+    returnCardAnimation?.cancel();
+    returnCardAnimation = null;
+  }
+  function settled(direction) {
+    root.removeAttribute("data-page-transition");
+    root.removeAttribute("data-cover-ready");
+    root.removeAttribute("data-card-transition");
+    signal("settled", 0, direction);
+  }
+  function reveal() {
+    departing = false;
+    pendingUrl = null;
+    clearTimeout(departureTimer);
+    clearTimeout(revealTimer);
+    arrivalAnimation?.cancel();
+    coverAnimation?.cancel();
+    clearReturnFrame();
+    outgoingCard?.cancel();
+    outgoingCard = null;
+    root.classList.remove("project-return");
+    focusPresentation();
+    const previous = previousPortfolioUrl();
+    const marker =
+      incoming ||
+      (previous && projectRoutes.has(previous.pathname)
+        ? { from: previous.href, direction: "close" }
+        : null);
+    incoming = null;
+    const direction = marker?.direction || "open";
+    const element = cover();
+    if (element) element.style.pointerEvents = "none";
+    if (marker?.flip && !motion.matches) {
+      if (!incomingCard) startCardArrival(marker);
+      const slug = marker.from
+        ? projectRoutes.get(new URL(marker.from).pathname)
+        : null;
+      const actual = isProject
+        ? document.querySelector(".presentation-deck")
+        : document.querySelector(`.card-frame[data-project="${slug}"]`);
+      if (incomingCard && actual) {
+        if (element) element.style.opacity = "0";
+        const card = incomingCard;
+        const section = actual.closest(".chapter-section");
+        section?.classList.add("is-chapter-active");
+        const title = section?.querySelector(".chapter-title");
+        if (title) title.style.animation = "none";
+        card.finished.then(async () => {
+          if (departing || incomingCard !== card) return;
+          if (direction === "close") {
+            await pageShown;
+            await new Promise(requestAnimationFrame);
+            if (departing || incomingCard !== card) return;
+            restoreCardScroll(marker, actual);
+          }
+          root.dataset.coverReady = "true";
+          await card.reveal(actual, () => {
+            root.removeAttribute("data-card-transition");
+          });
+          if (departing || incomingCard !== card) return;
+          incomingCard = null;
+          settled(direction);
+        });
+        return;
+      }
+    }
+    clearCardMotion();
+    if ((!marker && !isProject) || motion.matches) {
+      if (element) element.style.opacity = "0";
+      settled(direction);
+      return;
+    }
+    root.dataset.pageTransition = "entering";
+    const slug = marker?.from
+      ? projectRoutes.get(new URL(marker.from).pathname)
+      : null;
+    const frame = isProject
+      ? document.querySelector(".presentation-deck")
+      : slug
+        ? document.querySelector(`.card-frame[data-project="${slug}"]`)
+        : null;
+    if (!isProject && direction === "close") {
+      const section = frame?.closest(".chapter-section");
+      section?.classList.add("is-chapter-active");
+      const title = section?.querySelector(".chapter-title");
+      if (title) title.style.animation = "none";
+    }
+    returnFrame = !isProject ? restoreExitFrame(marker, frame) : null;
+    const duration = returnFrame
+      ? closingDuration
+      : isProject
+        ? openingDuration
+        : 320;
+    signal("entering", duration, direction);
+    if (element) {
+      element.style.opacity = "1";
+      root.dataset.coverReady = "true";
+      coverAnimation = element.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: returnFrame || (isProject && marker?.rect) ? 80 : 220,
+        fill: "forwards",
+        easing: "ease-out",
+      });
+    }
+    if (returnFrame) {
+      const target = originRect(frame);
+      arrivalAnimation = returnFrame.animate(
+        [
+          {
+            transform: rectTransform(returnFrame, marker.exitFrame.rect, true),
+            opacity: 1,
+            easing: "cubic-bezier(.22,1,.36,1)",
+          },
+          { opacity: 1, offset: 0.7, easing: "linear" },
+          { transform: rectTransform(returnFrame, target, true), opacity: 0 },
+        ],
+        { duration, fill: "forwards", easing: "linear" },
+      );
+      returnCardAnimation = frame.animate([{ opacity: 0 }, { opacity: 1 }], {
+        duration: duration * 0.3,
+        delay: duration * 0.7,
+        fill: "backwards",
+      });
+    } else if (
+      frame &&
+      frame.getBoundingClientRect().bottom > 0 &&
+      frame.getBoundingClientRect().top < innerHeight
+    ) {
+      frame.style.transformOrigin = "top left";
+      arrivalAnimation = frame.animate(
+        [
+          {
+            transform: isProject
+              ? rectTransform(frame, marker?.rect, true)
+              : "translateY(8px) scale(0.98)",
+            opacity: isProject && marker?.rect ? 1 : 0.3,
+          },
+          { transform: "none", opacity: 1 },
+        ],
+        { duration, easing: "cubic-bezier(.22,1,.36,1)" },
+      );
+    }
+    revealTimer = setTimeout(() => {
+      if (departing) return;
+      if (element) element.style.opacity = "0";
+      coverAnimation?.cancel();
+      clearReturnFrame();
+      settled(direction);
+    }, duration);
+  }
+  function leave(to, { back = false, rect = null, card = null } = {}) {
+    if (departing) return;
+    departing = true;
+    pendingUrl = to;
+    incoming = null;
+    clearTimeout(revealTimer);
+    const direction = isProject ? "close" : "open";
+    const destinationIsProject = projectRoutes.has(new URL(to).pathname);
+    const duration =
+      motion.matches || document.hidden
+        ? 0
+        : isProject
+          ? closingDuration
+          : destinationIsProject
+            ? 0
+            : softLeaveDuration;
+    const marker = { from: location.href, to, direction, rect, at: Date.now() };
+    const frame =
+      !initialized && incomingCard
+        ? incomingCard.element
+        : document.querySelector(".presentation-deck");
+    const origin = isProject
+      ? read(`portfolio-project-origin:${location.pathname}`)
+      : null;
+    const snapshot = captureExitFrame(isProject ? frame : card);
+    const canFlip =
+      !motion.matches &&
+      !document.hidden &&
+      cardMotion &&
+      snapshot &&
+      (isProject
+        ? !destinationIsProject &&
+          origin?.card &&
+          destinationMatchesOrigin(origin.from, to)
+        : destinationIsProject && card);
+    const target = isProject ? origin?.rect : deckRect();
+    const source = snapshot?.rect;
+    if (canFlip)
+      marker.flip = {
+        frame: isProject ? origin.card : snapshot,
+        rect: target,
+        target,
+        name:
+          origin?.name ||
+          card?.querySelector("h3")?.textContent ||
+          document.querySelector("h1")?.textContent ||
+          "",
+        summary: card?.querySelector(".card-description")?.textContent || "",
+        index: card?.querySelector(".card-meta .label")?.textContent || "",
+      };
+    if (duration && !projectRoutes.has(new URL(to).pathname))
+      marker.exitFrame = snapshot;
+    const stored = write(transitionKey, marker);
+    const destinationClose = stored && Boolean(marker.exitFrame);
+    if (projectRoutes.has(new URL(to).pathname) && rect)
+      write(`portfolio-project-origin:${new URL(to).pathname}`, {
+        from: location.href,
+        rect,
+        card: snapshot,
+        name: card?.querySelector("h3")?.textContent || "",
+      });
+    const element = cover();
+    const first = frame
+      ? {
+          transform: getComputedStyle(frame).transform,
+          opacity: getComputedStyle(frame).opacity,
+        }
+      : null;
+    arrivalAnimation?.cancel();
+    coverAnimation?.cancel();
+    clearReturnFrame();
+    root.dataset.pageTransition = "leaving";
+    root.dataset.coverReady = "true";
+    if (stored && marker.flip) {
+      const travel = isProject ? 460 : 520;
+      clearCardMotion();
+      root.dataset.cardTransition = "true";
+      root.dataset.pageTransition = "leaving";
+      if (element) {
+        element.style.opacity = "0";
+        element.style.pointerEvents = "auto";
+      }
+      outgoingCard = cardMotion.create({
+        frame: snapshot,
+        backFrame: isProject ? origin.card : null,
+        rect: source,
+        target: marker.flip.rect,
+        name: marker.flip.name,
+        summary: marker.flip.summary,
+        index: marker.flip.index,
+        direction,
+        arrival: false,
+        duration: travel,
+      });
+      preparation = back ? null : preparePage(to);
+      signal("leaving", travel, direction);
+      const departureCard = outgoingCard;
+      const shown = departureCard.finished.then(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(resolve, direction === "open" ? titleHold : 0),
+          ),
+      );
+      Promise.all([shown, preparation?.ready]).then(() => {
+        if (!departing || pendingUrl !== to || outgoingCard !== departureCard)
+          return;
+        marker.flip.progress = departureCard.progress(true);
+        marker.at = Date.now();
+        write(transitionKey, marker);
+        if (back) history.back();
+        else location.assign(to);
+      });
+      return;
+    }
+    clearCardMotion();
+    signal("leaving", duration, direction);
+    if (element) {
+      element.style.pointerEvents = "auto";
+      if (duration && !destinationClose) {
+        element.style.opacity = "0";
+        coverAnimation = element.animate([{ opacity: 0 }, { opacity: 1 }], {
+          duration: 80,
+          delay: duration - 80,
+          fill: "forwards",
+          easing: "ease-in-out",
+        });
+      } else element.style.opacity = "1";
+    }
+    if (frame && duration && !destinationClose) {
+      const origin = read(`portfolio-project-origin:${location.pathname}`);
+      const target =
+        origin && destinationMatchesOrigin(origin.from, to)
+          ? origin.rect
+          : null;
+      frame.style.transformOrigin = "top left";
+      arrivalAnimation = frame.animate(
+        [first, { transform: rectTransform(frame, target, true), opacity: 1 }],
+        { duration, fill: "forwards", easing: "cubic-bezier(.22,1,.36,1)" },
+      );
+    }
+    const commit = () => {
+      if (element) element.style.opacity = "1";
+      if (back) history.back();
+      else location.assign(to);
+    };
+    if (duration && !destinationClose)
+      departureTimer = setTimeout(commit, duration);
+    else commit();
+  }
+  function destinationMatchesOrigin(from, to) {
+    try {
+      const a = new URL(from),
+        b = new URL(to);
+      return a.pathname === b.pathname && a.search === b.search;
+    } catch {
+      return false;
+    }
+  }
+  function returnToPreviousPage() {
+    const previous = previousPortfolioUrl();
+    const allowed =
+      previous &&
+      (projectRoutes.has(previous.pathname) ||
+        /\/(?:index\.html|projects\.html)?$/.test(previous.pathname)) &&
+      history.length > 1;
+    leave(
+      allowed ? previous.href : new URL("index.html#work", location.href).href,
+      { back: Boolean(allowed && knownSource) },
+    );
+  }
+
+  document.addEventListener(
+    "DOMContentLoaded",
+    () => {
+      initialized = true;
+      if (!departing) reveal();
+    },
+    { once: true },
+  );
+  window.addEventListener("pageshow", (event) => {
+    if (!initialized || event.persisted) {
+      incoming = incoming || consumeTransition();
+      arrivalSource = incoming?.from || arrivalSource;
+      const element = document.getElementById("navigation-cover");
+      if (element) element.style.pointerEvents = "none";
+      reveal();
+    }
+  });
+  document.addEventListener("keydown", (event) => {
+    if (
+      event.key !== "Escape" ||
+      event.defaultPrevented ||
+      event.target.closest?.("input, textarea, select, [contenteditable]") ||
+      document.querySelector('.menu-toggle[aria-expanded="true"]')
+    )
+      return;
+    if (isProject) {
+      event.preventDefault();
+      returnToPreviousPage();
+    } else if (
+      departing &&
+      pendingUrl &&
+      projectRoutes.has(new URL(pendingUrl).pathname)
+    ) {
+      event.preventDefault();
+      window.stop();
+      preparation?.controller.abort();
+      preparedPages.delete(pendingUrl);
+      preparation = null;
+      clearCardMotion();
+      incoming = null;
+      try {
+        sessionStorage.removeItem(transitionKey);
+      } catch {}
+      reveal();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    if (
+      event.button !== 0 ||
+      event.defaultPrevented ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.shiftKey
+    )
+      return;
+    const link = event.target.closest?.("a[href]");
+    if (link) {
+      if (
+        (link.target && link.target !== "_self") ||
+        link.hasAttribute("download")
+      )
+        return;
+      const to = new URL(link.href, location.href);
+      if (
+        to.origin !== location.origin ||
+        !/\/(?:[^/]*\.html)?$/.test(to.pathname) ||
+        (to.pathname === location.pathname && to.search === location.search)
+      )
+        return;
+      event.preventDefault();
+      const card = link.querySelector(".card-frame");
+      leave(to.href, { rect: originRect(card), card });
+      return;
+    }
+    if (
+      isProject &&
+      !window.getSelection()?.toString() &&
+      !event.target.closest?.(
+        ".presentation-deck, .presentation-navigation, .presentation-hint, .site-header, a, button, dialog",
+      )
+    )
+      returnToPreviousPage();
+  });
+  for (const type of ["pointerover", "focusin"])
+    document.addEventListener(
+      type,
+      (event) => {
+        const link = event.target.closest?.(".project-card a[href]");
+        if (
+          link &&
+          link.origin === location.origin &&
+          projectRoutes.has(new URL(link.href).pathname)
+        )
+          preparePage(link.href);
+      },
+      { passive: true },
+    );
+})();
+</script><meta name="color-scheme" content="dark"><title>Privacy policy — Owen Le</title><meta name="description" content="How DueForm, a trading name of Owen Le, handles personal data from business contacts, clients, call bookings and website visitors."><link rel="canonical" href="https://taivanle.github.io/privacy.html"><meta name="theme-color" content="#0c1c1a"><meta property="og:type" content="article"><meta property="og:title" content="Privacy policy"><meta property="og:description" content="How DueForm, a trading name of Owen Le, handles personal data from business contacts, clients, call bookings and website visitors."><meta property="og:url" content="https://taivanle.github.io/privacy.html"><meta property="og:image" content="https://taivanle.github.io/assets/social-card.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:alt" content="Owen Le — Applied AI Engineer"><meta name="twitter:card" content="summary_large_image"><link rel="icon" href="assets/favicon.svg" type="image/svg+xml"><link rel="preload" href="assets/fonts/manrope-variable.woff2" as="font" type="font/woff2" crossorigin><link rel="stylesheet" href="assets/styles.css?v=8c0c65fdd1fe"><script src="assets/app.js?v=67962149b693" defer></script><script type="application/ld+json">{"@context":"https://schema.org","@type":"CreativeWork","name":"Privacy policy","description":"How DueForm, a trading name of Owen Le, handles personal data from business contacts, clients, call bookings and website visitors.","url":"https://taivanle.github.io/privacy.html","author":{"@type":"Person","name":"Owen Le","url":"https://taivanle.github.io/"}}</script></head><body class="content-page"><div class="cursor-tracker" aria-hidden="true"><span class="cursor-label">View</span></div><div class="scroll-progress" aria-hidden="true"></div><a class="skip-link" href="#main">Skip to content</a><header class="site-header"><div class="header-inner wrap"><a class="brand" href="index.html" aria-label="Owen Le home"><span class="brand-mark" aria-hidden="true">OL</span><span class="brand-name">Owen Le</span></a><span class="header-time" hidden><span class="header-time-label">Your time</span> <span data-local-time></span></span><button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="navigation">Menu</button><nav class="navigation" id="navigation" aria-label="Main navigation"><span class="nav-indicator" aria-hidden="true"></span><a class="nav-link" href="index.html#work">Work</a><a class="nav-link" href="index.html#about">About</a><a class="nav-link" href="index.html#experience">Experience</a><a class="nav-link" href="index.html#community">Speaking</a><a class="nav-link" href="index.html#notes">Notes</a><div class="header-actions"><a class="nav-resume" href="assets/owen-le-resume.pdf" target="_blank" rel="noopener" aria-label="View resume PDF (opens in a new tab)">Resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a class="nav-social" href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn profile (opens in a new tab)" title="LinkedIn"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.049c.476-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg></a><a class="nav-social" href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer" aria-label="GitHub profile (opens in a new tab)" title="GitHub"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 .297C5.37.297 0 5.67 0 12.297c0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.043-1.61-4.043-1.61-.546-1.387-1.333-1.756-1.333-1.756-1.09-.745.083-.729.083-.729 1.205.084 1.838 1.236 1.838 1.236 1.071 1.835 2.809 1.305 3.495.998.108-.776.418-1.305.762-1.605-2.665-.3-5.466-1.334-5.466-5.93 0-1.312.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23a11.52 11.52 0 0 1 3.003-.404c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.771.841 1.235 1.912 1.235 3.221 0 4.609-2.804 5.625-5.475 5.922.43.372.823 1.102.823 2.222 0 1.606-.015 2.896-.015 3.286 0 .322.216.694.825.576C20.565 22.093 24 17.593 24 12.297c0-6.627-5.373-12-12-12z"/></svg></a></div></nav></div></header><main id="main"><header class="page-hero wrap"><p class="eyebrow">DueForm</p><h1>Privacy <span class="soft">policy.</span></h1><svg class="light-rail title-rail" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="rail-line" pathLength="1" d="M0 32H92L120 4H1200"/><path class="rail-current rail-halo" pathLength="100" d="M0 32H92L120 4H1200"/><path class="rail-current rail-core" pathLength="100" d="M0 32H92L120 4H1200"/></svg><p class="article-meta">Last updated 11 October 2026</p></header><div class="case-layout wrap"><nav class="case-toc" aria-label="Policy sections"><span>In this policy</span><a href="#who">Who we are</a><a href="#data">The personal data we collect</a><a href="#use">How we use it, and our lawful basis</a><a href="#client-documents">Data in our clients’ documents</a><a href="#sharing">Who we share it with</a><a href="#transfers">International transfers</a><a href="#retention">How long we keep it</a><a href="#rights">Your rights</a><a href="#complaints">Complaints</a><a href="#website">Our website</a><a href="#changes">Changes to this policy</a><a href="#contact-us">Contact</a></nav><article class="case-content article-content"><section id="who">
+  <h2>1. Who we are</h2>
+  <p>
+    Owen Le, trading as DueForm (“DueForm”, “we”, “us”), is based in London,
+    United Kingdom. Owen Le is responsible for data protection. For any question
+    about this policy or your personal data, email
+    <a href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a>.
+  </p>
+  <p>
+    We help businesses check that their invoices match their customer contracts.
+    This policy explains how we handle personal data when we contact businesses,
+    work with clients, and run our website.
+  </p>
+</section>
+<section id="data">
+  <h2>2. The personal data we collect</h2>
+  <table class="policy-table">
+    <thead>
+      <tr>
+        <th scope="col">Who you are</th>
+        <th scope="col">What we collect</th>
+        <th scope="col">Where it comes from</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-label="Who you are">
+          A business contact we reach out to, or who contacts us
+        </td>
+        <td data-label="What we collect">
+          Name, job title, employer, work email, work phone, LinkedIn profile,
+          notes of our conversations
+        </td>
+        <td data-label="Where it comes from">
+          Your employer’s website, LinkedIn, Companies House, introductions, or
+          you
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Who you are">A contact at one of our clients</td>
+        <td data-label="What we collect">
+          Name, job title, work contact details, correspondence, signatures on
+          agreements, invoices and payments
+        </td>
+        <td data-label="Where it comes from">You or your employer</td>
+      </tr>
+      <tr>
+        <td data-label="Who you are">Someone who books a call with us</td>
+        <td data-label="What we collect">
+          Name, email, company and role, and the meeting time
+        </td>
+        <td data-label="Where it comes from">You, through our booking tool</td>
+      </tr>
+      <tr>
+        <td data-label="Who you are">A website visitor</td>
+        <td data-label="What we collect">
+          Your IP address and browser details, held in our hosting provider’s
+          server logs
+        </td>
+        <td data-label="Where it comes from">Your browser</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    We do not ask for, and ask clients not to send, special category data (such
+    as health data) or financial account details about individuals.
+  </p>
+</section>
+<section id="use">
+  <h2>3. How we use it, and our lawful basis</h2>
+  <table class="policy-table">
+    <thead>
+      <tr>
+        <th scope="col">Purpose</th>
+        <th scope="col">Lawful basis under the UK GDPR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-label="Purpose">
+          Contacting businesses about our services, and following up
+        </td>
+        <td data-label="Lawful basis">
+          Legitimate interests: telling relevant business contacts about
+          services that may help their work. You can object at any time (<a
+            href="#rights"
+            >section 8</a
+          >)
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Purpose">
+          Arranging and holding calls, and keeping notes of them
+        </td>
+        <td data-label="Lawful basis">
+          Legitimate interests: understanding potential clients’ needs
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Purpose">
+          Agreeing and delivering engagements, invoicing and getting paid
+        </td>
+        <td data-label="Lawful basis">
+          Legitimate interests (our agreement is with your employer, not with
+          you personally), or contract where you are a sole trader
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Purpose">Keeping accounting and tax records</td>
+        <td data-label="Lawful basis">Legal obligation</td>
+      </tr>
+      <tr>
+        <td data-label="Purpose">
+          Keeping records to establish or defend legal claims
+        </td>
+        <td data-label="Lawful basis">Legitimate interests</td>
+      </tr>
+      <tr>
+        <td data-label="Purpose">Running and securing our website</td>
+        <td data-label="Lawful basis">Legitimate interests</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    We do not use personal data for automated decision-making that has legal or
+    similarly significant effects on you.
+  </p>
+</section>
+<section id="client-documents">
+  <h2>4. Data in our clients’ documents</h2>
+  <p>
+    When a client asks us to check its invoices against its customer contracts,
+    those documents may contain personal data, such as names and contact details
+    of people at the client’s customers. For that data we act as a processor on
+    the client’s instructions, under a written data processing agreement. The
+    client is the controller and its own privacy notice applies. We use that
+    data only to provide the service, never for our own purposes or to train AI
+    models, and we delete it at the end of the engagement (normally within 30
+    days of delivery).
+  </p>
+  <p>
+    If the client agrees, we use an AI provider to help read contracts (<a
+      href="#sharing"
+      >section 5</a
+    >). Otherwise we enter contract terms by hand.
+  </p>
+</section>
+<section id="sharing">
+  <h2>5. Who we share it with</h2>
+  <p>
+    We share personal data only with service providers who help us run the
+    business, and only as needed:
+  </p>
+  <table class="policy-table">
+    <thead>
+      <tr>
+        <th scope="col">Recipient</th>
+        <th scope="col">Why</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-label="Recipient">Microsoft (email and calendar)</td>
+        <td data-label="Why">Sending and receiving email, scheduling</td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">Calendly (booking tool)</td>
+        <td data-label="Why">Letting you book a call</td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">
+          Google Meet, Zoom or Microsoft Teams (video calls)
+        </td>
+        <td data-label="Why">
+          Holding calls, on whichever service we agree for the call
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">LinkedIn</td>
+        <td data-label="Why">Messaging business contacts</td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">GitHub (website hosting)</td>
+        <td data-label="Why">Hosting our website, including server logs</td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">OpenAI</td>
+        <td data-label="Why">
+          Only for client documents, only where the client has agreed (<a
+            href="#client-documents"
+            >section 4</a
+          >)
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">
+          Our accountant, insurers and professional advisers
+        </td>
+        <td data-label="Why">
+          Running the business, insurance and legal advice
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Recipient">
+          HMRC, regulators, courts or law enforcement
+        </td>
+        <td data-label="Why">Where the law requires it</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>We never sell personal data.</p>
+</section>
+<section id="transfers">
+  <h2>6. International transfers</h2>
+  <p>
+    Some of the providers above process data outside the UK, mainly in the USA.
+    Where they do, the transfer is covered by UK adequacy regulations (including
+    the UK–US “data bridge” for certified US companies), or by the UK
+    International Data Transfer Addendum to standard contractual clauses, or
+    another safeguard allowed by the UK GDPR. Email us for details of the
+    safeguard for a particular provider.
+  </p>
+</section>
+<section id="retention">
+  <h2>7. How long we keep it</h2>
+  <table class="policy-table">
+    <thead>
+      <tr>
+        <th scope="col">Data</th>
+        <th scope="col">How long</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td data-label="Data">Business contacts who have not become clients</td>
+        <td data-label="How long">
+          Up to 24 months after our last contact, then deleted. Sooner if you
+          ask us to stop contacting you; we keep only your name and email on a
+          suppression list so we don’t contact you again
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Data">
+          Client contacts, agreements, invoices and correspondence
+        </td>
+        <td data-label="How long">
+          6 years after the end of the financial year in which the engagement
+          ends, to meet tax and accounting rules and for legal claims
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Data">
+          Data in clients’ documents (<a href="#client-documents">section 4</a>)
+        </td>
+        <td data-label="How long">
+          Until the end of the engagement, normally no more than 30 days after
+          delivery, then deleted with written confirmation to the client
+        </td>
+      </tr>
+      <tr>
+        <td data-label="Data">Website server logs</td>
+        <td data-label="How long">As set by our hosting provider</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+<section id="rights">
+  <h2>8. Your rights</h2>
+  <p>
+    You have the right to: access your personal data; have it corrected; have it
+    erased; restrict how we use it; object to our use of it; and receive it in a
+    portable format. You can object to marketing at any time, and we will stop.
+    Just reply “stop” to any message or email us.
+  </p>
+  <p>
+    We will respond within one month. Some rights are limited (for example, we
+    must keep accounting records for the period the law requires). For data in a
+    client’s documents (<a href="#client-documents">section 4</a>), contact that
+    client, and we will help them respond.
+  </p>
+</section>
+<section id="complaints">
+  <h2>9. Complaints</h2>
+  <p>
+    If you are unhappy with how we have handled your personal data, please
+    complain to us first at
+    <a href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a>. We will
+    acknowledge your complaint within 30 days and respond fully without undue
+    delay.
+  </p>
+  <p>
+    You can also complain to the Information Commissioner’s Office:
+    <a
+      href="https://ico.org.uk/make-a-complaint/"
+      target="_blank"
+      rel="noopener noreferrer"
+      >ico.org.uk/make-a-complaint</a
+    >
+    or <a href="tel:+443031231113">0303 123 1113</a>.
+  </p>
+</section>
+<section id="website">
+  <h2>10. Our website</h2>
+  <p>
+    Our website does not use cookies, analytics or advertising trackers. It uses
+    your browser’s temporary session storage only to remember display state
+    while you move between pages, such as page transitions. This is cleared when
+    you close the tab and is not used to identify or track you. You can clear it
+    at any time in your browser settings.
+  </p>
+  <p>
+    If you choose to book a call, the booking calendar loads from Calendly.
+    Calendly, and services it uses such as Stripe, then set their own cookies.
+    Nothing from Calendly loads until you open the calendar.
+  </p>
+  <p>
+    Our hosting provider (GitHub) keeps standard server logs, including IP
+    addresses, to run and secure the service.
+  </p>
+</section>
+<section id="changes">
+  <h2>11. Changes to this policy</h2>
+  <p>
+    We will update this policy when the way we handle personal data changes, and
+    change the date at the top. Significant changes will be highlighted on our
+    website.
+  </p>
+</section>
+<section id="contact-us">
+  <h2>12. Contact</h2>
+  <p>
+    Owen Le, trading as DueForm, London, United Kingdom. Email:
+    <a href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a>.
+  </p>
+</section>
+</article></div></main><footer id="contact" class="contact-section"><div class="wrap"><div class="contact-grid"><div><p class="eyebrow">Have something in mind?</p><h2>Let’s build<br><span class="soft">something useful.</span></h2><svg class="light-rail contact-rail" viewBox="0 0 1200 40" preserveAspectRatio="none" aria-hidden="true"><path class="rail-line" pathLength="1" d="M0 32H92L120 4H1200"/><path class="rail-current rail-halo" pathLength="100" d="M0 32H92L120 4H1200"/><path class="rail-current rail-core" pathLength="100" d="M0 32H92L120 4H1200"/></svg></div><div class="contact-copy"><p>Interested in applied AI, evaluation, or building a product that works in practice? I’d like to hear from you.</p><div class="email-row"><a class="email-link" href="mailto:taivan@hotmail.co.uk">taivan@hotmail.co.uk</a><button type="button" class="copy-button" data-copy-email aria-label="Copy email address"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V4H4v12h4"/></svg></button></div><p class="copy-status" id="copy-status" role="status"></p><div class="booking-row"><a class="button primary" href="https://calendly.com/taivan/new-meeting" data-booking>Book a call <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a><p class="booking-hint">Opens Calendly, which sets its own cookies. <a href="privacy.html#website">Privacy policy</a></p></div></div></div><div class="footer-inner"><span>© 2026 Owen Le · London, United Kingdom<span class="footer-time" data-london-time hidden></span></span><button type="button" class="shortcut-hint" data-shortcuts>Press <kbd>?</kbd> for shortcuts</button><div class="footer-links"><a href="privacy.html">Privacy</a><a href="https://www.linkedin.com/in/owen-le/" target="_blank" rel="noopener noreferrer">LinkedIn <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="https://github.com/taivanle" target="_blank" rel="noopener noreferrer">GitHub <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a><a href="assets/owen-le-resume.pdf" download="Owen-Le-Resume.pdf">Download resume <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 5l7 7-7 7"/></svg></a></div></div></div></footer><dialog class="booking" aria-labelledby="booking-title"><div class="booking-head"><h2 id="booking-title">Book a call</h2><button type="button" class="booking-close" aria-label="Close booking"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><div class="booking-frame"><p>Loading calendar…</p><iframe title="Calendly booking calendar"></iframe></div><p class="booking-note"><span>Booking runs on Calendly, which sets its own cookies. <a href="privacy.html#website">Privacy policy</a></span><a href="https://calendly.com/taivan/new-meeting" target="_blank" rel="noopener noreferrer">Open in Calendly <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 18 6M7 6h11v11"/></svg></a></p></dialog><dialog class="shortcuts" aria-labelledby="shortcuts-title"><div class="shortcuts-head"><h2 id="shortcuts-title">Keyboard shortcuts</h2><button type="button" class="shortcuts-close" aria-label="Close shortcuts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div><dl><div><dt><kbd>G</kbd><kbd>W</kbd></dt><dd>Work</dd></div><div><dt><kbd>G</kbd><kbd>A</kbd></dt><dd>About</dd></div><div><dt><kbd>G</kbd><kbd>E</kbd></dt><dd>Experience</dd></div><div><dt><kbd>G</kbd><kbd>S</kbd></dt><dd>Speaking</dd></div><div><dt><kbd>G</kbd><kbd>N</kbd></dt><dd>Notes</dd></div><div><dt><kbd>G</kbd><kbd>P</kbd></dt><dd>All projects</dd></div><div><dt><kbd>G</kbd><kbd>H</kbd></dt><dd>Home</dd></div><div><dt><kbd>?</kbd></dt><dd>Show or hide this panel</dd></div></dl></dialog></body></html>

@@ -1516,6 +1516,32 @@ if (shortcutPanel?.showModal) {
   });
 }
 
+const booking = document.querySelector(".booking");
+if (booking?.showModal) {
+  const frame = booking.querySelector("iframe");
+  document.querySelectorAll("[data-booking]").forEach((link) =>
+    link.addEventListener("click", (event) => {
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.button)
+        return;
+      event.preventDefault();
+      closeMenu();
+      // Calendly sets cookies, so it loads only once the visitor asks for it.
+      if (!frame.src)
+        frame.src = `${link.href}?embed_domain=${location.hostname}&embed_type=Inline&background_color=10241c&text_color=eaf0e7&primary_color=d5e7ae`;
+      booking.showModal();
+    }),
+  );
+  booking.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    booking.close();
+  });
+  booking.addEventListener("click", (event) => {
+    if (event.target === booking || event.target.closest(".booking-close"))
+      booking.close();
+  });
+}
+
 const diagramDialog = document.querySelector(".diagram-dialog");
 if (diagramDialog?.showModal) {
   document

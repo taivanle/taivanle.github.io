@@ -14,6 +14,7 @@ const pages = [
   "create_agent.html",
   "engineering-reliable-ai.html",
   "orchestrate_simplified.html",
+  "privacy.html",
   "404.html",
 ];
 
@@ -1678,4 +1679,75 @@ test("the Themis architecture opens as an accessible diagram and closes without 
   await page.keyboard.press("Escape");
   await expect(diagram).toBeHidden();
   await expect(page).toHaveURL(/themis.html#architecture$/);
+});
+
+test("the privacy policy is published in full and linked from the footer", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page
+    .locator(".footer-links")
+    .getByRole("link", { name: "Privacy" })
+    .click();
+  await expect(page).toHaveURL(/privacy.html$/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Privacy policy." }),
+  ).toBeVisible();
+  const policy = page.locator("main");
+  await expect(policy).toContainText("Last updated 11 October 2026");
+  await expect(policy).toContainText("Owen Le, trading as DueForm");
+  await expect(policy).toContainText("taivan@hotmail.co.uk");
+  await expect(policy).toContainText("loads from Calendly");
+  await expect(policy.locator("section h2")).toHaveCount(12);
+  expect(await policy.innerText()).not.toMatch(/\[[^\]]*\]|•/);
+});
+
+test("the booking calendar loads Calendly only after the visitor asks for it", async ({
+  page,
+}) => {
+  const calendly = [];
+  await page.route("https://calendly.com/**", (route) => {
+    calendly.push(route.request().url());
+    return route.fulfill({
+      contentType: "text/html",
+      body: "<!doctype html><title>Calendly</title><p>Pick a time</p>",
+    });
+  });
+  await page.goto("/");
+  const trigger = page.getByRole("link", { name: "Book a call" });
+  await expect(trigger).toHaveAttribute(
+    "href",
+    "https://calendly.com/taivan/new-meeting",
+  );
+  await expect(page.locator("iframe[src]")).toHaveCount(0);
+  expect(calendly).toEqual([]);
+  await trigger.click();
+  const panel = page.getByRole("dialog", { name: "Book a call" });
+  await expect(panel).toBeVisible();
+  await expect(panel.locator("iframe")).toHaveAttribute(
+    "src",
+    /^https:\/\/calendly\.com\/taivan\/new-meeting\?/,
+  );
+  await expect
+    .poll(() => calendly.some((url) => url.includes("/taivan/new-meeting")))
+    .toBeTruthy();
+  await expect(
+    panel.frameLocator("iframe").getByText("Pick a time"),
+  ).toBeVisible();
+  await expect(
+    panel.getByRole("link", { name: /Privacy policy/ }),
+  ).toHaveAttribute("href", "privacy.html#website");
+  const accessibility = await new AxeBuilder({ page })
+    .include(".booking")
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(accessibility.violations.map((violation) => violation.id)).toEqual([]);
+  await page.keyboard.press("Escape");
+  await expect(panel).toBeHidden();
+  await expect(trigger).toBeFocused();
+  await expect(page).toHaveURL(/127\.0\.0\.1:\d+\/$/);
+  await trigger.click();
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: "Close booking" }).click();
+  await expect(panel).toBeHidden();
 });
