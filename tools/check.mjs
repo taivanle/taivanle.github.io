@@ -25,7 +25,7 @@ for (const [file, html] of pages) {
   if (/\{\{[^}]+\}\}/.test(html))
     errors.push(`${file}: unexpanded template token`);
   for (const [, target] of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
-    if (/^(?:https?:|mailto:|data:)/.test(target)) continue;
+    if (/^(?:https?:|mailto:|tel:|data:)/.test(target)) continue;
     const [resource, fragment] = target.split("#");
     const filename = resource.split("?")[0];
     const destination = filename || file;
