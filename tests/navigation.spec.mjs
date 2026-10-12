@@ -511,6 +511,7 @@ test("direct projects stay dark and can exit even without external styles or scr
     "themis",
     "dueform",
     "actifact",
+    "compliance-review-agent",
     "financial-qa",
     "vodafone-tobi",
     "nationwide-governance",
