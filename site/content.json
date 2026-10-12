@@ -690,6 +690,385 @@
       }
     },
     {
+      "slug": "compliance-review-agent",
+      "name": "Compliance Review Agent",
+      "category": "ai",
+      "eyebrow": "AGENT WORKFLOWS · HUMAN IN THE LOOP",
+      "status": "Open-source prototype",
+      "title": "The agent flags it. A person decides.",
+      "summary": "A LangGraph agent that reviews contracts, pauses for a person on high-risk clauses, and keeps durable state, traces and an audit trail.",
+      "overview": [
+        "A LangGraph agent that reviews contracts for a UK regulated firm. It scores each clause, pauses for a person to decide on high-risk findings, then drafts remediation notes and an auditable report.",
+        "I built it to show the parts of an LLM system that matter in production: durable state, human control, tracing, evals and a secure AWS deployment, all runnable for £0."
+      ],
+      "tags": ["LangGraph", "Human in the loop", "Langfuse", "AWS ECS"],
+      "theme": "review",
+      "role": "Independent design & engineering",
+      "period": "Current build",
+      "details": true,
+      "problemHeadline": "A risky clause needs a person, not just a score.",
+      "challenge": [
+        "A model can flag uncapped liability or an unprotected data transfer, but a regulated firm needs a person to own the decision on anything high risk. That can take days, and the review must survive restarts and deploys while it waits.",
+        "The firm also has to show who decided what, and whether a model reviews contracts better than simple rules, at what latency and cost."
+      ],
+      "focus": [
+        "Pause for a person on high-risk findings",
+        "Keep every decision auditable",
+        "Measure quality, latency and cost"
+      ],
+      "flow": [
+        "Extract clauses",
+        "Score risk",
+        "Human review",
+        "Remediate & report"
+      ],
+      "stages": [
+        "Split the contract into clauses and give each a category: liability, data protection, termination, payment, confidentiality, governing law or other. Clauses are typed Pydantic models in the graph state.",
+        "Rate each clause low, medium or high risk with a one-sentence rationale. Any finding at or above the review threshold is marked for review; if none are, the run skips straight to remediation.",
+        "The review node calls interrupt(), which saves a checkpoint to Postgres and returns the findings that need a decision. A reviewer approves, edits or rejects each one through the API. Partial answers pause again for whatever is still pending.",
+        "Draft remediation notes for the medium and high findings a reviewer kept, skipping rejected false positives. The final report records risk counts, cost and latency, and every decision stays in the audit log with the reviewer’s name."
+      ],
+      "decision": "Human review is a step in the graph, not a side channel. interrupt() saves the run to Postgres and hands control back, so a paused review survives restarts and deploys, and any ECS task can resume it with the reviewer’s decisions.",
+      "buildLabels": [
+        "Graph & state",
+        "Human in the loop",
+        "Models & evals",
+        "Deployment & CI/CD"
+      ],
+      "approach": [
+        "Modelled the review as a typed LangGraph state machine. Metrics and the audit log use append-only reducers, and a Postgres checkpointer saves state after every node. Checkpoint loading is restricted to the app’s own types.",
+        "Routed high-risk findings to a node that calls interrupt(). A FastAPI endpoint takes approve, edit or reject decisions, refuses clauses that are not pending and resumes the run. A history endpoint returns the audit log and checkpoint trail.",
+        "Put a rule analyzer and an Ollama open-weights model (Qwen 2.5) behind one interface with shared prompts and schemas. One eval harness reports accuracy, high-risk recall and precision, cost and p95 latency for both. Langfuse traces every node and model call.",
+        "Wrote Terraform for ECS Fargate Spot with an Ollama sidecar, RDS Postgres, Secrets Manager and CloudWatch alarms. CI runs lint, 11 offline tests, the eval gate, a dependency audit and a Docker build. Deploys use GitHub OIDC, need approval and roll back on failure."
+      ],
+      "resultsHeadline": "The rules still win, for now.",
+      "resultsSetting": "One run each · temperature 0 · 8 contracts · 32 labelled clauses · Qwen 2.5 7B on an Apple M5 Pro",
+      "results": [
+        ["75%", "Qwen 2.5 7B risk accuracy", "24 of 32 clauses · rules: 87.5%"],
+        [
+          "50%",
+          "Qwen 2.5 7B high-risk recall",
+          "4 of 8 clauses · rules: 6 of 8"
+        ],
+        ["8.8", "mean seconds per contract", "Local and free · p95 12.2s"]
+      ],
+      "context": [
+        "The rule baseline scored highest on this starter set. Qwen 2.5 7B rated three of its four missed high-risk clauses as medium, and four of its five high-risk flags were correct.",
+        "Qwen 2.5 3B, run in CI on GitHub’s CPU runner, caught 7 of 8 high-risk clauses, but only half of its 14 high-risk flags were correct. It got 17 of 32 clauses right at about 48 seconds per contract."
+      ],
+      "resultsScope": "One run per model at temperature 0, on a starter golden set written alongside the rules, which may favour them. Eight contracts are too few for stable estimates: the figures show how the harness compares analyzers, not how either would perform on real contracts.",
+      "perspectiveHeadline": "Design the pause first.",
+      "reflection": "The hard part was the pause, not the model call. Making human review a checkpointed step in the graph kept each run durable, resumable and auditable: the model proposes, and a person decides anything high risk.",
+      "limitations": [
+        "Starter golden set: 8 contracts, 32 clauses.",
+        "One run per model, no repeats yet.",
+        "With the 7B model, 4 of 8 high-risk clauses would skip review.",
+        "AWS deployment not yet run end to end."
+      ],
+      "nextSteps": [
+        "Route medium findings to review when a model scores risk.",
+        "Flag a clause high if either the rules or the model do.",
+        "Grow the golden set to 30 or more contracts.",
+        "Deploy and roll back once on AWS, then tear down."
+      ],
+      "closing": "Report the baseline next to every model number. Here it showed the 7B model is not yet ready to replace the rules.",
+      "source": {
+        "label": "View the code on GitHub",
+        "href": "https://github.com/taivanle/compliance-review-agent"
+      },
+      "diagram": {
+        "badge": "Python · LangGraph prototype",
+        "title": "Compliance Review Agent — human-in-the-loop review graph",
+        "subtitle": "A checkpointed LangGraph run that pauses for a reviewer on high-risk findings",
+        "rows": [
+          {
+            "groups": [
+              {
+                "title": "Start a review",
+                "tone": "sky",
+                "quiet": true,
+                "text": [
+                  "POST /reviews with the contract text",
+                  "A new thread ID for every review"
+                ]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0]
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Extract clauses",
+                "text": [
+                  "Split the contract into clauses",
+                  "Typed clauses with a category"
+                ]
+              },
+              {
+                "title": "Score risk",
+                "text": [
+                  "Low, medium or high with a rationale",
+                  "Flag findings at or above the review threshold"
+                ]
+              },
+              {
+                "title": "Analyzer interface",
+                "tone": "gold",
+                "quiet": true,
+                "stack": true,
+                "items": [
+                  {
+                    "title": "Rule baseline",
+                    "lines": ["Deterministic, offline, used in tests"]
+                  },
+                  {
+                    "title": "Ollama · Qwen 2.5",
+                    "lines": ["Open weights, structured output"]
+                  }
+                ]
+              }
+            ],
+            "joins": [
+              {
+                "label": "Clauses"
+              },
+              {
+                "both": true,
+                "label": ["Model", "calls"]
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [0, 1],
+              "from": 1,
+              "labels": {
+                "0": "Finding ≥ threshold",
+                "1": "Nothing flagged"
+              }
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Human review",
+                "subtitle": "interrupt() pauses the run",
+                "tone": "core",
+                "text": [
+                  "Checkpoint saved, pending findings returned",
+                  "Reviewer approves, edits or rejects",
+                  "Partial answers pause again"
+                ]
+              },
+              {
+                "title": "Draft remediation",
+                "text": [
+                  "Medium and high findings that were kept",
+                  "Rejected false positives skipped"
+                ]
+              },
+              {
+                "title": "Finalise report",
+                "tone": "mint",
+                "text": [
+                  "Risk counts and kept findings",
+                  "Cost and latency per node"
+                ]
+              }
+            ],
+            "joins": [
+              {
+                "label": "Resume"
+              },
+              {
+                "label": "Notes"
+              }
+            ]
+          },
+          {
+            "connector": {
+              "drops": [2],
+              "align": "prev"
+            }
+          },
+          {
+            "groups": [
+              {
+                "title": "Report and audit trail",
+                "tone": "mint",
+                "quiet": true,
+                "columns": [
+                  {
+                    "title": "GET /reviews/{id}",
+                    "lines": ["Status, pending findings or the final report"]
+                  },
+                  {
+                    "title": "Audit log",
+                    "lines": ["Every decision with the reviewer’s name"]
+                  },
+                  {
+                    "title": "GET /reviews/{id}/history",
+                    "lines": ["The full checkpoint trail"]
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "notes": [
+          {
+            "title": "Key design decision",
+            "tone": "lime",
+            "text": "Human review is a step in the graph. interrupt() checkpoints the run to Postgres, so a paused review survives restarts and deploys, and any task can resume it."
+          },
+          {
+            "title": "Durable state",
+            "tone": "sky",
+            "points": [
+              "Postgres checkpoint after every node",
+              "Checkpoint loading limited to the app’s own types",
+              "Append-only metrics and audit log"
+            ]
+          },
+          {
+            "title": "Observability and evals",
+            "tone": "gold",
+            "points": [
+              "Langfuse traces every node and model call",
+              "Latency, tokens and cost per node",
+              "Golden-set evals with a recall gate in CI"
+            ]
+          },
+          {
+            "title": "Deployment",
+            "tone": "grey",
+            "text": "Terraform for ECS Fargate Spot with an Ollama sidecar and RDS Postgres. Deploys use GitHub OIDC, approval and automatic rollback. Not yet run end to end."
+          }
+        ],
+        "caption": [
+          "Every node appends to the metrics and audit log, and the checkpointer saves state after each one.",
+          "Drawn from the repository code. The AWS deployment is defined in Terraform but has not yet been run end to end."
+        ]
+      }
+    },
+    {
+      "slug": "nationwide-governance",
+      "name": "Nationwide AI Governance",
+      "category": "governance",
+      "theme": "governance",
+      "eyebrow": "ENTERPRISE AI · GOVERNANCE",
+      "status": "Governance pilot",
+      "organisation": "IBM",
+      "role": "Governance workflows, technical implementation, evaluations and integrations",
+      "tags": ["watsonx.governance", "watsonx Orchestrate", "OpenShift"],
+      "technologies": [
+        "watsonx.governance",
+        "watsonx Orchestrate",
+        "Watson Document Understanding",
+        "FileNet",
+        "OpenShift",
+        "Postgres",
+        "Object Storage"
+      ],
+      "details": true,
+      "title": "AI governance workflows for Nationwide",
+      "summary": "Contributed to an AI governance pilot for Nationwide, translating policy requirements into risk classification, evidence requirements and controlled approval workflows.",
+      "overview": [
+        "I worked on a governance pilot for Nationwide at IBM. My contribution covered governance workflows, technical implementation, evaluations and enterprise integrations.",
+        "The pilot translated policy and risk requirements into structured inputs and workflow rules. Evidence requirements and approval checkpoints controlled how an AI initiative could progress through its lifecycle."
+      ],
+      "problemHeadline": "Policy requirements need enforceable workflows",
+      "challenge": [
+        "Governance policies describe the reviews, documentation and approvals an AI initiative requires. Implementing those requirements means defining which information drives a decision, which controls apply and when a project can progress.",
+        "The pilot addressed this through structured risk assessment and controlled workflow transitions."
+      ],
+      "focus": [
+        "Classifying risk consistently",
+        "Applying the appropriate evidence and approval requirements",
+        "Preventing projects from skipping mandatory checkpoints",
+        "Making review decisions traceable"
+      ],
+      "flow": [
+        "Project information",
+        "Risk classification",
+        "Evidence & approval gates",
+        "Lifecycle records"
+      ],
+      "stages": [
+        "Capture structured inputs including model type, use case, data sensitivity, customer impact and regulatory exposure.",
+        "Apply risk logic and map the resulting tier to the required controls.",
+        "Require the relevant documentation and review before allowing progression. Conditional paths apply additional requirements where appropriate.",
+        "Preserve evidence and versioned approval checkpoints so reviewers can trace decisions to their supporting information."
+      ],
+      "decision": "Model customer impact and data sensitivity as separate fields. This makes it clearer which risk attribute triggered a control and what the team needs to address.",
+      "integrations": [
+        "The pilot used watsonx.governance, with orchestration and workflow enforcement in watsonx Orchestrate. Enterprise integrations connected the workflow with document-processing services and the systems used to store records, metadata and evidence.",
+        "Watson Document Understanding supported document processing. FileNet persisted enterprise records, Postgres supported structured metadata storage and Object Storage held durable artefacts. Enterprise content services ran on OpenShift."
+      ],
+      "buildLabels": [
+        "Metadata and risk tiers",
+        "Workflow controls",
+        "Evaluations and evidence",
+        "Integrations",
+        "Technical consideration"
+      ],
+      "approach": [
+        "Defined metadata schemas that translated policy concepts into structured fields. Implemented risk-tier logic and mapping between risk classifications and required controls.",
+        "Built conditional workflow paths with mandatory evidence and approval checkpoints. Designed state transitions that prevented skipped documentation or direct jumps to approval states.",
+        "Worked on evaluations and traceability across the governance workflow. Linked evidence requirements to lifecycle boundaries and risk classifications.",
+        "Contributed to integrations with document-processing and enterprise platform services.",
+        "Higher-risk paths required stricter controls, while lower-risk paths needed to remain usable. Workflow rules had to preserve policy intent without creating unnecessary review friction."
+      ],
+      "resultsHeadline": "Structured controls and traceable decisions",
+      "results": [
+        [
+          "Controlled",
+          "workflow progression",
+          "Mandatory checkpoints controlled movement through the lifecycle"
+        ],
+        [
+          "Risk-aligned",
+          "risk classification",
+          "Assessed risk determined documentation and approval requirements"
+        ],
+        [
+          "Traceable",
+          "evidence capture",
+          "Review decisions connected to structured inputs and captured artefacts"
+        ],
+        [
+          "Versioned",
+          "approval tracking",
+          "Versioned checkpoints improved traceability"
+        ]
+      ],
+      "context": [
+        "The pilot established structured governance workflows and reduced reliance on manual tracking and email-based approvals.",
+        "These outcomes are qualitative: no quantified efficiency gains, model-accuracy figures or production rollout are claimed."
+      ],
+      "resultsScope": "IBM’s case study describes the broader Nationwide AI partnership and governance programme. It provides context rather than evidence of every implementation detail above.",
+      "source": {
+        "label": "IBM’s Nationwide case study",
+        "href": "https://www.ibm.com/case-studies/nationwide-building-society"
+      },
+      "perspectiveHeadline": "Governance is a systems design problem",
+      "reflection": [
+        "Implementing governance requires precise definitions of risk inputs, control requirements and valid transitions. Reviewers also need to understand why a requirement applies and what evidence supports a decision.",
+        "The design challenge is to make higher-risk paths appropriately strict while keeping lower-risk workflows usable."
+      ],
+      "nextSteps": [
+        "Expand evaluation coverage across risk classifications and exception paths.",
+        "Test attempts to bypass documentation and approval prerequisites.",
+        "Check how policy changes affect existing rules and review records.",
+        "Review workflow usability alongside control enforcement."
+      ],
+      "closing": "Clear rules and traceable evidence make governance easier to operate and review."
+    },
+    {
       "slug": "financial-qa",
       "name": "Financial document QA",
       "category": "ai",
@@ -1023,119 +1402,6 @@
       "scope": "My main contribution was in evaluations and document querying. The wider project included additional workstreams across data, design, architecture and development.",
       "closing": "My contribution combined implementation work with evaluation in an enterprise assistant setting.",
       "details": true
-    },
-    {
-      "slug": "nationwide-governance",
-      "name": "Nationwide AI Governance",
-      "category": "governance",
-      "theme": "governance",
-      "eyebrow": "ENTERPRISE AI · GOVERNANCE",
-      "status": "Governance pilot",
-      "organisation": "IBM",
-      "role": "Governance workflows, technical implementation, evaluations and integrations",
-      "tags": ["watsonx.governance", "watsonx Orchestrate", "OpenShift"],
-      "technologies": [
-        "watsonx.governance",
-        "watsonx Orchestrate",
-        "Watson Document Understanding",
-        "FileNet",
-        "OpenShift",
-        "Postgres",
-        "Object Storage"
-      ],
-      "details": true,
-      "title": "AI governance workflows for Nationwide",
-      "summary": "Contributed to an AI governance pilot for Nationwide, translating policy requirements into risk classification, evidence requirements and controlled approval workflows.",
-      "overview": [
-        "I worked on a governance pilot for Nationwide at IBM. My contribution covered governance workflows, technical implementation, evaluations and enterprise integrations.",
-        "The pilot translated policy and risk requirements into structured inputs and workflow rules. Evidence requirements and approval checkpoints controlled how an AI initiative could progress through its lifecycle."
-      ],
-      "problemHeadline": "Policy requirements need enforceable workflows",
-      "challenge": [
-        "Governance policies describe the reviews, documentation and approvals an AI initiative requires. Implementing those requirements means defining which information drives a decision, which controls apply and when a project can progress.",
-        "The pilot addressed this through structured risk assessment and controlled workflow transitions."
-      ],
-      "focus": [
-        "Classifying risk consistently",
-        "Applying the appropriate evidence and approval requirements",
-        "Preventing projects from skipping mandatory checkpoints",
-        "Making review decisions traceable"
-      ],
-      "flow": [
-        "Project information",
-        "Risk classification",
-        "Evidence & approval gates",
-        "Lifecycle records"
-      ],
-      "stages": [
-        "Capture structured inputs including model type, use case, data sensitivity, customer impact and regulatory exposure.",
-        "Apply risk logic and map the resulting tier to the required controls.",
-        "Require the relevant documentation and review before allowing progression. Conditional paths apply additional requirements where appropriate.",
-        "Preserve evidence and versioned approval checkpoints so reviewers can trace decisions to their supporting information."
-      ],
-      "decision": "Model customer impact and data sensitivity as separate fields. This makes it clearer which risk attribute triggered a control and what the team needs to address.",
-      "integrations": [
-        "The pilot used watsonx.governance, with orchestration and workflow enforcement in watsonx Orchestrate. Enterprise integrations connected the workflow with document-processing services and the systems used to store records, metadata and evidence.",
-        "Watson Document Understanding supported document processing. FileNet persisted enterprise records, Postgres supported structured metadata storage and Object Storage held durable artefacts. Enterprise content services ran on OpenShift."
-      ],
-      "buildLabels": [
-        "Metadata and risk tiers",
-        "Workflow controls",
-        "Evaluations and evidence",
-        "Integrations",
-        "Technical consideration"
-      ],
-      "approach": [
-        "Defined metadata schemas that translated policy concepts into structured fields. Implemented risk-tier logic and mapping between risk classifications and required controls.",
-        "Built conditional workflow paths with mandatory evidence and approval checkpoints. Designed state transitions that prevented skipped documentation or direct jumps to approval states.",
-        "Worked on evaluations and traceability across the governance workflow. Linked evidence requirements to lifecycle boundaries and risk classifications.",
-        "Contributed to integrations with document-processing and enterprise platform services.",
-        "Higher-risk paths required stricter controls, while lower-risk paths needed to remain usable. Workflow rules had to preserve policy intent without creating unnecessary review friction."
-      ],
-      "resultsHeadline": "Structured controls and traceable decisions",
-      "results": [
-        [
-          "Controlled",
-          "workflow progression",
-          "Mandatory checkpoints controlled movement through the lifecycle"
-        ],
-        [
-          "Risk-aligned",
-          "risk classification",
-          "Assessed risk determined documentation and approval requirements"
-        ],
-        [
-          "Traceable",
-          "evidence capture",
-          "Review decisions connected to structured inputs and captured artefacts"
-        ],
-        [
-          "Versioned",
-          "approval tracking",
-          "Versioned checkpoints improved traceability"
-        ]
-      ],
-      "context": [
-        "The pilot established structured governance workflows and reduced reliance on manual tracking and email-based approvals.",
-        "These outcomes are qualitative: no quantified efficiency gains, model-accuracy figures or production rollout are claimed."
-      ],
-      "resultsScope": "IBM’s case study describes the broader Nationwide AI partnership and governance programme. It provides context rather than evidence of every implementation detail above.",
-      "source": {
-        "label": "IBM’s Nationwide case study",
-        "href": "https://www.ibm.com/case-studies/nationwide-building-society"
-      },
-      "perspectiveHeadline": "Governance is a systems design problem",
-      "reflection": [
-        "Implementing governance requires precise definitions of risk inputs, control requirements and valid transitions. Reviewers also need to understand why a requirement applies and what evidence supports a decision.",
-        "The design challenge is to make higher-risk paths appropriately strict while keeping lower-risk workflows usable."
-      ],
-      "nextSteps": [
-        "Expand evaluation coverage across risk classifications and exception paths.",
-        "Test attempts to bypass documentation and approval prerequisites.",
-        "Check how policy changes affect existing rules and review records.",
-        "Review workflow usability alongside control enforcement."
-      ],
-      "closing": "Clear rules and traceable evidence make governance easier to operate and review."
     }
   ]
 }

@@ -180,6 +180,11 @@ function visual(project, index) {
       body =
         '<div class="verification-window conversation-window"><div class="window-top"><span>CONVFINQA / ONE TURN</span><span class="window-dots"><i></i><i></i><i></i></span></div><div class="verification-row"><span>Conversation history</span><span class="result-pill result-pass">CARRIED</span></div><div class="verification-row"><span>Structured response</span><span class="result-pill result-pass">VALIDATED</span></div><div class="verification-row"><span>Restricted arithmetic</span><span class="result-pill result-pass">COMPUTED</span></div><div class="verification-row"><span>Unsupported question</span><span class="result-pill result-unknown">ABSTAIN</span></div></div>';
       break;
+    case "review":
+      body =
+        '<div class="verification-window"><div class="window-top"><span>CONTRACT REVIEW / ONE THREAD</span><span class="window-dots"><i></i><i></i><i></i></span></div><div class="verification-row"><span>Clauses extracted and scored</span><span class="result-pill result-pass">DONE</span></div><div class="verification-row"><span>Unlimited liability clause</span><span class="result-pill result-fail">HIGH RISK</span></div><div class="verification-row"><span>Reviewer decision</span><span class="result-pill result-unknown">PAUSED</span></div><div class="verification-row"><span>Audit log and checkpoint</span><span class="result-pill result-pass">SAVED</span></div></div>';
+      note = "SYNTHETIC CONTRACT CLAUSE";
+      break;
     case "controls":
       body =
         '<div class="verification-window"><div class="window-top"><span>ACTIFACT / VERIFIER STATES</span><span>↗</span></div><div class="verification-row"><span>Approved action verified</span><span class="result-pill result-pass">PASS</span></div><div class="verification-row"><span>Wrong target changed</span><span class="result-pill result-fail">FAIL</span></div><div class="verification-row"><span>State evidence unavailable</span><span class="result-pill result-unknown">INCONCLUSIVE</span></div></div>';

@@ -4,7 +4,17 @@ const dark = "rgb(12, 28, 26)";
 const projects = [
   { slug: "themis", name: "Themis", next: "dueform" },
   { slug: "dueform", name: "DueForm", next: "actifact" },
-  { slug: "actifact", name: "ActiFact", next: "financial-qa" },
+  { slug: "actifact", name: "ActiFact", next: "compliance-review-agent" },
+  {
+    slug: "compliance-review-agent",
+    name: "Compliance Review Agent",
+    next: "nationwide-governance",
+  },
+  {
+    slug: "nationwide-governance",
+    name: "Nationwide AI Governance",
+    next: "financial-qa",
+  },
   {
     slug: "financial-qa",
     name: "Financial document QA",
@@ -13,11 +23,6 @@ const projects = [
   {
     slug: "vodafone-tobi",
     name: "Vodafone TOBi",
-    next: "nationwide-governance",
-  },
-  {
-    slug: "nationwide-governance",
-    name: "Nationwide AI Governance",
     next: "themis",
   },
 ];
@@ -227,7 +232,7 @@ async function recordJourney(page, records, label, action, url, selector) {
     await page.waitForLoadState("domcontentloaded");
     const destination = page.locator(selector);
     if (selector === ".project-card") {
-      await expect(destination).toHaveCount(6);
+      await expect(destination).toHaveCount(7);
       await expect(destination.first()).toBeVisible();
     } else await expect(destination).toBeVisible();
     await expect

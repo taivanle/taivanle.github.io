@@ -7,6 +7,7 @@ const pages = [
   "themis.html",
   "dueform.html",
   "actifact.html",
+  "compliance-review-agent.html",
   "financial-qa.html",
   "vodafone-tobi.html",
   "nationwide-governance.html",
@@ -365,9 +366,9 @@ test("project filters update visible cards and announce the result", async ({
   page,
 }) => {
   await page.goto("/");
-  await expect(page.locator(".project-card:visible")).toHaveCount(6);
+  await expect(page.locator(".project-card:visible")).toHaveCount(7);
   for (const [name, count] of [
-    ["AI & evaluation", 3],
+    ["AI & evaluation", 4],
     ["Product engineering", 1],
     ["Governance & controls", 2],
   ]) {
@@ -381,7 +382,7 @@ test("project filters update visible cards and announce the result", async ({
     );
   }
   await page.getByRole("button", { name: "All work" }).click();
-  await expect(page.locator(".project-card:visible")).toHaveCount(6);
+  await expect(page.locator(".project-card:visible")).toHaveCount(7);
 });
 
 test("mobile menu supports navigation, Escape, and desktop resizing", async ({
@@ -420,7 +421,7 @@ test("essential content and navigation work without JavaScript", async ({
   });
   const page = await context.newPage();
   await page.goto("/");
-  await expect(page.locator(".project-card")).toHaveCount(6);
+  await expect(page.locator(".project-card")).toHaveCount(7);
   await expect(page.locator("#navigation")).toBeVisible();
   await page
     .getByRole("link", { name: "Read case study: DueForm", exact: true })
@@ -482,6 +483,7 @@ for (const project of [
   "themis",
   "dueform",
   "actifact",
+  "compliance-review-agent",
   "financial-qa",
   "vodafone-tobi",
   "nationwide-governance",
@@ -721,6 +723,7 @@ test("result labels stay inside their own columns at every breakpoint", async ({
     "themis",
     "dueform",
     "actifact",
+    "compliance-review-agent",
     "financial-qa",
     "vodafone-tobi",
     "nationwide-governance",
@@ -1294,6 +1297,7 @@ for (const [slug, name] of [
   ["themis", "Themis"],
   ["dueform", "DueForm"],
   ["actifact", "ActiFact"],
+  ["compliance-review-agent", "Compliance Review Agent"],
   ["financial-qa", "Financial document QA"],
   ["vodafone-tobi", "Vodafone TOBi"],
   ["nationwide-governance", "Nationwide AI Governance"],
@@ -1370,6 +1374,7 @@ for (const slug of [
   "themis",
   "dueform",
   "actifact",
+  "compliance-review-agent",
   "financial-qa",
   "vodafone-tobi",
   "nationwide-governance",
@@ -1750,4 +1755,34 @@ test("the booking calendar loads Calendly only after the visitor asks for it", a
   await expect(panel).toBeVisible();
   await panel.getByRole("button", { name: "Close booking" }).click();
   await expect(panel).toBeHidden();
+});
+
+test("the Compliance Review Agent architecture opens as an accessible diagram", async ({
+  page,
+}) => {
+  await page.goto("/compliance-review-agent.html#architecture");
+  await page.getByRole("button", { name: "Full architecture" }).click();
+  const diagram = page.getByRole("dialog", {
+    name: "Compliance Review Agent — human-in-the-loop review graph",
+  });
+  await expect(diagram).toBeVisible();
+  await expect(diagram.locator(".diagram-group")).toHaveCount(8);
+  await expect(diagram.getByText("interrupt() pauses the run")).toBeVisible();
+  const accessibility = await new AxeBuilder({ page })
+    .include(".diagram-dialog")
+    .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
+    .analyze();
+  expect(accessibility.violations.map((violation) => violation.id)).toEqual([]);
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    expect(
+      await diagram.evaluate(
+        (dialog) => dialog.scrollWidth <= dialog.clientWidth,
+      ),
+      `Diagram overflows at ${width}px`,
+    ).toBeTruthy();
+  }
+  await page.keyboard.press("Escape");
+  await expect(diagram).toBeHidden();
+  await expect(page).toHaveURL(/compliance-review-agent.html#architecture$/);
 });
